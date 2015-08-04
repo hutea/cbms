@@ -1,0 +1,9 @@
+﻿.settings/
+target/
+zdoc/
+.svn/
+
+.classpath
+.project
+*.class
+

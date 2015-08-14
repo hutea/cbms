@@ -37,15 +37,18 @@ public class MemberRank extends BaseEntity {
 	/**
 	 * 积分
 	 */
+	@Column(nullable=false)
 	private Float amount;
 	/**
 	 * 等级名称
 	 */
+	@Column(nullable=false)
 	private String name;
 	
 	/**
 	 * 消费优惠
 	 */
+	@Column(nullable=false)
 	private Float scale;
 	
 	@Column(name="orders")
@@ -55,7 +58,7 @@ public class MemberRank extends BaseEntity {
 	 */
 	@OneToMany(fetch=FetchType.LAZY,mappedBy="memberRank",cascade=CascadeType.ALL)
 	@OrderBy("createDate desc")
-	@Where(clause="visible = true")
+	@Where(clause="visible = 1")
 	private Set<Member> memberSet;
 	
 	private Boolean visible = true;

@@ -249,7 +249,7 @@
 									<label class="col-sm-4 control-label">车标图片</label>
 									<div class="col-sm-8">
 										<div class="img_div">
-											<img alt="" src="/${carBrand.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
+											<img alt="" src="<%=basePath %>/${carBrand.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
 											<input type="hidden" name="imgPath" value="${carBrand.imgPath }"/>
 										</div>
 										<label>
@@ -263,7 +263,7 @@
 						<div class="panel-footer">
 							<div class="row">
 								<div class="col-sm-9 col-sm-offset-3">
-									<button id="updateCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
+									<button id="updateCate" class="btn btn-primary mr5" onclick="saveType()" type="button">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
 								</div>
 							</div>

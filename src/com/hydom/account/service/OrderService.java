@@ -3,6 +3,9 @@ package com.hydom.account.service;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.hydom.account.ebean.Area;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.ServiceType;
@@ -11,12 +14,29 @@ import com.hydom.util.dao.DAO;
 
 public interface OrderService extends DAO<Order> {
 
+	/***
+	 * 为指定的技师分配一个订单，分配原则如下：<br>
+	 * <1> 订单为正常的洗车订单(非取消中的订单)且未分配技师<br>
+	 * <2> 根据订单生成时间序分配<br>
+	 * <3> 订单距离技师在5km范围内<br>
+	 * 其他的功能：<br>
+	 * <1>更新技师经纬度<br>
+	 * 调用时注意： <1>必须判断用户当前状态为上班状态才进行调用，否则返回空
+	 * 
+	 * @param techid
+	 * @param lat
+	 * @param lng
+	 * @return
+	 */
+	public Order matchOrder(String techid, double lat, double lng);
+
 	/**
 	 * 给指定的订单绑定技师<br>
 	 * 绑定原则：<br>
 	 * <1>根据用户经纬度由近及远绑定；<br>
 	 * <2>用户没有绑定过此订单（订单不分配给拒绝过技师）<br>
 	 * <3>技师状态为上班且空闲状态<br>
+	 * <4>技师当前没有分配订单 <br>
 	 * 主要功能及说明：<br>
 	 * <1>技师绑定记录与订单绑定在同一事务中进行<br>
 	 * <2>绑定时会时行相应距离设置<br>
@@ -57,5 +77,12 @@ public interface OrderService extends DAO<Order> {
 	 * @return
 	 */
 	public List<Order> getBindingOrder(Order order);
+
+	/**
+	 * 根据订单号 获取订单
+	 * @param orderNum
+	 * @return
+	 */
+	public Order getOrderByOrderNum(String orderNum);
 
 }

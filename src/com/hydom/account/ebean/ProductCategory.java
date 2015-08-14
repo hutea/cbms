@@ -57,6 +57,8 @@ public class ProductCategory extends BaseEntity {
 	@Column(name="tree_path",length=2000)
 	private String treePath;
 	
+	@Column(name="img_path",length=1000)
+	private String imgPath;
 	/**
 	 * 层级
 	 */
@@ -68,6 +70,13 @@ public class ProductCategory extends BaseEntity {
 	 */
 	@Column(name="orders")
 	private Integer order;
+	
+	
+	/**
+	 * 热卖分类 0 非热卖   1 热卖
+	 */
+	@Column(name="hot_productcategory")
+	private Integer hotProductCategory = 0;
 	
 	/** 上级分类 */
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -187,8 +196,14 @@ public class ProductCategory extends BaseEntity {
 	public void setServiceType(ServiceType serviceType) {
 		this.serviceType = serviceType;
 	}
-	
-	
+
+	public Integer getHotProductCategory() {
+		return hotProductCategory;
+	}
+
+	public void setHotProductCategory(Integer hotProductCategory) {
+		this.hotProductCategory = hotProductCategory;
+	}
 
 	public Set<Attribute> getAttributeSet() {
 		return attributeSet;
@@ -196,6 +211,14 @@ public class ProductCategory extends BaseEntity {
 
 	public void setAttributeSet(Set<Attribute> attributeSet) {
 		this.attributeSet = attributeSet;
+	}
+	
+	public String getImgPath() {
+		return imgPath;
+	}
+
+	public void setImgPath(String imgPath) {
+		this.imgPath = imgPath;
 	}
 
 	/**

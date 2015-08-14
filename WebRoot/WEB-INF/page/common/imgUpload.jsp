@@ -30,7 +30,7 @@
 			file_size_limit : "100 MB",// 上传文件大小限制
 			file_types : "*.*",// 上传文件类型限制
 			file_types_description : "*.jpg,*.png,*.jpeg",// 上传对话框中的文件类型描述
-			file_upload_limit : "1",
+			file_upload_limit : "0",
 			
 			// 事件处理
 			file_queue_error_handler : fileQueueError,
@@ -46,7 +46,6 @@
 				var json = eval("("+serverData+")");
 				if(json.code == 0){
 					var img = "<%=basePath%>"+json.url;
-					console.log(img);
 					$("input[name='imgPath']").val(json.url);
 					$("#show_img").attr("src",img);
 				};

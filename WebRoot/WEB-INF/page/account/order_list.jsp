@@ -29,24 +29,12 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="js/html5shiv.js"></script>
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
-		}
-	</script>
 	<style type="text/css">
 		#chooseTeamContent label{
 			margin-right: 15px;
 		}
 	</style>
+	
 </head>
 
 <body>
@@ -60,13 +48,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		        <div class="media-body">
 		          <ul class="breadcrumb">
 		            <li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-		            <li><a href="">地区列表</a></li>
+		            <li><a href="">订单列表</a></li>
 		          </ul>
 		        </div>
 		      </div><!-- media -->
 		    </div>
 		    <form id="pageList" action="${pageContext.request.contextPath}/manage/order/list" method="post">
 		    	<input type="hidden" name="searchProp" value="${searchProp }"/>
+		    	<input type="hidden" name="endOrder" value="${endOrder}"/>
 			    <div class="contentpanel">
 			      <div class="search-header">
 			        <div class="btn-list">
@@ -92,13 +81,16 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<input type="checkbox" id="selectAll"/>
 								</th>
 								<th>
+									编号
+								</th>
+								<th>
 									收货人
 								</th>
 								<th>
 									订单金额
 								</th>
 								<th>
-									服务
+									服务类型
 								</th>
 								<th>
 									地区
@@ -126,13 +118,25 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<input type="checkbox" name="ids" value="${order.id}" />
 								</td>
 								<td>
+									${order.num }
+								</td>
+								<td>
 									${order.contact }
 								</td>
 								<td>
 									${order.price }
 								</td>
 								<td>
-									${order.serviceType.name }
+									<%-- 类型 1洗车订单 2保养订单 3纯商品订单 --%>
+									<c:if test="${order.type eq 1}">
+										洗车订单
+									</c:if>
+									<c:if test="${order.type eq 2}">
+										保养订单
+									</c:if>
+									<c:if test="${order.type eq 3}">
+										纯商品订单
+									</c:if>
 								</td>
 								<td>
 									${order.area.treeFull }
@@ -150,13 +154,29 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<span><fmt:formatDate value="${order.createDate}" pattern="yyyy-MM-dd"/></span>
 								</td>
 								<td><!-- data-toggle="modal" data-target=".bs-example-modal-lg" -->
-									<c:if test="${order.status eq 1}">
-										<a href="javascript:void(0);" onclick="showModal('${order.id}');">[服务]</a>
+									<c:if test="${order.type eq 2 }"><%-- 说明是保养服务或者商品服务 --%>
+										<c:if test="${order.status eq 11}">
+											<a href="javascript:void(0);" onclick="showModal('${order.id}');">[分配车队]</a>
+										</c:if>
+										<c:if test="${order.status eq 12}">
+											<a href="javascript:void(0);" <%-- onclick="endOrder('${order.id}');" --%> onclick="successOrder('${order.id}');">[完结]</a>
+										</c:if>
 									</c:if>
-									<c:if test="${order.status eq 2}">
-										<a href="javascript:void(0);" onclick="endOrder('${order.id}');">[完结]</a>
+									<c:if test="${order.type eq 3}"><%-- 说明是商品服务 --%>
+										<c:if test="${order.status eq 21}">
+											<a href="javascript:void(0);" onclick="showModal('${order.id}');">[分配车队]</a>
+										</c:if>
+										<c:if test="${order.status eq 22}">
+											<a href="javascript:void(0);" onclick="statusOrder('${order.id}');">[送货中]</a>
+										</c:if>
+										<c:if test="${order.status eq 23}">
+											<a href="javascript:void(0);" onclick="successOrder('${order.id}');">[完结]</a>
+										</c:if>
 									</c:if>
-									<a href="javascript:void(0);" onclick="errorOrder('${order.id}');">[失败]</a>
+									<c:if test="${order.type eq 1 && order.status ne 0}">
+										<a href="javascript:void(0);" onclick="successOrder('${order.id}');">[完结]</a>
+									</c:if>
+									<a href="javascript:void(0);" onclick="errorOrder('${order.id}');">[退费]</a>
 								</td>
 							</tr>
 						  </c:forEach>
@@ -176,9 +196,27 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
                   <button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
                   <h4 class="modal-title">选择服务车队</h4>
               </div>
+              <div class="form-horizontal form-bordered">
+              	<div class="panel-body nopadding">
+              	 <div class="form-group">
+					<label class="col-sm-2 control-label"  style="text-align: right;">地区筛选</label>
+						<div class="col-sm-8" id="area_div_select" style="padding-top: 10px;">
+							<select onchange="getAreaList(this);" id="firstSelect" style="margin-right: 5px;">
+								<option value=''>请选择</option>
+								<c:forEach var="area" items="${areas }">
+									<option value="${area.id }" <c:if test="${area.children.size()>0 }">class="hasNext"</c:if>
+									>${area.name }</option>
+								</c:forEach>
+							</select>
+						</div>
+						<input type="hidden" value="" id="areaSelectId"/>
+				  </div>
+              	</div>
+              </div>
+              
               <input type="hidden" value="" id="chooseOrderId"/>
               <div class="modal-body" id="chooseTeamContent">
-              		<label><input type="radio" name="carTeam" value=""/></label>
+              		
               </div>
               <div class="modal-footer">
              		<button data-dismiss="modal" type="button" aria-hidden="true" class="btn btn-dark">关闭</button>
@@ -189,9 +227,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
     </div>
    <script type="text/javascript">
    		var base = "<%=base %>";
+   		
    		function showModal(obj){
+   			initSelect();
    			$("#chooseOrderId").val(obj);
-   			var url = base + "manage/order/getCarTeam";
+   			$("#areaSelectId").val("");
+   			loadCarTeam();
+   			/* var url = base + "manage/order/getCarTeam";
    			var data = {orderId:obj};
    			$.post(url,data,function(result){
    				if(result.status == "success"){
@@ -199,29 +241,36 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
    				}else{
    					addError();
    				}
-   			},"json");
+   			},"json"); */
    			
    			$(".bs-example-modal-lg").modal();
    		}
    		
-   		function addLabel(value){
-			var label = "";
-			for(var i in value){
-				label += "<label><input type='radio' name='carTeam' value='"+value[i].id+"'/>"+value[i].name+"</label>";
-			}
-			$("#chooseTeamContent").html(label);
+   		function initSelect(){
+   			$("#firstSelect").nextAll().remove();
+   			$("#firstSelect").find("option[value='']").prop("selected",true);
    		}
-   		function addError(){
-   			$("#chooseTeamContent").html("暂无可以分配的车队");
+   		
+   		function loadCarTeam(){
+   			var inputPageValue = $("#inputTeamPage").val();
+   			var areaId = $("#areaSelectId").val();
+   			var data = {
+   				areaId:areaId,
+   				page:inputPageValue
+   			}
+   			var url = base + "manage/order/getCarTeam";
+   			$("#chooseTeamContent").load(url,data,function(){});
    		}
+		   		
    		//选择车队
    		function chooseTeam(){
-   			var carTeam = $("input[name='carTeam']:checked");
-   			var carTeamId = "";
+   			var carTeamId = $("input[name='teamIds']:checked").val();
+   			/* var carTeamId = "";
    			if(carTeam.length == 1){
    				carTeamId = $(carTeam[0]).val();
-   			}
-   			if(carTeamId == ""){
+   			} */
+   		//	alert(carTeamId == undefined);
+   			if(carTeamId == undefined || carTeamId == ""){
    				alert("请选择车队");
    				return;
    			}
@@ -238,11 +287,24 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
    					alert("选择车队失败");
    				}
    			},"json");
+   		
+   		}
+   		
+   		//送货中
+   		function statusOrder(obj){
+   			var url = base + "manage/order/orderstatus";
+   			var data = {
+   					orderId:obj
+   			};
+   			$.post(url,data,function(result){
+   				if(result.status == "success"){
+   					window.location.reload(true);
+   				}
+   			},"json");
    		}
    		
    		//完结订单
-   		function endOrder(obj){
-   		
+   		function successOrder(obj){
    			var url = base + "manage/order/endOrder";
    			var data = {
    					orderId:obj
@@ -256,6 +318,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
    		
    		//失败订单
    		function errorOrder(obj){
+   			if(!confirm("该订单是否申请退费?")){
+   				return;
+   			}
    			var url = base + "manage/order/errorOrder";
    			var data = {
    					orderId:obj
@@ -266,6 +331,73 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
    				}
    			},"json");
    		}
+   		
+   		
+   	    //选择地区
+		function getAreaList(e){
+			delSelect(e);
+			var option = $(e).find("option:selected");
+			var id = option.val();
+			$("#areaSelectId").val(id);
+			loadCarTeam();
+			if(!option.hasClass("hasNext")){
+				return;
+			}
+			var url = base + "/manage/area/findArea";
+			$.post(url,{id:id},function(result){
+				if(result.status == "success"){
+					var values = result.message;
+					addSelectElement(values);
+				}
+			},"json");
+		}
+		
+		//设置地区
+		function delSelect(e){
+			$(e).nextAll().remove();
+		}
+		
+		//添加选择元素
+		function addSelectElement(value){
+			var options = "<option value=''>请选择</option>";
+			for(var i in value){
+				options += "<option value='"+value[i].id+"' class='"+value[i].hasNext+"'>"+value[i].text+"</option>";
+			}
+			var select = "<select onchange='getAreaList(this);' style='margin-right: 5px;'>"+options+"</select>";
+			$("#area_div_select").append(select);
+		}
+		
+		/* 分页三方法 */
+		
+		//跳转分页
+		function topageTeam(page) {
+			//var form = document.getElementById("pageList");
+			$("#inputTeamPage").val(page);
+			/*console.log(form);
+			form.page.value = page;*/
+			loadCarTeam();
+		}
+
+		// 跳转到指定页面
+		function goTeam(totalPage) {
+			var inputPageValue = $("#inputTeamPage").val();
+			if (inputPageValue > totalPage) {
+				alert("超过最大页数: " + totalPage);
+			} else if (inputPageValue < 1) {
+				alert("页码数必须大于等于1");
+			} else {
+				//var form = document.getElementById("pageList");
+				//form.page.value = inputPageValue;
+				loadCarTeam();
+			}
+		}
+		// 设置页码为1
+		/* function loadCarTeam() {
+			//var form = document.getElementById("pageList");
+			//form.page.value = 1;
+			$("#inputTeamPage").val("1");
+			loadCarTeam();
+		} */
    </script>
 </body>
 </html>

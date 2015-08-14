@@ -1,11 +1,12 @@
 package com.hydom.account.action;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,44 +21,42 @@ import com.hydom.account.ebean.PrivilegeGroup;
 import com.hydom.account.service.AccountService;
 import com.hydom.account.service.PrivilegeGroupService;
 import com.hydom.util.BaseAction;
+import com.hydom.util.DateTimeHelper;
+import com.hydom.util.IDGenerator;
 import com.hydom.util.dao.PageView;
 
 @RequestMapping("/manage/account")
 @Controller
-public class AccountAction extends BaseAction{
+public class AccountAction extends BaseAction {
 	@Resource
 	private AccountService accountService;
 	@Resource
 	private PrivilegeGroupService groupService;
 	@Autowired
 	private HttpServletRequest request;
-	@Autowired
-	private HttpServletResponse response;
-	
 	private int maxresult = 10;
 
 	@RequestMapping("/list")
 	public ModelAndView list(
-			@RequestParam(required = false, defaultValue = "1") int page) {
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false) String queryContent) {
 		PageView<Account> pageView = new PageView<Account>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("id", "desc");
+		StringBuffer jpql = new StringBuffer("o.visible=?1");
+		List<Object> params = new ArrayList<Object>();
+		params.add(true);
+		if (queryContent != null && !"".equals(queryContent)) {
+			jpql.append(" and (o.username like?" + (params.size() + 1)
+					+ " or o.nickname=?" + (params.size() + 2) + ")");
+			params.add("%" + queryContent + "%");
+			params.add("%" + queryContent + "%");
+		}
 		pageView.setQueryResult(accountService.getScrollData(
-				pageView.getFirstResult(), maxresult, orderby));
-
-//		StringBuffer jpql = new StringBuffer("o.visilbe=?1");
-//		List<Object> params = new ArrayList<Object>();
-//		params.add(true);
-//		if(""){
-//			jpql.append(" and o.username like?"+(params.size()+1));
-//			params.add("xxxx");
-//		}
-//		accountService.getScrollData(pageView.getFirstResult(), page,
-//				jpql.toString(), params.toArray(), orderby);
-		
-		request.setAttribute("pageView", pageView);
-		ModelAndView mav = new ModelAndView("/account/account_list");
-		mav.addObject("paveView", pageView);
+				pageView.getFirstResult(), maxresult, jpql.toString(),
+				params.toArray(), orderby));
+		ModelAndView mav = new ModelAndView("/account/privilege/account_list");
+		mav.addObject("pageView", pageView);
 		mav.addObject("m", 3);
 		return mav;
 	}
@@ -66,7 +65,7 @@ public class AccountAction extends BaseAction{
 	public ModelAndView addUI() {
 		List<PrivilegeGroup> groups = groupService.getScrollData()
 				.getResultList();
-		ModelAndView mav = new ModelAndView("/account/account_add");
+		ModelAndView mav = new ModelAndView("/account/privilege/account_add");
 		mav.addObject("groups", groups);
 		mav.addObject("m", 3);
 		return mav;
@@ -90,7 +89,7 @@ public class AccountAction extends BaseAction{
 		for (PrivilegeGroup group : account.getGroups()) {
 			ugs.append("#" + group.getId());
 		}
-		ModelAndView mav = new ModelAndView("/account/account_edit");
+		ModelAndView mav = new ModelAndView("/account/privilege/account_edit");
 		mav.addObject("account", account);
 		mav.addObject("ugs", ugs.toString());
 		mav.addObject("m", 3);
@@ -99,11 +98,17 @@ public class AccountAction extends BaseAction{
 
 	@RequestMapping("/update")
 	public ModelAndView edit(@ModelAttribute Account account,
-			@RequestParam String[] gids) {
+			@RequestParam(required = false) String[] gids) {
 		Account entity = accountService.find(account.getId());
-		entity.setUsername(account.getUsername());
 		entity.setPassword(account.getPassword());
 		entity.setNickname(account.getNickname());
+		entity.getGroups().clear();
+		if (gids != null && gids.length > 0) {
+			for (String gid : gids) {
+				PrivilegeGroup group = groupService.find(gid);
+				entity.getGroups().add(group);
+			}
+		}
 		accountService.update(entity);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		return mav;
@@ -112,11 +117,40 @@ public class AccountAction extends BaseAction{
 	@RequestMapping("/delete")
 	public @ResponseBody
 	String delete(@RequestParam String[] ids) {
-		for(String id : ids){
+		for (String id : ids) {
 			Account entity = accountService.find(id);
+			String deleteExtraName = DateTimeHelper.formatDateTimetoString(
+					new Date(), "yyyyMMddHHmmss-");
+			deleteExtraName += IDGenerator.getRandomString(6, 1);
+			entity.setUsername(entity.getUsername() + "-DEL-" + deleteExtraName);
 			entity.setVisible(false);
 			accountService.update(entity);
 		}
-		return ajaxSuccess("成功", response);
+		return "{\"message\":\"删除成功\",\"status\":\"success\"}";
+	}
+
+	@RequestMapping("/checkUsername")
+	public @ResponseBody
+	String checkUsername(@RequestParam String username) {
+		Account entity = accountService.findByUsername(username);
+		if (entity != null) {
+			return "0";
+		} else {
+			return "1";
+		}
+	}
+
+	@RequestMapping("/resetPwd")
+	public @ResponseBody
+	String resetPwd(@RequestParam String accid) {
+		try {
+			Account entity = accountService.find(accid);
+			entity.setPassword("123456");
+			accountService.update(entity);
+			return "1";
+		} catch (Exception e) {
+			return "0";
+		}
+
 	}
 }

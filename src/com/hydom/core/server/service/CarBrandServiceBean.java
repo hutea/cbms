@@ -1,9 +1,19 @@
 package com.hydom.core.server.service;
 
-import javax.persistence.NoResultException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+
+import net.sf.json.JSONArray;
+
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
+import com.hydom.account.ebean.Product;
+import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.util.dao.DAOSupport;
 
@@ -30,6 +40,28 @@ public class CarBrandServiceBean extends DAOSupport<CarBrand> implements CarBran
 			return true;
 		}
 		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public String getChooseBrand(Product product) {
+		String hql = "select cb from CarBrand cb join cb.carList c where c in(:carSet)";
+		
+	//	Query query = em.createQuery(hql);
+//		query.setParameter("carSet", product.getCarSet());
+		Set<Car> carSet = product.getCarSet();
+		
+		Set<CarBrand> carBrands = new HashSet<CarBrand>();
+		for(Car car : carSet){
+			carBrands.add(car.getCarBrand());
+		}
+		
+		JSONArray array = new JSONArray();
+		String brandIds = "";
+		for(CarBrand cb : carBrands){
+			array.add(cb.getId());
+		}
+		return array.toString();
 	}
 
 }

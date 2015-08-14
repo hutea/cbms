@@ -61,17 +61,17 @@ public class MemberAction extends BaseAction{
 		//查询条件
 		String queryContent = request.getParameter("queryContent");
 		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append(" and o.name like ?"+(params.size()+1));
+			jpql.append(" and (o.name like ?"+(params.size()+1));
 			params.add("%"+queryContent+"%");
 			
-			jpql.append(" and o.email like ?"+(params.size()+1));
+			jpql.append(" or o.email like ?"+(params.size()+1));
 			params.add("%"+queryContent+"%");
 			
-			jpql.append(" and o.phone like ?"+(params.size()+1));
+			jpql.append(" or o.mobile like ?"+(params.size()+1)+")");
 			params.add("%"+queryContent+"%");
 			
-			jpql.append(" and o.area.name like ?"+(params.size()+1));
-			params.add("%"+queryContent+"%");
+			//jpql.append(" or o.area.name like ?"+(params.size()+1)+")");
+			//params.add("%"+queryContent+"%");
 		}
 		model.addAttribute("queryContent", queryContent);
 		
@@ -188,5 +188,15 @@ public class MemberAction extends BaseAction{
 		return ajaxSuccess("成功", response);
 	}
 	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String mobile) {
+		
+		Member member = memberService.findByMobile(mobile);
+		if(member != null){
+			return ajaxError("该手机号已被注册", response);
+		}
+		return ajaxSuccess("", response);
+	}
 	
 }

@@ -79,7 +79,7 @@ public class AreaAction extends BaseAction{
 	public String add(ModelMap model){
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("order", "asc");
-		String jpql = "parent is null and o.visible = true";
+		String jpql = "o.parent is null and o.visible = true";
 		List<Area> areas = areaService.getList(jpql, null, orderby);
 		model.addAttribute("m", mark);
 		model.addAttribute("rootArea", areas);
@@ -95,7 +95,7 @@ public class AreaAction extends BaseAction{
 		
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("order", "asc");
-		String jpql = "parent is null";
+		String jpql = "o.parent is null and o.visible = true";
 		List<Area> areas = areaService.getList(jpql, null, orderby);
 		model.addAttribute("rootArea", areas);
 		
@@ -104,19 +104,20 @@ public class AreaAction extends BaseAction{
 	
 	@RequestMapping("/save")
 	public String save(ModelMap model,Area entity){
+		String searchProp = entity.getParent().getId();
+		if(StringUtils.isEmpty(entity.getParent().getId())){
+			entity.setParent(null);
+			searchProp="";
+		}
+		entity.setFullName(entity.getName());
+		
 		if(StringUtils.isNotEmpty(entity.getId())){
-			entity.setFullName(entity.getName());
 			areaService.update(entity);
 		}else{
-			
-			if(StringUtils.isEmpty(entity.getParent().getId())){
-				entity.setParent(null);
-			}
-			
-			entity.setFullName(entity.getName());
 			areaService.save(entity);
 		}
-		return  "redirect:list";
+		
+		return  "redirect:list?searchProp="+searchProp;
 	}
 	
 	@RequestMapping("/delete")
@@ -156,5 +157,18 @@ public class AreaAction extends BaseAction{
 		}
 		
 		return ajaxSuccess(jsonArray, response);
+	}
+	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String prantId,String content){
+		JSONObject obj = new JSONObject();
+		
+		Area area = areaService.getEntitybyNameAndPrantId(prantId,content);
+		if(area == null){
+			return ajaxSuccess("", response);
+		}
+		
+		return ajaxError("该地区下已存在该名称,请重新输入", response);
 	}
 }

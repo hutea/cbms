@@ -14,7 +14,7 @@
 	content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="description" content="">
 
-<title>商品标签修改</title>
+<title>技师帐号编辑</title>
 <link
 	href="${pageContext.request.contextPath}/resource/chain/css/style.default.css"
 	rel="stylesheet">
@@ -137,11 +137,22 @@ function checkPhoneNumber() {
 		
 	});
 
+	function checkLevel() {
+		var level = $("#level").val();
+		if(level =="0"){
+			$("#level_error").html("请选择星级");
+			$("#level").next().val("");
+		}else{
+			$("#level").next().val("success");
+		}
+	}
+	
 	function saveType(){
 		
 		checkAccount();
 		checkName();
 		checkPhoneNumber();
+		checkLevel();
 			$(function(){
 				var flag = true;
 				$(".repeat").each(function(){
@@ -154,6 +165,8 @@ function checkPhoneNumber() {
 		
 		
 	}
+	
+	
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -193,7 +206,7 @@ function checkPhoneNumber() {
 						<div class="media-body">
 							<ul class="breadcrumb">
 								<li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-								<li><a href="">标签修改</a></li>
+								<li><a href="">技师帐号编辑</a></li>
 							</ul>
 						</div>
 					</div>
@@ -239,6 +252,46 @@ function checkPhoneNumber() {
 										<span class="errorStyle" id="phonenumber_error"></span>
 									</div>
 								</div>
+								<script type="text/javascript">
+									$(document).ready(function(){
+										var userLevel = "${technician.level}";
+										$("#level").find("option[value='"+userLevel+"']").prop("selected",true);
+									});
+								</script>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">技师星级</label>
+									<div class="col-sm-8">
+										<select class="form-control" id="level" name="level">
+												<option value="5.0" selected="selected" >5.0</option>
+												<option value="4.5" >4.5</option>
+												<option value="4.0" >4.0</option>
+												<option value="3.5" >3.5</option>
+												<option value="3.0" >3.0</option>
+												<option value="2.5" >2.5</option>
+												<option value="2.0" >2.0</option>
+												<option value="1.5" >1.5</option>
+												<option value="1.0" >1.0</option>
+												<option value="0.5" >0.5</option>
+												<option value="0">0</option>
+										</select>
+										<input type="hidden" class="repeat"/>
+										<span class="errorStyle" id="level_error"></span>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">头像</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="<%=basePath %>/${technician.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
+											<input type="hidden" name="imgPath" value="${technician.imgPath }"/>
+										</div>
+										<label>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+										
+									</div>
+								</div>
 								
 							</div>
 						</form>
@@ -247,6 +300,7 @@ function checkPhoneNumber() {
 								<div class="col-sm-9 col-sm-offset-3">
 									<button id="updateCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
+									<!-- <button id="restpassword" class="btn btn-dark" onclick="restPassWord()">重置密码</button> -->
 								</div>
 							</div>
 						</div>
@@ -259,6 +313,12 @@ function checkPhoneNumber() {
 			<!-- mainpanel -->
 		</div>
 		<!-- mainwrapper -->
+		
 	</section>
+	<!-- 上传图片页面 -->
+	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
+	<script type="text/javascript">
+		$('[data-toggle="tooltip"]').popover();
+	</script>
 </body>
 </html>

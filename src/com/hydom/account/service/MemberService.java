@@ -18,4 +18,5 @@ public interface MemberService extends DAO<Member> {
 	 * @return
 	 */
 	public Member findByMobile(String mobile);
+
 }

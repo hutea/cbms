@@ -72,12 +72,12 @@
 			$("#repeat").val("");
 			$("#inputForm")[0].reset();
 			couponType();
-			isExchange();
+// 			isExchange();
 		});
 	});
 	$(document).ready(function(){
 		couponType();
-		isExchange();
+// 		isExchange();
 	});
 	
 	function isVisible(e){
@@ -89,10 +89,10 @@
 	function saveType(){
 		$(function(){
 			isVisible($("#name"));
-			isVisible($("#point"));
+// 			isVisible($("#point"));
 			isVisible($("#discount"));
 			isVisible($("#minPrice"));
-			isVisible($("#residueCount"));
+			isVisible($("#rate"));
 			var flag = true;
 			$(".repeat").each(function(){
 				if($(this).prev().is(":visible") && $(this).val()!="success") flag = false;
@@ -108,40 +108,38 @@
 	
 	function couponType(){
 		if($("input[name=type]:checked").val()==1){
+			$("#discountDiv").hide();
+			$("#minPriceDiv").show();
+			$("#rateDiv").show();
+		}else if($("input[name=type]:checked").val()==2){
 			$("#discountDiv").show();
 			$("#minPriceDiv").show();
-			$("#residueCountDiv").hide();
-		}else if($("input[name=type]:checked").val()==2){
-			$("#discountDiv").hide();
-			$("#minPriceDiv").hide();
-			$("#residueCountDiv").hide();
+			$("#rateDiv").hide();
 		}else if($("input[name=type]:checked").val()==3){
-			$("#discountDiv").hide();
+			$("#discountDiv").show();
 			$("#minPriceDiv").hide();
-			$("#residueCountDiv").show();
+			$("#rateDiv").hide();
 		}
 	}
 	
 	function couponTypeRemoveAttr(){
 		if($("input[name=type]:checked").val()==1){
-			$("#residueCount").removeAttr("value");
+			$("#discount").removeAttr("value");
 		}else if($("input[name=type]:checked").val()==2){
-			$("#discount").removeAttr("value");
-			$("#minPrice").removeAttr("value");
-			$("#residueCount").removeAttr("value");
+			$("#rate").removeAttr("value");
 		}else if($("input[name=type]:checked").val()==3){
-			$("#discount").removeAttr("value");
 			$("#minPrice").removeAttr("value");
+			$("#rate").removeAttr("value");
 		}
 	}
 	
-	function isExchange(){
-		if($("input[name=isExchange]:checked").val()==1){
-			$("#pointDiv").show();
-		}else{
-			$("#pointDiv").hide();
-		}
-	}
+// 	function isExchange(){
+// 		if($("input[name=isExchange]:checked").val()==1){
+// 			$("#pointDiv").show();
+// 		}else{
+// 			$("#pointDiv").hide();
+// 		}
+// 	}
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -157,6 +155,16 @@
 }
 .rdio3 {
 	width: 30%;
+}
+.img_div{
+	display: inline-block;
+	height: 60px;
+	width: 160px;
+}
+.img_div img{
+	display: inline-block;
+	height: 60px;
+	width: 160px;
 }
 </STYLE>
 </head>
@@ -227,6 +235,20 @@
 										<input type="text" class="form-control" name="introduction" placeholder="请填写优惠券介绍" maxlength="255">
 									</div>
 								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">优惠券图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
+											<input type="hidden" name="imgPath" value=""/>
+										</div>
+										<label>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+										
+									</div>
+								</div>
 
 								<div class="form-group">
 									<label class="col-sm-4 control-label">是否启用</label>
@@ -242,7 +264,7 @@
 									</div>
 								</div>
 								
-								<div class="form-group">
+								<!-- <div class="form-group">
 									<label class="col-sm-4 control-label">是否允许积分兑换</label>
 									<div class="col-sm-8" onchange="isExchange()">
 										<div class="rdio rdio-default" style="width: 140px;">
@@ -254,31 +276,31 @@
 											<label for="radioZH-4">否</label>
 										</div>
 									</div>
-								</div>
+								</div> -->
 
-								<div class="form-group" id="pointDiv">
+								<!-- <div class="form-group" id="pointDiv">
 									<label class="col-sm-4 control-label">兑换所需积分</label>
 									<div class="col-sm-8">
 										<input type="text" class="form-control" name="point" id="point" placeholder="请填写积分数" maxlength="11" CHname="积分" onBlur="check(this)">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="point_error"></span>
 									</div>
-								</div>
+								</div> -->
 								
 								<div class="form-group">
 									<label class="col-sm-4 control-label">优惠券类型</label>
 									<div class="col-sm-8 rdio3" onchange="couponType()">
 										<div class="rdio rdio-default" style="width: 140px;">
 											<input type="radio" name="type" id="radioZH-5" value="1" checked="checked">
-											<label for="radioZH-5">满额优惠</label>
+											<label for="radioZH-5">满额打折</label>
 										</div>
 										<div class="rdio rdio-default" style="width: 140px;">
 											<input type="radio" name="type" id="radioZH-6" value="2">
-											<label for="radioZH-6">免单</label>
+											<label for="radioZH-6">满额优惠</label>
 										</div>
 										<div class="rdio rdio-default" style="width: 140px;">
 											<input type="radio" name="type" id="radioZH-7" value="3">
-											<label for="radioZH-7">可重复使用</label>
+											<label for="radioZH-7">减免</label>
 										</div>
 									</div>
 								</div>
@@ -292,21 +314,21 @@
 									</div>
 								</div>
 
+								<div class="form-group" id="rateDiv">
+									<label class="col-sm-4 control-label">折扣率（折）</label>
+									<div class="col-sm-8">
+										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写折扣率" maxlength="1" CHname="折扣率" onBlur="check(this)">
+										<input type="hidden" class="repeat"/>
+										<span class="errorStyle" id="rate_error"></span>
+									</div>
+								</div>
+
 								<div class="form-group" id="minPriceDiv">
 									<label class="col-sm-4 control-label">最小商品价格</label>
 									<div class="col-sm-8">
 										<input type="text" class="form-control" name="minPrice" id="minPrice" placeholder="请填写最小商品价格" CHname="价格" onBlur="check(this)">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="minPrice_error"></span>
-									</div>
-								</div>
-
-								<div class="form-group" id="residueCountDiv">
-									<label class="col-sm-4 control-label">剩余使用次数</label>
-									<div class="col-sm-8">
-										<input type="text" class="form-control" name="residueCount" id="residueCount" placeholder="请填写剩余使用次数" maxlength="11" CHname="次数" onBlur="check(this)">
-										<input type="hidden" class="repeat"/>
-										<span class="errorStyle" id="residueCount_error"></span>
 									</div>
 								</div>
 								
@@ -330,6 +352,8 @@
 		</div>
 		<!-- mainwrapper -->
 	</section>
+	<!-- 上传图片页面 -->
+	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
 	<script type="text/javascript">
 		$('[data-toggle="tooltip"]').popover();
 		

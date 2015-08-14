@@ -15,8 +15,9 @@
         overflowToDisk：内存不足时，是否启用磁盘缓存。
         memoryStoreEvictionPolicy：缓存满了之后的淘汰算法。
     -->
-    
-	<cache name="phonecode" maxElementsInMemory="100" timeToLiveSeconds="300" eternal="false" overflowToDisk="false" />
-	<cache name="order" maxElementsInMemory="10000" timeToLiveSeconds="3600" eternal="true" overflowToDisk="false" />
+    <!-- 短信验证码 -->
+	<cache name="phonecode" maxElementsInMemory="1000" timeToLiveSeconds="300" eternal="false" overflowToDisk="false" />
+	<!-- 生成订单 -->
+	<cache name="order" maxElementsInMemory="10000" timeToLiveSeconds="7200" eternal="false" overflowToDisk="true" />
 
 </ehcache>

@@ -2,6 +2,7 @@ package com.hydom.core.server.service;
 
 import java.util.List;
 
+import com.hydom.account.ebean.Product;
 import com.hydom.core.server.ebean.CarType;
 import com.hydom.util.dao.DAO;
 
@@ -30,4 +31,12 @@ public interface CarTypeService extends DAO<CarType> {
 	 * @return
 	 */
 	public List<CarType> listByTopID(String id);
+	
+	
+	/**
+	 * 根据商品 获取该商品选择的车系
+	 * @param product
+	 * @return
+	 */
+	public String getChooseCarType(Product product);
 }

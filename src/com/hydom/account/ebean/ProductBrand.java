@@ -58,20 +58,6 @@ public class ProductBrand extends BaseEntity {
 	@Length(max = 200)
 	private String url;
 	
-	@Transient
-	public String getFullUrl(){
-		if(StringUtils.isEmpty(this.url)){
-			return "";
-		}
-		Pattern pattern = Pattern.compile("^(http:\\/\\/)(www.)?(\\w+\\.)+\\w{2,4}(\\/)?$");
-		Matcher matcher = pattern.matcher(this.url);
-		if(matcher.matches()){
-			return this.url;
-		}
-	//	http://www.baidu.com
-		return "http://"+this.url;
-	}
-	
 	/**
 	 * 是否可以利用
 	 */
@@ -82,10 +68,30 @@ public class ProductBrand extends BaseEntity {
 	 */
 	@Column(name="orders")
 	private Integer order;
+	
+	/**
+	 * 是否推荐  0 不推荐  1 推荐
+	 */
+	@Column(name="command_brand")
+	private Integer commandBrand;
+	
+	/**
+	 * 介绍
+	 */
+	private String remark;
+	
+	
 	/** 介绍 *//*
 	@Lob
 	private String introduction;*/
-
+	/**
+	 * 商品类型
+	 */
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "t_product_category_brand",joinColumns={@JoinColumn(name="product_brand_id")},inverseJoinColumns={@JoinColumn(name="product_category_id")})
+	@OrderBy("order asc")
+	private List<ProductCategory> productCategorySet = new ArrayList<ProductCategory>();
+	
 	public String getName() {
 		return name;
 	}
@@ -125,11 +131,42 @@ public class ProductBrand extends BaseEntity {
 	public void setOrder(Integer order) {
 		this.order = order;
 	}
-	/**
-	 * 商品类型
-	 */
-	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "t_product_category_brand",joinColumns={@JoinColumn(name="product_brand_id")},inverseJoinColumns={@JoinColumn(name="product_category_id")})
-	@OrderBy("order asc")
-	private List<ProductCategory> productCategorySet = new ArrayList<ProductCategory>();
+	
+	public List<ProductCategory> getProductCategorySet() {
+		return productCategorySet;
+	}
+
+	public void setProductCategorySet(List<ProductCategory> productCategorySet) {
+		this.productCategorySet = productCategorySet;
+	}
+
+	public Integer getCommandBrand() {
+		return commandBrand;
+	}
+
+	public void setCommandBrand(Integer commandBrand) {
+		this.commandBrand = commandBrand;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	@Transient
+	public String getFullUrl(){
+		if(StringUtils.isEmpty(this.url)){
+			return "";
+		}
+		Pattern pattern = Pattern.compile("^(http:\\/\\/)(www.)?(\\w+\\.)+\\w{2,4}(\\/)?$");
+		Matcher matcher = pattern.matcher(this.url);
+		if(matcher.matches()){
+			return this.url;
+		}
+	//	http://www.baidu.com
+		return "http://"+this.url;
+	}
 }

@@ -27,12 +27,10 @@ public class MemberServiceBean extends DAOSupport<Member> implements
 	public Member findByMobile(String mobile) {
 		try {
 			return (Member) em
-					.createQuery(
-							"select o from Member o where o.visible=?1 and o.mobile=?2")
-					.setParameter(1, true).setParameter(2, mobile)
-					.getSingleResult();
+					.createQuery("select o from Member o where o.mobile=?1 and o.visible=true")
+					.setParameter(1, mobile).getSingleResult();
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return null;
 		}
 	}

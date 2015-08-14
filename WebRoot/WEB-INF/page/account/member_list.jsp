@@ -89,11 +89,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									用户名
 								</th>
 								<th>
-									会员等级
+									联系方式
 								</th>
 								<th>
-									Email
+									会员等级
 								</th>
+								<!-- <th>
+									Email
+								</th> -->
 								<th>
 									创建日期
 								</th>
@@ -114,11 +117,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									${member.name}
 								</td>
 								<td>
-									${member.memberRank.name}
+									${member.mobile}
 								</td>
 								<td>
-									${member.email}
+									${member.memberRank.name}
 								</td>
+							<%-- 	<td>
+									${member.email}
+								</td> --%>
 								<td>
 									<span><fmt:formatDate value="${member.createDate}" pattern="yyyy-MM-dd"/></span>
 								</td>

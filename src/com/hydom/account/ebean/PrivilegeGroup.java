@@ -17,12 +17,12 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.hydom.util.dao.BaseEntity;
+
 @Entity
 @Table(name = "t_privilegegroup")
-public class PrivilegeGroup {
-	@Id
-	@Column
-	private String id;
+public class PrivilegeGroup extends BaseEntity {
+	private static final long serialVersionUID = 1L;
 
 	@Column(unique = true)
 	private String name;
@@ -31,14 +31,14 @@ public class PrivilegeGroup {
 
 	@ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
 	@JoinTable(name = "t_pri_group", joinColumns = @JoinColumn(name = "g_id"), inverseJoinColumns = @JoinColumn(name = "p_id"))
-	private Set<SystemPrivilege> privileges = new HashSet<SystemPrivilege>();
+	private Set<Privilege> privileges = new HashSet<Privilege>();
 
 	@ManyToMany(mappedBy = "groups", cascade = CascadeType.REFRESH)
 	private Set<Account> accounts = new LinkedHashSet<Account>();
 
 	private Boolean initSign = false;
 
-	public void addPrivilege(SystemPrivilege p) {
+	public void addPrivilege(Privilege p) {
 		this.privileges.add(p);
 	}
 
@@ -50,14 +50,6 @@ public class PrivilegeGroup {
 		this.initSign = initSign;
 	}
 
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -66,11 +58,11 @@ public class PrivilegeGroup {
 		this.name = name;
 	}
 
-	public Set<SystemPrivilege> getPrivileges() {
+	public Set<Privilege> getPrivileges() {
 		return privileges;
 	}
 
-	public void setPrivileges(Set<SystemPrivilege> privileges) {
+	public void setPrivileges(Set<Privilege> privileges) {
 		this.privileges = privileges;
 	}
 

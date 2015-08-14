@@ -1,10 +1,20 @@
 package com.hydom.core.server.service;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.NoResultException;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
+import com.hydom.account.ebean.Product;
 import com.hydom.core.server.ebean.Car;
+import com.hydom.core.server.ebean.CarBrand;
+import com.hydom.core.server.ebean.CarType;
 import com.hydom.util.dao.DAOSupport;
 
 /**
@@ -29,6 +39,16 @@ public class CarServiceBean extends DAOSupport<Car> implements CarService{
 		}else{
 			return true;
 		}
+	}
+
+	@Override
+	public String getChooseCar(Product product) {
+		Set<Car> carSet = product.getCarSet();
+		JSONArray array = new JSONArray();
+		for(Car cb : carSet){
+			array.add(cb.getId());
+		}
+		return array.toString();
 	}
 
 }

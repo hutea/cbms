@@ -9,15 +9,18 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.hydom.core.order.ebean.TechnicianBindRecord;
 import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarTeam;
 import com.hydom.util.DateTimeHelper;
@@ -49,7 +52,7 @@ public class Order extends BaseEntity {
 	/** 配送方式 1=上门服务； 2=到门店 **/
 	private Integer serverWay = 1;
 
-	/** 优惠价 **/
+	/** 优惠价：优惠了多少钱 **/
 	private Float amount_paid;
 
 	/** 原价 **/
@@ -58,11 +61,30 @@ public class Order extends BaseEntity {
 	/** 实际价格 **/
 	private Float price;
 
-	/** 状态 1、审核中的订单 2、服务中的订单 3、完结订单 4、退费订单 5、失败订单 **/
+	/** 订单编号 **/
+	@Column(nullable = false, unique = true)
+	private String num;
+
+	/**
+	 * 已完结 0 <br>
+	 * 洗车服务订单状态 1派单中 2路途中 3服务中 1-9洗车状态 <br>
+	 * 保养服务订单状态 11 预约成功 12 已分配车队 11-19 保养服务状态<br>
+	 * 纯商品订单状态 21已下单 22配货中 23送货中 21-29 纯商品订单状态 <br>
+	 * 取消订单状态 31待审核 32 审核中 33 退款中 34已退款 35未通过 31-39取消订单状态<br>
+	 */
 	private Integer status;
 
-	/** 类型 1洗车订单 2保养订单 **/
+	/** 备注 */
+	private String remark;
+
+	/** 类型 1洗车订单 2保养订单 3纯商品订单 **/
 	private Integer type;
+
+	/**
+	 * 消费记录
+	 */
+	@OneToOne(fetch = FetchType.LAZY, mappedBy = "order")
+	private FeeRecord feeRecord;
 
 	/** 服务开始时间 **/
 	@Column(name = "start_date")
@@ -102,30 +124,29 @@ public class Order extends BaseEntity {
 	@JoinColumn(name = "member_id")
 	private Member member;
 
-
 	/** 优惠卷 **/
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "member_coupon_id")
 	private MemberCoupon memberCoupon;
-	
+
 	/**
-	 * 服务订单
+	 * 保养订单：带商品时，在serverOrder中的serverOrderDetail进行体现
 	 */
-	@OneToMany(fetch=FetchType.LAZY,mappedBy="order")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "order", cascade = CascadeType.PERSIST)
 	private Set<ServerOrder> serverOrder = new HashSet<ServerOrder>();
-	
+
 	/**
-	 * 订单中的商品
+	 * 订单中的商品：针对纯商品
+	 * 
 	 * @return
 	 */
-	@OneToMany(fetch=FetchType.LAZY,mappedBy="order")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "order", cascade = CascadeType.PERSIST)
 	private Set<ServerOrderDetail> serverOrderDetail = new HashSet<ServerOrderDetail>();
-	
-	/** 公共字段结束 
-	 * 流程      订单保存     1 服务订单  
-	 * 2、保存各服务订单中的所有商品
+
+	/**
+	 * 公共字段结束 流程 订单保存 1 服务订单 2、保存各服务订单中的所有商品
 	 */
-	
+
 	/** 洗车专用字段 */
 
 	/**
@@ -134,6 +155,11 @@ public class Order extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "technician_id")
 	private Technician techMember;
+
+	/** 当前对应的绑定记录 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "tech_bindrecord_id")
+	private TechnicianBindRecord technicianBindRecord;
 
 	/** 技师与用户之间的距离：在绑定技师时填充该数据 */
 	private Double distance;
@@ -149,16 +175,42 @@ public class Order extends BaseEntity {
 	 */
 
 	/**
+	 * 
+	 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "area_id")
+	private Area area;
+	/**
 	 * 预约时间
 	 */
 	@Column(name = "mark_startdate")
 	private Date makeStartDate;
-	
+
 	/** 车队 **/
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "car_team_id")
 	private CarTeam carTeam;
-	
+
+	/** 逻辑删除标志 **/
+	@Column(name = "visible")
+	private Boolean visible = true;
+
+	public FeeRecord getFeeRecord() {
+		return feeRecord;
+	}
+
+	public void setFeeRecord(FeeRecord feeRecord) {
+		this.feeRecord = feeRecord;
+	}
+
+	public Boolean getVisible() {
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
+	}
+
 	public String getPhone() {
 		return phone;
 	}
@@ -189,6 +241,14 @@ public class Order extends BaseEntity {
 
 	public void setPayWay(Integer payWay) {
 		this.payWay = payWay;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 	public Integer getServerWay() {
@@ -350,7 +410,7 @@ public class Order extends BaseEntity {
 	public void setDistance(Double distance) {
 		this.distance = distance;
 	}
-	
+
 	public Set<ServerOrder> getServerOrder() {
 		return serverOrder;
 	}
@@ -367,8 +427,38 @@ public class Order extends BaseEntity {
 		this.serverOrderDetail = serverOrderDetail;
 	}
 
+	public TechnicianBindRecord getTechnicianBindRecord() {
+		return technicianBindRecord;
+	}
+
+	public void setTechnicianBindRecord(
+			TechnicianBindRecord technicianBindRecord) {
+		this.technicianBindRecord = technicianBindRecord;
+	}
+
+	public String getNum() {
+		return num;
+	}
+
+	public void setNum(String num) {
+		this.num = num;
+	}
+
+	public Area getArea() {
+		return area;
+	}
+
+	public void setArea(Area area) {
+		this.area = area;
+	}
+
 	@Transient
 	public String getDateTimeMap() {
+
+		if (this.type == null || this.type == 1) {
+			return "";
+		}
+
 		Date startDate = this.startDate;
 		Date endDate = this.endDate;
 
@@ -384,16 +474,49 @@ public class Order extends BaseEntity {
 
 	@Transient
 	public String getStatusString() {
-		Integer stauts = this.status;
-		/** 状态 1、审核中的订单 2、服务中的订单 3、完结订单 4、退费订单 **/
-		if (stauts == 1) {
-			return "审核中";
-		} else if (stauts == 2) {
-			return "服务中";
-		} else if (stauts == 3) {
+
+		/**
+		 * 已完结 0 <br>
+		 * 洗车服务订单状态 1派单中 2路途中 3服务中 1-9洗车状态 <br>
+		 * 保养服务订单状态 11 预约成功 12 已分配车队 11-19 保养服务状态<br>
+		 * 纯商品订单状态 21已下单 22配货中 23送货中 21-29 纯商品订单状态 <br>
+		 * 取消订单状态 31待审核 32 审核中 33 退款中 34已退款 35未通过 36已完结【待定】 31-39取消订单状态<br>
+		 */
+		switch (status) {
+		case 0:
 			return "已完结";
-		} else {
-			return "退费";
+		case 1:
+			return "派单中";
+		case 2:
+			return "路途中";
+		case 3:
+			return "服务中";
+
+		case 11:
+			return "预约成功";
+		case 12:
+			return "已分配车队";
+
+		case 21:
+			return "已下单";
+		case 22:
+			return "配货中";
+		case 23:
+			return "送货中";
+
+		case 31:
+			return "待审核";
+		case 32:
+			return "审核中";
+		case 33:
+			return "退款中";
+		case 34:
+			return "已退款";
+		case 35:
+			return "未通过";
+		default:
+			return "未知状态";
 		}
+
 	}
 }

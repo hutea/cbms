@@ -154,15 +154,15 @@
 							<div class="panel-body nopadding">
 								<div class="form-panle-div">
 									<div class="form-group">
-										<label class="col-sm-4 control-label">邮箱</label>
-										<div class="col-sm-8">
-											<label class="control-label">${entity.email }</label>
-										</div>
-									</div>
-									<div class="form-group">
 										<label class="col-sm-4 control-label">手机号码</label>
 										<div class="col-sm-8">
 											<label class="control-label">${entity.mobile }</label>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-4 control-label">邮箱</label>
+										<div class="col-sm-8">
+											<label class="control-label">${entity.email }</label>
 										</div>
 									</div>
 									<div class="form-group">
@@ -345,7 +345,7 @@
 		function goBack(){
 			window.history.back(-1);
 		}
-		
+	
 	</script>
 </body>
 </html>

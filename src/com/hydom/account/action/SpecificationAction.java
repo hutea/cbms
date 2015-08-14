@@ -101,22 +101,26 @@ public class SpecificationAction extends BaseAction {
 			}else{
 				specificationService.save(entity);
 			}
-			if(specificationNames != null){
+			if(specificationNames != null && specificationNames.length > 0){
 				for(int i = 0; i<specificationNames.length; i++){
-					if(specificationFiles[i] !=null || specificationNames[i] != null || specificationOrders[i]!=null){
-						
+					
+					SpecificationValue specificationValue = new SpecificationValue();
+					
+					specificationValue.setName(specificationNames[i]);
+					specificationValue.setSpecification(entity);
+					
+					if(specificationFiles !=null && specificationFiles.length>0){
 						MultipartFile file = specificationFiles[i];
 						Map<String,String> imgMap = UploadImageUtil.uploadFile(file,request);
-						
-						SpecificationValue specificationValue = new SpecificationValue();
-						
-						specificationValue.setName(specificationNames[i]);
 						specificationValue.setImage(imgMap.get("source"));
-						specificationValue.setSpecification(entity);
-						specificationValue.setOrder(specificationOrders[i]);
-						specificationValueService.save(specificationValue);
-						
 					}
+					
+					if(specificationOrders[i]!=null&&specificationOrders.length>0){
+						specificationValue.setOrder(specificationOrders[i]);
+					}
+					
+					specificationValueService.save(specificationValue);
+					
 				}
 			}
 		return "redirect:list";

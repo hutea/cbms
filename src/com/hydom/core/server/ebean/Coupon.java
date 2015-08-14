@@ -45,9 +45,9 @@ public class Coupon extends BaseEntity{
 	
 	/**是否允许积分兑换*/
 	@Column(name="is_exchange",nullable=false)
-	private Boolean isExchange = false;
+	private Boolean isExchange = true;
 	
-	/**优惠券类型 1满额打折 2满额打折减免 3免额多少 */
+	/**优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
 	@Column(name="type",nullable=false,length=1)
 	private Integer type = 1;
 	
@@ -63,9 +63,9 @@ public class Coupon extends BaseEntity{
 	@Column(name="min_price")
 	private Double minPrice;
 	
-	/**剩余使用次数*/
-	@Column(name="residue_count")
-	private Integer residueCount;
+	/**折扣率*/
+	@Column(name="rate")
+	private Double rate;
 	
 	/**图片*/
 	@Column(name="imgPath")
@@ -74,6 +74,14 @@ public class Coupon extends BaseEntity{
 	/** 逻辑删除标志 */
 	@Column(name="visible",nullable=false)
 	private Boolean visible = true;
+
+	public Double getRate() {
+		return rate;
+	}
+
+	public void setRate(Double rate) {
+		this.rate = rate;
+	}
 
 	public String getImgPath() {
 		return imgPath;
@@ -161,14 +169,6 @@ public class Coupon extends BaseEntity{
 
 	public void setMinPrice(Double minPrice) {
 		this.minPrice = minPrice;
-	}
-
-	public Integer getResidueCount() {
-		return residueCount;
-	}
-
-	public void setResidueCount(Integer residueCount) {
-		this.residueCount = residueCount;
 	}
 
 	public Boolean getVisible() {

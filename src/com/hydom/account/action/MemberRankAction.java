@@ -112,7 +112,7 @@ public class MemberRankAction extends BaseAction{
 	
 	@RequestMapping("/delete")
 	@ResponseBody
-	public String delete(ModelMap model,String[] ids) {
+	public String delete(ModelMap model,@RequestParam(required=false) String[] ids) {
 		
 		List<MemberRank> memberRanks = memberRankService.getList(ids);
 
@@ -130,4 +130,17 @@ public class MemberRankAction extends BaseAction{
 		
 		return ajaxSuccess("成功", response);
 	}
+	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String name) {
+		
+		MemberRank memberRank = memberRankService.getEntityByName(name);
+		if(memberRank != null){
+			return ajaxError("该名称已存在", response);
+		}
+		return ajaxSuccess("", response);
+	}
+	
+	
 }

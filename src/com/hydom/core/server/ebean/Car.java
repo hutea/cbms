@@ -10,11 +10,14 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Where;
 
 import com.hydom.account.ebean.Product;
+import com.hydom.user.ebean.UserCar;
 import com.hydom.util.dao.BaseEntity;
 
 /**
@@ -60,6 +63,15 @@ public class Car extends BaseEntity{
 	@ManyToMany(cascade = CascadeType.ALL,fetch=FetchType.LAZY,mappedBy="carSet")
 	private Set<Product> productSet = new HashSet<Product>();
 	
+	/**
+	 * 用户是适用集合
+	 * @return
+	 */
+	@OneToMany(fetch=FetchType.LAZY,mappedBy="car")
+	@Where(clause="visible = 1")
+	private Set<UserCar> userCarSet = new HashSet<UserCar>();
+	
+	
 	public String getImgPath() {
 		return imgPath;
 	}
@@ -100,4 +112,11 @@ public class Car extends BaseEntity{
 		this.visible = visible;
 	}
 
+	public Set<UserCar> getUserCarSet() {
+		return userCarSet;
+	}
+
+	public void setUserCarSet(Set<UserCar> userCarSet) {
+		this.userCarSet = userCarSet;
+	}
 }

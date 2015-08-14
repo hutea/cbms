@@ -14,6 +14,13 @@ public interface ServiceTypeService extends DAO< ServiceType> {
 	 */
 	
 	List<ServiceType> getServiceType(Integer i);
+	
+	/**
+	 * 根据服务名称获取服务
+	 * @param name
+	 * @return
+	 */
+	ServiceType getEntitybyName(String name);
 
 	
 }

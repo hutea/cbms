@@ -134,6 +134,7 @@ public class SelectCarAction extends BaseAction{
 				dataMap.put("id", cb.getId());
 				dataMap.put("name", cb.getName());
 				dataMap.put("initial", cb.getInitial());
+				dataMap.put("imgPath", cb.getImgPath()==null?"":cb.getImgPath());
 				jList.add(dataMap);
 			}
 			dataMap.clear();

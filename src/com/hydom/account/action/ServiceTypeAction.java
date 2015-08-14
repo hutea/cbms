@@ -42,13 +42,15 @@ public class ServiceTypeAction extends BaseAction{
 		
 		PageView<ServiceType> pageView = new PageView<ServiceType>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("type", "desc");
 		orderby.put("order", "asc");
 		
 		StringBuffer jpql = new StringBuffer();
 		List<String> params = new ArrayList<String>();
+		jpql.append("o.visible = true ");
 		String queryContent = request.getParameter("queryContent");
 		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append("o.name like ?"+(params.size()+1));
+			jpql.append("and o.name like ?"+(params.size()+1));
 			params.add("%"+queryContent+"%");
 		}
 		model.addAttribute("queryContent", queryContent);
@@ -106,5 +108,17 @@ public class ServiceTypeAction extends BaseAction{
 			serviceTypeService.update(serviceType);
 		}
 		return ajaxSuccess("成功", response);
+	}
+	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String name){
+		
+		ServiceType serviceType = serviceTypeService.getEntitybyName(name);
+		if(serviceType == null){
+			return ajaxSuccess("", response);
+		}
+		
+		return ajaxError("该名称已存在,请重新输入", response);
 	}
 }

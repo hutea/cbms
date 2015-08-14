@@ -121,9 +121,9 @@
 									<div class="col-sm-8">
 										<div class="img_div">
 											<img alt="" src="
-											<c:if test="${!empty entity}"><%=basePath %>/${entity.imgPath }</c:if>
+											<c:if test="${!empty news}"><%=basePath %>/${news.imgPath }</c:if>
 											" onerror="<%=basePath %>/resource/image/default.png" id="show_img">
-											<input type="hidden" name="imgPath" value="${entity.imgPath }"/>
+											<input type="hidden" name="imgPath" value="${news.imgPath }"/>
 										</div>
 										<label> <%-- style="position: absolute;  float: right;  margin-left: 20%;" --%>
 											<span id="spanButtonPlaceholder"></span>
@@ -147,15 +147,15 @@
 								</div>
 								<input type="hidden" name="id" value="${news.id}"/>
 							</div>
-						</form>
-						<div class="panel-footer">
-							<div class="row">
-								<div class="col-sm-9 col-sm-offset-3">
-									<button id="addCate" class="btn btn-primary mr5" onclick="submitForm()">提交</button>
-									<button id="reset" class="btn btn-dark" type="reset">重置</button>
+							<div class="panel-footer">
+								<div class="row">
+									<div class="col-sm-9 col-sm-offset-3">
+										<button id="addCate" class="btn btn-primary mr5" onclick="submitForm()" type="button">提交</button>
+										<button id="cancelBtn" class="btn btn-dark mr5" type="reset">重置</button>
+									</div>
 								</div>
 							</div>
-						</div>
+						</form>
 					</div>
 				</div>
 				<div class="bottomwrapper">
@@ -183,12 +183,27 @@
 	 		var html = ue.getContent();
 	 		console.log(html);
 	         $("#content").val(html);
+	         if($("input[name='title']").val() == ""){
+	        	 alert("请输入标题");
+	        	 return ;
+	         }
+			if(html == ""){
+				if(!confirm("新闻内容为空，是否继续提交？")){
+					return;
+				};
+			}   
 			$("#inputForm").submit();
 		}
 		function resetText(){
 			$("#inputForm")[0].reset();
 			$("#content").val("");
 			ue.execCommand('cleardoc');
+		}
+		function cancel(){
+			if(!confirm("确定取消这次编辑?")){
+				return;
+			}
+			window.history.back(-1);
 		}
 		//实例化编辑器
 	    //建议使用工厂方法getEditor创建和引用编辑器实例，如果在某个闭包下引用该编辑器，直接调用UE.getEditor('editor')就能拿到相关的实例

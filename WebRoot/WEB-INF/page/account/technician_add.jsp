@@ -14,7 +14,7 @@
 	content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="description" content="">
 
-<title>汽车品牌添加</title>
+<title>技师帐号添加</title>
 <link
 	href="${pageContext.request.contextPath}/resource/chain/css/style.default.css"
 	rel="stylesheet">
@@ -62,42 +62,91 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
 <script type="text/javascript">
-	window.onload = function(){
-    	document.getElementById("name").focus();
-	}
+window.onload = function(){
+	document.getElementById("account").focus();
+};
 	
-	function checkName() {
-		var name = $("#name").val();
-		$
-				.post(
-						"${pageContext.request.contextPath}/manage/productLabel/check",
-						{
-							name : name
-						},
-						function(data) {
-							if(name == "" || name == null){
-								$("#name_error").html("品牌不能为空");
-								$("#name").next().val("");
-							} else if (data == true) {//表示品牌存在
-								$("#name_error").html("品牌已经存在");
-								$("#name").next().val("");
-							} else {
-								$("#name_error").html("");
-								$("#name").next().val("success");
-							}
-						});
-	}
+function checkAccount() {
 	
+	var account = $("#account").val();
+	$
+			.post(
+					"${pageContext.request.contextPath}/manage/technician/checkAccount",
+					{
+						account : account
+					},
+					function(data) {
+						if(account == "" || account == null){
+							$("#account_error").html("帐号不能为空");
+							$("#account").next().val("");
+						} else if (data == true && account!="${technician.account }") {//表示品牌存在
+							$("#account_error").html("帐号已经存在");
+							$("#account").next().val("");
+						} else {
+							$("#account_error").html("");
+							$("#account").next().val("success");
+						}
+					});
+					
+}
+	
+function checkName() {
+	
+	var name = $("#name").val();
+						if(name == "" || name == null){
+							$("#name_error").html("姓名不能为空");
+							$("#name").next().val("");
+						} else {
+							$("#name_error").html("");
+							$("#name").next().val("success");
+						};
+					
+}
+
+function checkLevel() {
+	var level = $("#level").val();
+	if(level =="0"){
+		$("#level_error").html("请选择星级");
+		$("#level").next().val("");
+	}else{
+		$("#level").next().val("success");
+	}
+}
+function checkPhoneNumber() {
+	
+	var phoneNumber = $("#phonenumber").val();
+	$
+			.post(
+					"${pageContext.request.contextPath}/manage/technician/checkPhoneNumber",
+					{
+						phoneNumber : phoneNumber
+					},
+					function(data) {
+						if(phoneNumber == "" || phoneNumber == null){
+							$("#phonenumber_error").html("手机号码不能为空");
+							$("#phonenumber").next().val("");
+						} else if (data == true && phoneNumber!="${technician.phonenumber }") {//表示品牌存在
+							$("#phonenumber_error").html("手机号码已经存在");
+							$("#phonenumber").next().val("");
+						} else {
+							$("#phonenumber_error").html("");
+							$("#phonenumber").next().val("success");
+						}
+					});
+					
+}
+
 	$(document).ready(function(){
 		$("#reset").bind("click",function() {
-			$("#inputForm")[0].reset();/* 
-			$("#name").next().val("");
-			$("#name_error").html(""); */
+			$("#inputForm")[0].reset();
 		});
 	});
 
 	function saveType(){
+		checkAccount();
 		checkName();
+		checkPhoneNumber();
+		checkLevel();
 		$(function(){
 			var flag = true;
 			$(".repeat").each(function(){
@@ -142,7 +191,7 @@
 						<div class="media-body">
 							<ul class="breadcrumb">
 								<li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-								<li><a href="">商品标签添加</a></li>
+								<li><a href="">技师帐号添加</a></li>
 							</ul>
 						</div>
 					</div>
@@ -156,18 +205,73 @@
 							<h4 class="panel-title">基本信息</h4>
 						</div>
 						<form class="form-horizontal form-bordered" id="inputForm"
-							action="<%=basePath%>manage/productLabel/save" method="POST">
+							action="<%=basePath%>manage/technician/save" method="POST">
 							<div class="panel-body nopadding">
 								<div class="form-group">
 									<label class="col-sm-4 control-label">技师帐号</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name=labelName
-											onBlur="checkName()" placeholder="请填写标签名称" id="name">
+										<input type="text" class="form-control" name=account
+											onBlur="checkAccount()" placeholder="请填技师帐号" id="account">
+										<input type="hidden" class="repeat"/>
+										<span class="errorStyle" id="account_error"></span>
+									</div>
+								</div>
+							
+							<div class="form-group">
+									<label class="col-sm-4 control-label">技师姓名</label>
+									<div class="col-sm-8">
+										<input type="text" class="form-control" name=name
+											onBlur="checkName()" placeholder="请填技师姓名" id="name">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="name_error"></span>
 									</div>
 								</div>
-							
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">联系电话</label>
+									<div class="col-sm-8">
+										<input type="text" class="form-control" name=phonenumber
+											onBlur="checkPhoneNumber()" placeholder="请填技师电话" id="phonenumber">
+										<input type="hidden" class="repeat"/>
+										<span class="errorStyle" id="phonenumber_error"></span>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">技师星级</label>
+									<div class="col-sm-8">
+										<select class="form-control" id="level" name="level">
+											<option value="5.0" selected="selected" >5.0</option>
+											<option value="4.5" >4.5</option>
+											<option value="4.0" >4.0</option>
+											<option value="3.5" >3.5</option>
+											<option value="3.0" >3.0</option>
+											<option value="2.5" >2.5</option>
+											<option value="2.0" >2.0</option>
+											<option value="1.5" >1.5</option>
+											<option value="1.0" >1.0</option>
+											<option value="0.5" >0.5</option>
+											<option value="0">0</option>
+										</select>
+										<input type="hidden" class="repeat"/>
+										<span class="errorStyle" id="level_error"></span>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">头像</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="/${technician.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
+											<input type="hidden" name="imgPath" value="${technician.imgPath }"/>
+										</div>
+										<label>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+										
+									</div>
+								</div>
+								
 							</div>
 						</form>
 						<div class="panel-footer">
@@ -188,6 +292,10 @@
 		</div>
 		<!-- mainwrapper -->
 	</section>
+	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
+	<script type="text/javascript">
+		$('[data-toggle="tooltip"]').popover();
+	</script>
 </body>
 </html>
 

@@ -50,7 +50,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			    <div class="contentpanel">
 			      <div class="search-header">
 			        <div class="btn-list">
-			          <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/carBrand" disabled>删除</button>
+			          <%-- <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/carBrand" disabled>删除</button> --%>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
 					  <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/carBrand">添加</button>
 			          <div style="float: right;max-width: 340px;height: 37px;">
@@ -68,7 +68,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			        <table id="listTable" class="table table-info" >
 			          <thead>
 			          	<tr>
-		                    <th ><input id="selectAll" type="checkbox" /></th>
+		                   <!--  <th ><input id="selectAll" type="checkbox" /></th> -->
 		                    <th>名称</th>
 		                    <th>首字母</th>
 		                    <th>拼音缩写</th>
@@ -79,12 +79,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			          <tbody>
 			          	<c:forEach items="${pageView.records}" var="entry" varStatus="s">
 			           	  	<tr id="tr_${entry.id}">
-			           	  		 <td><input type="checkbox" name="ids" value="${entry.id}"></td>
+			           	  		<%--  <td><input type="checkbox" name="ids" value="${entry.id}"></td> --%>
 				           		 <td>${entry.name}</td>
 				           		 <td>${entry.initial}</td>
 				           		 <td>${entry.jp}</td>
 				           		 <td>${entry.qp}</td>
-				           		 <td><a href="${pageContext.request.contextPath}/manage/carBrand/edit?id=${entry.id}">修改</a></td>
+				           		 <td><a href="${pageContext.request.contextPath}/manage/carBrand/edit?id=${entry.id}">修改</a>
+				           		 	<a href="javascript:delEntity('${entry.id }')">删除</a>
+				           		 </td>
 			           	  	</tr>
 			           	  </c:forEach>
 			          </tbody>
@@ -96,7 +98,27 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		  </div>       
     </div> <!-- mainwrapper -->
     </section>
-
+	<script type="text/javascript">
+		function delEntity(obj){
+			if(!confirm("是否删除该品牌？")){
+				return;
+			}
+			var url = "<%=base%>/manage/carBrand/delete";
+			var data = {
+				ids:obj	
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$(this).closest("tr").remove();
+					if($("tr.cartypetr").length <= 0){
+						location.reload(true);
+					}
+				}else{
+					alert(result.message);
+				}
+			},"json");
+		}
+	</script>
 
    
 </body>

@@ -32,8 +32,8 @@ public class TechnicianBindRecord extends BaseEntity {
 	@JoinColumn(name = "order_id")
 	private Order order;
 
-	/** 接受=true 拒单=false */
-	private Boolean accept = true;
+	/** 初始绑定=1，接受=2，拒绝=3 */
+	private Integer state = 1;
 	/** 拒单时间 */
 	private Date refuseDate;
 	/** 拒单距离 */
@@ -57,12 +57,12 @@ public class TechnicianBindRecord extends BaseEntity {
 		this.order = order;
 	}
 
-	public Boolean getAccept() {
-		return accept;
+	public Integer getState() {
+		return state;
 	}
 
-	public void setAccept(Boolean accept) {
-		this.accept = accept;
+	public void setState(Integer state) {
+		this.state = state;
 	}
 
 	public Date getRefuseDate() {

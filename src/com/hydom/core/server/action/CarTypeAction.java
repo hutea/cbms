@@ -1,19 +1,26 @@
 package com.hydom.core.server.action;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.core.server.ebean.CarType;
 import com.hydom.core.server.service.CarBrandService;
@@ -21,7 +28,6 @@ import com.hydom.core.server.service.CarTypeService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.CommonUtil;
 import com.hydom.util.dao.PageView;
-import com.hydom.util.dao.QueryResult;
 
 /**
  * @Description:车系控制层
@@ -32,6 +38,9 @@ import com.hydom.util.dao.QueryResult;
 @RequestMapping("/manage/carType")
 @Controller
 public class CarTypeAction extends BaseAction{
+	
+	private static String base = "/carType";
+	private static Integer mark = 2;
 	
 	@Resource
 	private CarTypeService carTypeService;
@@ -45,22 +54,40 @@ public class CarTypeAction extends BaseAction{
 	private int maxresult = 10;
 	
 	/**
-	 * 添加
+	 * 根据车辆品牌获取大车系
 	 */
-	@RequestMapping("/add")
-	public ModelAndView addUI() {
+	@RequestMapping("/getCarType")
+	@ResponseBody
+	public String getCarType(String carBrandId) {
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("id", "desc");
-		String jpql = "o.visible = 1 and o.level=1";
-		Object[] params = new Object[]{};
-		QueryResult<CarType> carTypes = carTypeService.getScrollData(-1, -1, jpql, params, orderby);
+		String jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
+		List<Object> params = new ArrayList<Object>();
+		params.add(carBrandId);
+		List<CarType> carTypes = carTypeService.getList(jpql, params.toArray(), orderby);
+		JSONArray array = new JSONArray();
+		for(CarType entity:carTypes){
+			JSONObject obj = new JSONObject();
+			obj.put("id", entity.getId());
+			obj.put("name", null);//entity.getName()
+			array.add(obj);
+		}
+		return ajaxSuccess(array, response);
+	}
+	
+	/**
+	 * 跳转添加页面
+	 */
+	@RequestMapping("/add")
+	public String addUI(ModelMap model) {
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("initial", "asc");
+		String jpql = "o.visible = true";
+		List<CarBrand> carBrands = carBrandService.getList(jpql, null, orderby);
+		model.addAttribute("carBrands", carBrands);
+		model.addAttribute("m", mark);
 		
-		QueryResult<CarBrand> carBrands = carBrandService.getScrollData();
-		ModelAndView mav = new ModelAndView("/carType/carType_add");
-		mav.addObject("parents", carTypes.getResultList());
-		mav.addObject("carBrands", carBrands.getResultList());
-		mav.addObject("m", 2);
-		return mav;
+		return base + "/carType_add";
 	}
 	
 	/**
@@ -72,15 +99,15 @@ public class CarTypeAction extends BaseAction{
 		carType.setName(name);
 		carType.setQp(qp);
 		carType.setJp(jp);
-		CarType parent = null;
-		if(parentId!=null) parent = carTypeService.find(parentId);
-		carType.setParent(parent);
-		carType.setCarBrand(carBrandService.find(carBrandId));
-		if(parent==null){
-			carType.setLevel(1);
+		if(parentId!=null){
+			CarType parent = carTypeService.find(parentId);
+			carType.setParent(parent);
+			carType.setLevel(2);
 		}else{
-			carType.setLevel(parent.getLevel()+1);
+			carType.setParent(null);
+			carType.setLevel(1);
 		}
+		carType.setCarBrand(carBrandService.find(carBrandId));
 		carTypeService.save(carType);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		mav.addObject("m", 2);
@@ -90,24 +117,33 @@ public class CarTypeAction extends BaseAction{
 	/**
 	 * 编辑
 	 */
-	@RequestMapping("/edit")
-	public ModelAndView editUI(@RequestParam String id) {
+	@RequestMapping(value="/edit")
+	public String editUI(ModelMap model,String id) {
+		
 		CarType carType = carTypeService.find(id);
 		
+		//品牌
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
-		String jpql = "o.visible = 1 and o.level=1";
-		Object[] params = new Object[]{};
-		QueryResult<CarType> carTypes = carTypeService.getScrollData(-1, -1, jpql, params, orderby);
+		orderby.put("initial", "asc");
+		String jpql = "o.visible = true";
+		List<CarBrand> carBrands = carBrandService.getList(jpql, null, orderby);
+		model.addAttribute("carBrands", carBrands);
+		model.addAttribute("carType", carType);
 		
-		QueryResult<CarBrand> carBrands = carBrandService.getScrollData();
+		//顶级分类
+		if(carType.getParent() != null || carType.getLevel() != 1){
+			orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
+			List<Object> params = new ArrayList<Object>();
+			params.add(carType.getCarBrand().getId());
+			List<CarType> carTypes = carTypeService.getList(jpql, params.toArray(), orderby);
+			model.addAttribute("carTypes", carTypes);
+		}
 		
-		ModelAndView mav = new ModelAndView("/carType/carType_edit");
-		mav.addObject("carType", carType);
-		mav.addObject("parents", carTypes.getResultList());
-		mav.addObject("carBrands", carBrands.getResultList());
-		mav.addObject("m", 2);
-		return mav;
+		model.addAttribute("m", mark);
+		
+		return base + "/carType_edit";
 	}
 	
 	/**
@@ -162,13 +198,35 @@ public class CarTypeAction extends BaseAction{
 	 */
 	@RequestMapping("/delete")
 	public @ResponseBody
-	String delete(@RequestParam String[] ids) {
-		for(String id : ids){
+	String delete(@RequestParam String ids) {
+		try{
+			CarType entity = carTypeService.find(ids);
+			
+			List<Car> carList = new ArrayList<Car>();
+			if(entity.getLevel() == 1){
+				for(CarType carType : entity.getCarTypeSet()){
+					carList.addAll(carType.getCarList());
+				}
+			}else{
+				carList.addAll(entity.getCarList());
+			}
+			if(carList.size() > 0){
+				return ajaxError("该车系下有关联车辆，请先删除车辆", response);
+			}
+			
+			entity.setVisible(false);
+			carTypeService.update(entity);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			
+		}
+		return ajaxError("删除失败", response);
+		/*for(String id : ids){
 			CarType entity = carTypeService.find(id);
 			entity.setVisible(false);
 			carTypeService.update(entity);
 		}
-		return ajaxSuccess("成功", response);
+		return ajaxSuccess("成功", response);*/
 	}
 	
 	/**

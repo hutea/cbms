@@ -19,18 +19,19 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.Order;
-import com.hydom.account.ebean.ServiceType;
 import com.hydom.account.service.AreaService;
+import com.hydom.account.service.MemberService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ServiceTypeService;
 import com.hydom.core.server.ebean.CarTeam;
 import com.hydom.core.server.service.CarTeamService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.DateTimeHelper;
-import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.PageView;
 
 @RequestMapping("/manage/order")
@@ -48,7 +49,8 @@ public class OrderAction extends BaseAction{
 	private ServiceTypeService serviceTypeService;
 	@Resource
 	private CarTeamService carTeamService;
-	
+	@Resource
+	private MemberService memberService;
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -56,7 +58,8 @@ public class OrderAction extends BaseAction{
 	private HttpServletResponse response;
 
 	@RequestMapping("/list")
-	public String list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp) {
+	public String list(@RequestParam(required = false, defaultValue = "1") int page,
+			ModelMap model,String searchProp,String endOrder,String queryContent) {
 		
 		PageView<Order> pageView = new PageView<Order>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
@@ -64,48 +67,47 @@ public class OrderAction extends BaseAction{
 		
 		StringBuffer jpql = new StringBuffer();
 		List<String> params = new ArrayList<String>();
-		jpql.append("o.status in (1,2)");
+		jpql.append("o.visible = true");
+		if("true".equals(endOrder)){
+			jpql.append(" and o.status = 0");
+		}else{
+			jpql.append(" and o.status < 30");
+			jpql.append(" and o.status > 0");
+		}
+		
+		if(StringUtils.isNotEmpty(queryContent)){
+			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+		}
+		
 		pageView.setJpql(jpql.toString());
+		pageView.setOrderby(orderby);
 		pageView = orderService.getPage(pageView);
 		
 	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
 		model.addAttribute("pageView", pageView);
 		model.addAttribute("m", mark);
 		model.addAttribute("searchProp", searchProp);
+		model.addAttribute("endOrder", endOrder);
+		model.addAttribute("queryContent", queryContent);
+		model.addAttribute("areas", areaService.getRootArea());
 		//mav.addAllObjects(model);
 		return basePath+"/order_list";
 	}
 	
 	//获取空闲的服务车队
 	@RequestMapping("/getCarTeam")
-	@ResponseBody
-	public String getCarTeam(String orderId){
-		JSONArray array = new JSONArray();
-		/*Order order = orderService.find(orderId);
-		Area area = order.getArea();
-		List<CarTeam> carTeamList = area.getCarTeam();
-		if(carTeamList.size() <= 0){
-			return null;
+	public String getCarTeam(String areaId,@RequestParam(required=false,defaultValue="1") Integer page,ModelMap model){
+		
+		Area area = null;
+		if(StringUtils.isNotEmpty(areaId)){
+			area = areaService.find(areaId);
 		}
 		
-		List<Order> orders = orderService.getBindingOrder(order);
+		PageView<CarTeam> pageView = carTeamService.getPage(area, page);
 		
-		for(Order o : orders){
-			carTeamList.remove(o.getCarTeam());
-		}
+		model.addAttribute("pageView", pageView);
 		
-		JSONArray array = new JSONArray();
-		if(orders == null || carTeamList.size() == 0){
-			return ajaxError("暂无车队", response);
-		}
-		for(CarTeam ct : carTeamList){
-			JSONObject obj = new JSONObject();
-			obj.put("id", ct.getId());
-			obj.put("name", ct.getHeadMember());
-			array.add(obj);
-		}*/
-		
-		return ajaxSuccess(array, response);
+		return basePath + "/order/order_car_team";
 	}
 	
 	//将服务车队与订单绑定
@@ -115,7 +117,12 @@ public class OrderAction extends BaseAction{
 		try{
 			CarTeam carTeam = carTeamService.find(teamId);
 			Order order = orderService.find(orderId);
-			order.setStatus(2);
+			if(order.getType() == 2){//保养服务
+				order.setStatus(12);
+			}else if(order.getType() == 3){//商品
+				order.setStatus(22);
+			}
+			//order.setStatus(2);
 			order.setCarTeam(carTeam);
 			orderService.update(order);
 			return ajaxSuccess("成功", response);
@@ -126,12 +133,15 @@ public class OrderAction extends BaseAction{
 	}
 	
 	//将服务车队与订单绑定
-	@RequestMapping("/endOrder")
+	@RequestMapping("/orderstatus")
 	@ResponseBody
 	public String endDate(String orderId){
 		try{
 			Order order = orderService.find(orderId);
-			order.setStatus(3);
+			
+			if(order.getStatus() == 22){
+				order.setStatus(23);
+			}
 			orderService.update(order);
 			return ajaxSuccess("成功", response);
 		}catch(Exception e){
@@ -140,13 +150,14 @@ public class OrderAction extends BaseAction{
 		return ajaxError("失败", response);
 	}
 	
-	//将服务车队与订单绑定
+	//退费订单
 	@RequestMapping("/errorOrder")
 	@ResponseBody
 	public String errorDate(String orderId){
 		try{
 			Order order = orderService.find(orderId);
-			order.setStatus(5);
+			order.setStatus(31);
+			order.setModifyDate(new Date());
 			orderService.update(order);
 			return ajaxSuccess("成功", response);
 		}catch(Exception e){
@@ -155,7 +166,22 @@ public class OrderAction extends BaseAction{
 		return ajaxError("失败", response);
 	}
 		
+	//完结订单
+	@RequestMapping("/endOrder")
+	@ResponseBody
+	public String endOrder(String orderId){
+		try{
+			Order order = orderService.find(orderId);
+			order.setStatus(0);
+			orderService.update(order);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("失败", response);
+	}
 	
+	//删除订单
 	@RequestMapping("/delete")
 	@ResponseBody
 	public String delete(String[] ids){
@@ -193,15 +219,170 @@ public class OrderAction extends BaseAction{
 		}*/
 		
 		try{
-			Date startDate = DateTimeHelper.parseToDate("2015-7-15 9:00", "yyyy-MM-dd HH:mm");
-			Date endDate = DateTimeHelper.parseToDate("2015-7-15 10:00", "yyyy-MM-dd HH:mm");
-			Area area = areaService.find("eaff89d2-988b-4ae3-8dfa-44b6bf227d21");
-			orderService.checkDateTime(startDate, endDate, area);
+			//Date startDate = DateTimeHelper.parseToDate("2015-7-15 9:00", "yyyy-MM-dd HH:mm");
+			//Date endDate = DateTimeHelper.parseToDate("2015-7-15 10:00", "yyyy-MM-dd HH:mm");
+			//Area area = areaService.find("eaff89d2-988b-4ae3-8dfa-44b6bf227d21");
+			//orderService.checkDateTime(startDate, endDate, area);
+			Member member = memberService.find("00a3c615-65ec-43ea-92f4-8516d1e92ee7");
+			System.out.println(member);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 		
-		
 		return ajaxSuccess(array, response);
 	}
+	
+	/**
+	 * 申请取消订单 待审核 市场部
+	 * @return
+	 */
+	@RequestMapping("/market_list")
+	public String market_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent) {
+		
+		PageView<Order> pageView = new PageView<Order>(null,page);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("modifyDate", "desc");
+		
+		StringBuffer jpql = new StringBuffer();
+		jpql.append("o.visible = true and o.status = 31");
+		
+		if(StringUtils.isNotEmpty(queryContent)){
+			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+		}
+		
+		pageView.setJpql(jpql.toString());
+		pageView.setOrderby(orderby);
+		pageView = orderService.getPage(pageView);
+		
+	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
+		model.addAttribute("pageView", pageView);
+		model.addAttribute("m", mark);
+		model.addAttribute("searchProp", searchProp);
+		model.addAttribute("queryContent", queryContent);
+		//mav.addAllObjects(model);
+		return basePath+"/order_market_cancel_list";
+	}
+	
+	/**
+	 * 市场部同意   ---》审核中
+	 */
+	@RequestMapping("/marketAgree")
+	@ResponseBody
+	public String marketAgree(String orderId){
+		try{
+			Order order = orderService.find(orderId);
+			order.setStatus(32);
+			order.setModifyDate(new Date());
+			orderService.update(order);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("失败", response);
+	}
+	
+	/**
+	 * 审核中的列表 需财政部同意的列表
+	 * @return
+	 */
+	@RequestMapping("/finance_list")
+	public String finance_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent){
+		PageView<Order> pageView = new PageView<Order>(null,page);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("modifyDate", "desc");
+		
+		StringBuffer jpql = new StringBuffer();
+		jpql.append("o.visible = true and o.status = 32");
+		if(StringUtils.isNotEmpty(queryContent)){
+			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+		}
+		pageView.setJpql(jpql.toString());
+		pageView.setOrderby(orderby);
+		pageView = orderService.getPage(pageView);
+		
+	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
+		model.addAttribute("pageView", pageView);
+		model.addAttribute("m", mark);
+		model.addAttribute("searchProp", searchProp);
+		model.addAttribute("queryContent", queryContent);
+		//mav.addAllObjects(model);
+		return basePath+"/order_finance_cancel_list";
+	}
+	
+	/**
+	 * 审核中的列表 财政部同意
+	 * @return
+	 */
+	@RequestMapping("/financeAgree")
+	@ResponseBody
+	public String financeAgree(String orderId, String content){
+		try{
+			Order order = orderService.find(orderId);
+			order.setStatus(33);
+			order.setModifyDate(new Date());
+			orderService.update(order);
+			JSONObject obj = new JSONObject();
+			obj.put("trade_num", order.getFeeRecord()==null?"":order.getFeeRecord().getTradeNo());
+			obj.put("payWay", order.getPayWay());
+			obj.put("price", order.getPrice());
+			obj.put("content", content);
+			return ajaxSuccess(obj, response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("失败", response);
+	}
+	
+	
+	
+	/**
+	 * 已退款成功的订单 或者 正在退款的订单
+	 * @return
+	 */
+	@RequestMapping("/cancel_list")
+	public String cancel_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent){
+		PageView<Order> pageView = new PageView<Order>(null,page);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("modifyDate", "desc");
+		
+		StringBuffer jpql = new StringBuffer();
+		jpql.append("o.visible = true and o.status = 33 or o.status = 34 ");
+		
+		if(StringUtils.isNotEmpty(queryContent)){
+			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+		}
+		
+		pageView.setJpql(jpql.toString());
+		pageView.setOrderby(orderby);
+		pageView = orderService.getPage(pageView);
+		
+	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
+		model.addAttribute("pageView", pageView);
+		model.addAttribute("m", mark);
+		model.addAttribute("searchProp", searchProp);
+		model.addAttribute("queryContent", queryContent);
+		//mav.addAllObjects(model);
+		return basePath+"/order_cancel_finsh_list";
+	}
+	
+	/**
+	 * 驳回取消订单
+	 * @return
+	 */
+	@RequestMapping("/overOrder")
+	@ResponseBody
+	public String overOrder(String orderId){
+		try{
+			Order order = orderService.find(orderId);
+			order.setStatus(35);
+			order.setModifyDate(new Date());
+			orderService.update(order);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("成功", response);
+	}
+	
+	
 }

@@ -1,7 +1,9 @@
 package com.hydom.core.server.ebean;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,6 +13,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Where;
 
 import com.hydom.util.dao.BaseEntity;
 
@@ -63,8 +67,18 @@ public class CarType extends BaseEntity{
 	 * 车刑集合
 	 */
 	@OneToMany(fetch=FetchType.LAZY,mappedBy="carType")
+	@Where(clause="visible = 1")
 	@OrderBy("createDate desc")
 	private List<Car> carList = new ArrayList<Car>();
+	
+	/**
+	 * 子分类集合
+	 */
+	@OneToMany(fetch=FetchType.LAZY,mappedBy="parent")
+	@Where(clause="visible = 1")
+	@OrderBy("jp asc")
+	private Set<CarType> carTypeSet = new HashSet<CarType>();
+	
 	
 	public String getJp() {
 		return jp;
@@ -128,6 +142,14 @@ public class CarType extends BaseEntity{
 
 	public void setCarList(List<Car> carList) {
 		this.carList = carList;
+	}
+
+	public Set<CarType> getCarTypeSet() {
+		return carTypeSet;
+	}
+
+	public void setCarTypeSet(Set<CarType> carTypeSet) {
+		this.carTypeSet = carTypeSet;
 	}
 	
 }

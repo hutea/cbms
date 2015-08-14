@@ -47,10 +47,10 @@ public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int
 	PageView<Technician> pageView = new PageView<Technician>(maxresult, page);
 	LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 	orderby.put("id", "desc");
-	String jpql = "";
+	String jpql = "o.visible = true ";
 	Object[] params = new Object[]{};
 	if(queryContent!=null){
-		jpql+="o.name like ?1";
+		jpql+="and o.name like ?1 or o.account like ?1 or o.phonenumber ?1";
 		params = new Object[]{"%"+queryContent+"%"};
 	}
 	pageView.setQueryResult(technicianService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));

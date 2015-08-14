@@ -1,28 +1,17 @@
 package com.hydom.core.web.action;
 
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Random;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.config.CacheManagementConfigUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Member;
 import com.hydom.account.service.MemberService;
-import com.hydom.core.server.ebean.Car;
-import com.hydom.core.server.ebean.CarBrand;
-import com.hydom.core.server.ebean.CarType;
 import com.hydom.core.server.service.CarBrandService;
 import com.hydom.core.server.service.CarService;
 import com.hydom.core.server.service.CarTypeService;
@@ -30,8 +19,6 @@ import com.hydom.util.BaseAction;
 import com.hydom.util.IDGenerator;
 import com.hydom.util.bean.MemberBean;
 import com.hydom.util.cache.CachedManager;
-import com.hydom.util.dao.PageView;
-import com.hydom.util.dao.QueryResult;
 import com.hydom.util.duanxin.SendMessage;
 
 /**
@@ -91,7 +78,7 @@ public class IndexAction extends BaseAction {
 			return ajaxError("无效的验证码", response);
 		}
 		
-		Member member = memberService.findByHql("from Member where mobile=" + mobile);
+		Member member = memberService.findByHql("select o from com.hydom.account.ebean.Member o where o.mobile='" + mobile+"'");
 		if (member != null) {
 			if (code.equals(verifyCode.toString())) {
 				

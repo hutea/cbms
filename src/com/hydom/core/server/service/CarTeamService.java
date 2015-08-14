@@ -1,7 +1,9 @@
 package com.hydom.core.server.service;
 
+import com.hydom.account.ebean.Area;
 import com.hydom.core.server.ebean.CarTeam;
 import com.hydom.util.dao.DAO;
+import com.hydom.util.dao.PageView;
 
 /**
  * @Description 车队业务层接口
@@ -10,5 +12,13 @@ import com.hydom.util.dao.DAO;
  */
 
 public interface CarTeamService extends DAO<CarTeam>{
+	
+	/**
+	 * 
+	 * @param areaId 区域
+	 * @param page 页码
+	 * @return
+	 */
+	PageView<CarTeam> getPage(Area area, Integer page);
 
 }

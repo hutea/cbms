@@ -114,6 +114,10 @@
 	  margin-top: 5px;
 	  margin-right: 10px;
 }
+#hotProductCategory label{
+	  margin-top: 5px;
+	  margin-right: 10px;
+}
 </STYLE>
 </head>
 <body>
@@ -193,6 +197,26 @@
 									</div>
 								</div>
 								<div class="form-group">
+									<label class="col-sm-4 control-label">展示图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="
+											<c:if test="${!empty entity}"><%=basePath %>/${entity.imgPath }</c:if>
+											" onerror="<%=basePath %>/resource/image/default.png" id="show_img">
+											<input type="hidden" name="imgPath" value="${entity.imgPath }"/>
+										</div>
+										<label> <%-- style="position: absolute;  float: right;  margin-left: 20%;" --%>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+									</div>
+								 </div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">类型</label>
+									<div class="col-sm-8" id="hotProductCategory">
+										<label><input type="checkbox" value="1" name="hotProductCategory"/>热卖分类</label>
+									</div>
+								</div>
+								<div class="form-group">
 									<label class="col-sm-4 control-label">排序</label>
 									<div class="col-sm-8">
 										<input type="text" class="form-control" name="order" value=""/>
@@ -218,6 +242,7 @@
 			<!-- mainpanel -->
 		</div>
 		<!-- mainwrapper -->
+		<jsp:include page="../common/imgUpload.jsp"></jsp:include>
 	</section>
 	<script type="text/javascript">
 		var base = "<%=basePath%>";

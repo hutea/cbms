@@ -22,6 +22,7 @@ public class AdminBean implements Serializable{
 	private String nickname;
 	private Account member;
 	
+	
 	public static AdminBean convert2MemberBean(Account member){
 		if(member != null){
 			AdminBean bean = new AdminBean();

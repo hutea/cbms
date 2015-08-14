@@ -1,5 +1,7 @@
 package com.hydom.core.server.service;
 
+import java.util.List;
+
 import com.hydom.core.server.ebean.Coupon;
 import com.hydom.util.dao.DAO;
 
@@ -10,5 +12,6 @@ import com.hydom.util.dao.DAO;
  */
 
 public interface CouponService extends DAO<Coupon>{
+	
 
 }

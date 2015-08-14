@@ -8,17 +8,21 @@ package com.hydom.account.ebean;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Where;
 
 import com.hydom.util.dao.BaseEntity;
 
 /**
- * Entity - 订单 服务 
+ * Entity - 订单 服务
  * 
  */
 @Entity
@@ -29,33 +33,44 @@ public class ServerOrder extends BaseEntity {
 	 * serialVersionUID.
 	 */
 	private static final long serialVersionUID = -7057361994167657841L;
-	
+
 	/**
 	 * 服务分类
 	 */
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="service_type_id")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "service_type_id")
 	private ServiceType serviceType;
-	
+
 	/**
 	 * 服务名称
 	 */
 	private String name;
-	
+
+	/**
+	 * 服务价格
+	 */
+	private float price;
+
 	/**
 	 * 订单
 	 */
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="order_id")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "order_id")
 	private Order order;
+
+	/**
+	 * 订单服务评论
+	 */
+	@OneToOne
+	@JoinColumn(name = "comment_id")
+	private Comment comment;
 
 	/**
 	 * 商品订单详情
 	 */
-	@OneToMany(fetch=FetchType.LAZY,mappedBy="serverOrder")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "serverOrder",cascade=CascadeType.PERSIST)
 	private Set<ServerOrderDetail> serverOrderDetail = new HashSet<ServerOrderDetail>();
-	
-	
+
 	public ServiceType getServiceType() {
 		return serviceType;
 	}
@@ -87,6 +102,20 @@ public class ServerOrder extends BaseEntity {
 	public void setServerOrderDetail(Set<ServerOrderDetail> serverOrderDetail) {
 		this.serverOrderDetail = serverOrderDetail;
 	}
-	
-	
+
+	public Comment getComment() {
+		return comment;
+	}
+
+	public void setComment(Comment comment) {
+		this.comment = comment;
+	}
+
+	public float getPrice() {
+		return price;
+	}
+
+	public void setPrice(float price) {
+		this.price = price;
+	}
 }

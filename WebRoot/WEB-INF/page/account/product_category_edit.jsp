@@ -114,6 +114,10 @@
 	  margin-top: 5px;
 	  margin-right: 10px;
 }
+#hotProductCategory label{
+	  margin-top: 5px;
+	  margin-right: 10px;
+}
 </STYLE>
 </head>
 <body>
@@ -179,7 +183,17 @@
 									<label class="col-sm-4 control-label">绑定服务</label>
 									<div class="col-sm-8" id="categoryDiv">
 										<select name="serviceType.id">
-											<option value="${entity.serviceType.id }">${entity.serviceType.name }</option>
+											<option value="">无</option>
+											<c:if test="${!empty entity.serviceType}">
+												<option value="${entity.serviceType.id }" selected="selected">${entity.serviceType.name }</option>
+											</c:if>
+											<c:if test="${empty entity.serviceType}">
+												<c:forEach var="serviceType" items="${serviceTypes }">
+													<option value="${serviceType.id }">
+														${serviceType.name}
+													</option>
+												</c:forEach>
+											</c:if>
 											<%-- <option value="">无</option>
 											<c:forEach var="serviceType" items="${serviceTypes }">
 												<option value="${serviceType.id }" <c:if test="${serviceType.id eq entity.serviceType.id }">selected="selected"</c:if> >
@@ -197,6 +211,26 @@
 												<c:if test="${bean.isSelected}">checked="checked"</c:if>
 											/>${bean.brand.name }</label>
 										</c:forEach>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">展示图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="
+											<c:if test="${!empty entity}"><%=basePath %>/${entity.imgPath }</c:if>
+											" onerror="<%=basePath %>/resource/image/default.png" id="show_img">
+											<input type="hidden" name="imgPath" value="${entity.imgPath }"/>
+										</div>
+										<label> <%-- style="position: absolute;  float: right;  margin-left: 20%;" --%>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+									</div>
+								 </div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">类型</label>
+									<div class="col-sm-8" id="hotProductCategory">
+										<label><input type="checkbox" value="1" name="hotProductCategory" <c:if test="${entity.hotProductCategory eq 1}">checked="checked"</c:if> />热卖分类</label>
 									</div>
 								</div>
 								<div class="form-group">
@@ -224,6 +258,7 @@
 			</div>
 			<!-- mainpanel -->
 		</div>
+		<jsp:include page="../common/imgUpload.jsp"></jsp:include>
 		<!-- mainwrapper -->
 	</section>
 	<script type="text/javascript">

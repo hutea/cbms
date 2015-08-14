@@ -1,7 +1,9 @@
 package com.hydom.core.server.action;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarBrand;
+import com.hydom.core.server.ebean.CarType;
 import com.hydom.core.server.service.CarBrandService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.CommonUtil;
@@ -101,25 +105,54 @@ public class CarBrandAction extends BaseAction{
 	 */
 	@RequestMapping("/update")
 	public ModelAndView edit(@ModelAttribute CarBrand carBrand) {
-		carBrand.setModifyDate(new Date());
-		carBrandService.update(carBrand);
+		CarBrand entity = carBrandService.find(carBrand.getId());
+		entity.setImgPath(carBrand.getImgPath());
+		entity.setInitial(carBrand.getInitial());
+		entity.setName(carBrand.getName());
+		entity.setJp(carBrand.getJp());
+		entity.setQp(carBrand.getQp());
+		entity.setModifyDate(new Date());
+		
+		carBrandService.update(entity);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		return mav;
 	}
 	
-	/**
+/*	*//**
 	 * 删除
-	 */
+	 *//*
 	@RequestMapping("/delete")
 	public @ResponseBody
-	String delete(@RequestParam String[] ids) {
-		for(String id : ids){
+	String delete(@RequestParam String[] ids) {*/
+		
+		/**
+		 * 删除
+		 */
+		@RequestMapping("/delete")
+		public @ResponseBody
+		String delete(@RequestParam String ids) {
+			try{
+				CarBrand entity = carBrandService.find(ids);
+				if(entity.getCarTypeList().size() > 0){
+					return ajaxError("该品牌下有可使用的车系，请先删除车系", response);
+				}
+				entity.setVisible(false);
+				carBrandService.update(entity);
+				return ajaxSuccess("成功", response);
+			}catch(Exception e){
+				
+			}
+			return ajaxError("删除失败", response);
+		}
+		
+		
+		/*for(String id : ids){
 			CarBrand entity = carBrandService.find(id);
 			entity.setVisible(false);
 			carBrandService.update(entity);
 		}
-		return ajaxSuccess("成功", response);
-	}
+		return ajaxSuccess("成功", response);}*/
+	
 	
 	/**
 	 * 验证

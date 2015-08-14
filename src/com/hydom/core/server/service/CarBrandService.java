@@ -1,5 +1,6 @@
 package com.hydom.core.server.service;
 
+import com.hydom.account.ebean.Product;
 import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.util.dao.DAO;
 
@@ -17,4 +18,11 @@ public interface CarBrandService extends DAO<CarBrand>{
 	 * @return true存在 false不存在
 	 */
 	public boolean isExist(String name);
+	
+	/**
+	 * 根据商品获取选择的品牌
+	 * @param product
+	 * @return
+	 */
+	public String getChooseBrand(Product product);
 }

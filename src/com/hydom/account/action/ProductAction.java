@@ -1,8 +1,5 @@
 package com.hydom.account.action;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Resource;
-import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -20,6 +16,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -42,6 +39,7 @@ import com.hydom.account.service.AttributeService;
 import com.hydom.account.service.ParameterGroupService;
 import com.hydom.account.service.ParameterService;
 import com.hydom.account.service.ProductCategoryService;
+import com.hydom.account.service.ProductImageService;
 import com.hydom.account.service.ProductLabelService;
 import com.hydom.account.service.ProductService;
 import com.hydom.account.service.SpecificationService;
@@ -55,7 +53,6 @@ import com.hydom.core.server.service.CarTypeService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.CommonUtil;
 import com.hydom.util.DateTimeHelper;
-import com.hydom.util.ImageUtils;
 import com.hydom.util.UploadImageUtil;
 import com.hydom.util.dao.PageView;
 
@@ -88,6 +85,8 @@ public class ProductAction extends BaseAction{
 	private CarTypeService carTypeService;
 	@Resource
 	private ProductLabelService productLabelService;
+	@Resource
+	private ProductImageService productImageService;
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -102,6 +101,11 @@ public class ProductAction extends BaseAction{
 		params.add(true);
 		pageView.setJpql(jpql);
 		pageView.setParams(params.toArray());
+		
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("createDate", "desc");
+		pageView.setOrderby(orderby);
+		
 		pageView = productService.getPage(pageView);
 		
 		model.addAttribute("pageView", pageView);
@@ -140,12 +144,48 @@ public class ProductAction extends BaseAction{
 	@RequestMapping("/edit")
 	public String edit(ModelMap model,String id){
 		
-		Attribute entity = attributeService.find(id);
-		model.addAttribute("entity", entity);
+		Product product = productService.find(id);
+		model.addAttribute("entity", product);
+		
+		String labelStr = "";
+		Set<ProductLabel> labelSet = product.getLabels();
+		for(ProductLabel label : labelSet){
+			if(StringUtils.isNotEmpty(labelStr)){
+				labelStr += ",";
+			}
+			labelStr += label.getId();
+		}
+		
+		model.addAttribute("labelSet", labelStr);
+		
+		//商品保修标签
+		List<ProductLabel> labels = productLabelService.getProductLabelVisible(true);
+		model.addAttribute("labels",labels);
+		
+		//车辆品牌
+		String jpql = "o.visible = ?1";
+		List<Object> params = new ArrayList<Object>();
+		params.add(true);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("createDate", "desc");
+		List<CarBrand> carbrands = carBrandService.getList(jpql, params.toArray(), orderby);
+	//	model.addAttributes("carBrands",carbrands);
+		model.addAttribute("carBrands",carbrands);
+		
+		//被选择的品牌 [{id}]
+		String chooseBrandIds = carBrandService.getChooseBrand(product);
+		//被选择的车系 [{id,parendId}]
+		String chooseCarTypeIds = carTypeService.getChooseCarType(product);
+		//被选择的车型
+		String chooseCar = carService.getChooseCar(product);
+		
+		model.addAttribute("chooseBrandIds",chooseBrandIds);
+		model.addAttribute("chooseCarTypeIds",chooseCarTypeIds);
+		model.addAttribute("chooseCar",chooseCar);
 		
 		model.addAttribute("m", mark);
 		
-		return  basePath+"/attribute_edit";
+		return  basePath+"/product_edit";
 	}
 	
 	/**
@@ -174,6 +214,16 @@ public class ProductAction extends BaseAction{
 			product.setFullName(product.getName());
 			product.setPrice(product.getMarketPrice());
 			product.setVisible(true);
+			product.setBuyProductCount(0);
+			//特色商品 限量
+			if(product.getProuductUniqueType() != null){
+				if(product.getProuductUniqueType() == 2){
+					
+				}else if(product.getProuductUniqueType() == 3){//天天打折
+					Float discountMoney = CommonUtil.mul(product.getDiscount()+"",product.getMarketPrice()+"");
+					product.setDiscountMoney(discountMoney);
+				}
+			}
 			
 			ProductCategory productCategory = productCategoryService.find(product.getProductCategory().getId());
 			
@@ -182,14 +232,14 @@ public class ProductAction extends BaseAction{
 			
 			product.setSpecifications(specifications);
 			
-			if(attributeIds != null){
+			if(attributeIds != null && attributeIds.length > 0){
 				for (int i = 0; i < attributeIds.length; i++) {
 					Attribute attribute = attributeService.find(attributeIds[i]);
 					product.setAttributeValue(attribute, attributeValues[i]);
 				}
 			}
 		
-			if(parameterIds != null){
+			if(parameterIds != null && parameterIds.length > 0){
 				Map<Parameter,String> map = new HashMap<Parameter, String>();
 				for (int i = 0; i < parameterIds.length; i++) {
 					Parameter parameter = parameterService.find(parameterIds[i]);
@@ -199,7 +249,7 @@ public class ProductAction extends BaseAction{
 			}
 			
 			//适用车辆
-			if(carBrandIds != null){
+			if(carBrandIds != null && carBrandIds.length > 0){
 				if(carBrandIds.toString().indexOf("-1") <= -1){
 					if(carIds != null){
 						List<Car> carList = carService.getList(carIds);
@@ -216,7 +266,7 @@ public class ProductAction extends BaseAction{
 			}
 			
 			//商品支持的售后服务
-			if(labelIds != null){
+			if(labelIds != null && labelIds.length > 0){
 				List<ProductLabel> labels = productLabelService.getList(labelIds);
 				
 				Set<ProductLabel> labelSet = new HashSet<ProductLabel>();
@@ -225,25 +275,17 @@ public class ProductAction extends BaseAction{
 				product.setLabels(labelSet);
 			}
 			
-			if(files != null){
-				List<ProductImage> imgs = new ArrayList<ProductImage>();
-				for (MultipartFile file : files) {
-					ProductImage  img = new ProductImage();
-					Map<String,String> map = UploadImageUtil.uploadFile(file,request);
-					img.setSource(map.get("source"));
-					img.setLarge(map.get("big"));
-					img.setThumbnail(map.get("small"));
-					img.setOrder(imgs.size());
-					imgs.add(img);
-				}
-				product.setProductImages(imgs);
-			}
-			
 			//商品规格存在 则保存规格 商品规格不存在  则直接保存该商品 
-			if(specificationValueIds != null){
+			if(specificationValueIds != null && specificationValueIds.length > 0){
 				for (int i = 0; i < specificationValueIds.length; i++) {
+					
 					Product entity = new Product();
-					entity = product;
+				//	entity = product;
+					BeanUtils.copyProperties(product, entity);
+					
+					entity.setProductBrand(product.getProductBrand());
+					entity.setProductCategory(product.getProductCategory());
+				//	entity.set
 					entity.setSn(DateTimeHelper.getSystemTime()+"");
 					Set<SpecificationValue> specificationValueSet = new HashSet<SpecificationValue>();
 					
@@ -253,31 +295,226 @@ public class ProductAction extends BaseAction{
 						specificationValueSet.add(v);
 					}
 					entity.setSpecificationValues(specificationValueSet);
-					
 					productService.save(entity);
+					
+					
+					if(files != null && files.length > 0){
+						//List<ProductImage> imgs = new ArrayList<ProductImage>();
+						int n = 0;
+						for (MultipartFile file : files) {
+							ProductImage  img = new ProductImage();
+							Map<String,String> map = UploadImageUtil.uploadFile(file,request);
+							img.setSource(map.get("source"));
+							img.setLarge(map.get("big"));
+							img.setThumbnail(map.get("small"));
+							img.setOrder(n++);
+							img.setProduct(entity);
+							productImageService.save(img);
+						//	imgs.add(img);
+						}
+						//product.setProductImages(imgs);
+					}
+					
 				}
 			}else{
 				product.setSn(DateTimeHelper.getSystemTime()+"");
 				productService.save(product);
+				
+				if(files != null && files.length > 0){
+					//List<ProductImage> imgs = new ArrayList<ProductImage>();
+					int n = 0;
+					for (MultipartFile file : files) {
+						ProductImage  img = new ProductImage();
+						Map<String,String> map = UploadImageUtil.uploadFile(file,request);
+						img.setSource(map.get("source"));
+						img.setLarge(map.get("big"));
+						img.setThumbnail(map.get("small"));
+						img.setOrder(n++);
+						img.setProduct(product);
+						productImageService.save(img);
+					//	imgs.add(img);
+					}
+					//product.setProductImages(imgs);
+				}
+				
 			}
+		return  "redirect:list";
+	}
+	
+	/**
+	 * 
+	 * @param files 展示图片
+	 * @param product 商品基本信息
+	 * @param attributeIds 筛选参数
+	 * @param attributeValues 筛选参数值
+	 * @param parameterIds 商品参数ID
+	 * @param parameterValues 商品参数值
+	 * @param specificationValueIds 规格值
+	 * @return
+	 */
+	@RequestMapping("/update")//ModelMap model,Attribute entity,String[] attributeValues, 
+	public String update(@RequestParam MultipartFile[] files,Product product,String productId,
+			@RequestParam(required=false) String[] attributeIds,
+			@RequestParam(required=false) String[] attributeValues,
+			@RequestParam(required=false) String[] parameterIds,
+			@RequestParam(required=false) String[] parameterValues,
+			@RequestParam(required=false) String[] specificationValueIds,
+			@RequestParam(required=false) String[] oldSpecificationValueIds,
+			@RequestParam(required=false) String[] labelIds,
+			@RequestParam(required=false) String[] carBrandIds,
+			@RequestParam(required=false) String[] carIds){
+			
+		
+			Product productEntity = productService.find(productId);
+			productEntity.setMarketPrice(product.getMarketPrice());
+			productEntity.setCost(product.getCost());
+			productEntity.setFullName(product.getName());
+			productEntity.setProductBrand(product.getProductBrand());
+			productEntity.setDiscount(product.getDiscount());
+			productEntity.setProductCount(product.getProductCount());
+			productEntity.setImgPath(product.getImgPath());
+			//	productEntity.setBuyProductCount(product.getBuyProductCount());
+			productEntity.setIntroduction(product.getIntroduction());
+			
+			productEntity.setName(product.getName());
+			productEntity.setPoint(product.getPoint());
 			
 			
-		/*Map<String,String> map = uploadFile(bean);
-		System.out.println(map);*/
-	/*	List<String> options = new ArrayList<String>();
-		for(String attributeValue : attributeValues){
-			if(StringUtils.isNotEmpty(attributeValue)){
-				options.add(attributeValue);
+			//特色商品 限量
+			if(product.getProuductUniqueType() != null){
+				if(product.getProuductUniqueType() == 2){
+					
+				}else if(product.getProuductUniqueType() == 3){//天天打折
+					Float discountMoney = CommonUtil.mul(product.getDiscount()+"",product.getMarketPrice()+"");
+					product.setDiscountMoney(discountMoney);
+				}
 			}
-		}
-		if(StringUtils.isNotEmpty(entity.getId())){
-			entity.setOptions(options);
-			attributeService.update(entity);
-		}else{
-			entity.setPropertyIndex(null);
-			entity.setOptions(options);
-			attributeService.save(entity);
-		}*/
+			productEntity.setProuductUniqueType(product.getProuductUniqueType());
+			productEntity.setDiscountMoney(product.getDiscountMoney());
+			
+			if(attributeIds != null && attributeIds.length > 0){
+				for (int i = 0; i < attributeIds.length; i++) {
+					Attribute attribute = attributeService.find(attributeIds[i]);
+					productEntity.setAttributeValue(attribute, attributeValues[i]);
+				}
+			}
+		
+			
+			if(parameterIds != null && parameterIds.length > 0){
+				Map<Parameter,String> map = new HashMap<Parameter, String>();
+				for (int i = 0; i < parameterIds.length; i++) {
+					Parameter parameter = parameterService.find(parameterIds[i]);
+					map.put(parameter, parameterValues[i]);
+				}
+				productEntity.setParameterValue(map);
+			}
+			
+			//适用车辆
+			if(carBrandIds != null && carBrandIds.length > 0){
+				if(carBrandIds.toString().indexOf("-1") <= -1){
+					if(carIds != null){
+						List<Car> carList = carService.getList(carIds);
+						Set<Car> carSet = new HashSet<Car>();
+						carSet.addAll(carList);
+						productEntity.setCarSet(carSet);
+						productEntity.setUseAllCar(1);
+					}
+				}else{//适用所有车型
+					productEntity.setUseAllCar(0);
+				}
+			}else{//默认 适用所有车型
+				productEntity.setUseAllCar(0);
+			}
+			
+			//商品支持的售后服务
+			if(labelIds != null && labelIds.length > 0){
+				List<ProductLabel> labels = productLabelService.getList(labelIds);
+				
+				Set<ProductLabel> labelSet = new HashSet<ProductLabel>();
+				labelSet.addAll(labels);
+				
+				productEntity.setLabels(labelSet);
+			}
+			
+			//修改已存在的规格值
+			if(oldSpecificationValueIds != null && oldSpecificationValueIds.length > 0){
+				for (int i = 0; i < oldSpecificationValueIds.length; i++) {
+					Set<SpecificationValue> specificationValueSet = new HashSet<SpecificationValue>();
+					for(String specificationValue : oldSpecificationValueIds){
+						SpecificationValue v = specificationValueService.find(specificationValue);
+						specificationValueSet.add(v);
+					}
+					productEntity.setSpecificationValues(specificationValueSet);
+				}
+			}
+			
+			//商品规格存在 则保存规格 商品规格不存在  则直接保存该商品  新增规格
+			if(specificationValueIds != null && specificationValueIds.length > 0){
+				
+				for (int i = 0; i < specificationValueIds.length; i++) {
+					
+					Product entity = new Product();
+				//	entity = product;
+					BeanUtils.copyProperties(productEntity, entity);
+					entity.setId(null);
+					entity.setProductBrand(productEntity.getProductBrand());
+					entity.setProductCategory(productEntity.getProductCategory());
+					Set<Car> carSet = new HashSet<Car>();
+					carSet.addAll(productEntity.getCarSet());
+					entity.setCarSet(carSet);
+					entity.setOrderProduct(null);
+				//	entity.setParameterValue(productEntity.getParameterValue());
+				//	entity.set
+				//	entity.set
+					entity.setSn(DateTimeHelper.getSystemTime()+"");
+					Set<SpecificationValue> specificationValueSet = new HashSet<SpecificationValue>();
+					
+					String[] specificationValues = specificationValueIds[i].split(",");
+					for(String specificationValue : specificationValues){
+						SpecificationValue v = specificationValueService.find(specificationValue);
+						specificationValueSet.add(v);
+					}
+					entity.setSpecificationValues(specificationValueSet);
+					productService.save(entity);
+					
+					if(files != null && files.length > 0){
+						//List<ProductImage> imgs = new ArrayList<ProductImage>();
+						int n=0;
+						for (MultipartFile file : files) {
+							ProductImage  img = new ProductImage();
+							Map<String,String> map = UploadImageUtil.uploadFile(file,request);
+							img.setSource(map.get("source"));
+							img.setLarge(map.get("big"));
+							img.setThumbnail(map.get("small"));
+							img.setOrder(n++);
+							img.setProduct(entity);
+							productImageService.save(img);
+						//	imgs.add(img);
+						}
+						//product.setProductImages(imgs);
+					}
+					
+				}
+			}
+			
+			productService.update(productEntity);
+			if(files != null && files.length > 0){
+				//List<ProductImage> imgs = new ArrayList<ProductImage>();
+				int i = productEntity.getProductImages().size();
+				for (MultipartFile file : files) {
+					ProductImage  img = new ProductImage();
+					Map<String,String> map = UploadImageUtil.uploadFile(file,request);
+					img.setSource(map.get("source"));
+					img.setLarge(map.get("big"));
+					img.setThumbnail(map.get("small"));
+					img.setOrder(i++);
+					img.setProduct(productEntity);
+					productImageService.save(img);
+				//	imgs.add(img);
+				}
+				//product.setProductImages(imgs);
+			}
+			
 		return  "redirect:list";
 	}
 	
@@ -315,7 +552,7 @@ public class ProductAction extends BaseAction{
 	
 	//获取商品参数
 	@RequestMapping("/loadParameter")
-	public String getParamenterPage(ModelMap model, String productCategoryId){
+	public String getParamenterPage(ModelMap model, String productCategoryId, String productId){
 		
 		String jpql = "o.productCategory.id = ?1";
 		List<Object> params = new ArrayList<Object>();
@@ -325,13 +562,29 @@ public class ProductAction extends BaseAction{
 		if(parameterGroup != null){
 			List<Parameter> parameters = parameterGroup.getParameters();
 			model.addAttribute("parameters", parameters);
+			
+			if(StringUtils.isNotEmpty(productId)){
+				Product product = productService.find(productId);
+				JSONArray array = new JSONArray();
+				Map<Parameter,String> map = product.getParameterValue();
+				for(Parameter p : parameters){
+					JSONObject obj = new JSONObject();
+					obj.put("id", p.getId());
+					obj.put("value", map.get(p));
+					array.add(obj);
+				}
+				model.addAttribute("productPara", array);
+			}
+			
+			
+			
 		}
 		return basePath+"/product/product_load_parameter";
 	}
 	
 	//获取商品筛选条件
 	@RequestMapping("/loadAttribute")
-	public String loadAttribute(ModelMap model, String productCategoryId){
+	public String loadAttribute(ModelMap model, String productCategoryId, String productId){
 		
 		String jpql = "o.productCategory.id = ?1";
 		List<Object> params = new ArrayList<Object>();
@@ -339,7 +592,14 @@ public class ProductAction extends BaseAction{
 		
 		List<Attribute> attributes = attributeService.getList(jpql, params.toArray(),null);
 		if(attributes.size() > 0){
-			model.addAttribute("attribute", attributes.get(0));
+			Attribute attribute = attributes.get(0);
+			model.addAttribute("attribute", attribute);
+			if(StringUtils.isNotEmpty(productId)){
+				Product product = productService.find(productId);
+				String attributeValue = product.getAttributeValue(attribute);
+				model.addAttribute("attributeValue", attributeValue);
+			}
+			
 		}
 		
 		return basePath+"/product/product_load_attribute";
@@ -353,6 +613,51 @@ public class ProductAction extends BaseAction{
 		model.addAttribute("specifications", productCategory.getSpecificationSet());
 		
 		return basePath+"/product/product_load_specification";
+	}
+	
+	//编辑商品 获取商品规格
+	@RequestMapping("/loadEditSpecification")
+	public String loadSpecification(ModelMap model, String productCategoryId, String productId){
+		
+		ProductCategory productCategory = productCategoryService.find(productCategoryId);
+		model.addAttribute("specifications", productCategory.getSpecificationSet());
+		if(StringUtils.isNotEmpty(productId)){
+			JSONArray array = new JSONArray();
+			
+			JSONObject ob1 = new JSONObject();
+			JSONArray productArray = new JSONArray();
+			Product product = productService.find(productId);
+			for(SpecificationValue value : product.getSpecificationValues()){
+				JSONObject obj = new JSONObject();
+				obj.put("id", value.getSpecification().getId());
+				obj.put("value", value.getId());
+				productArray.add(obj);
+			}
+			
+			ob1.put("productId", product.getId());
+			ob1.put("specification", productArray);
+			array.add(ob1);
+			
+			//查找一个系列商品
+			String goodsNum = product.getGoods_num();
+			List<Product> productList = productService.getProductByGoodsNum(goodsNum,product.getId());
+			for(Product specifiProduct : productList){
+				JSONObject ob = new JSONObject();
+				JSONArray array1 = new JSONArray();
+				for(SpecificationValue value : specifiProduct.getSpecificationValues()){
+					JSONObject obj = new JSONObject();
+					obj.put("id", value.getSpecification().getId());
+					obj.put("value", value.getId());
+					array1.add(obj);
+				}
+				ob.put("productId", specifiProduct.getId());
+				ob.put("specification", array1);
+				array.add(ob);
+			}
+			model.addAttribute("productSpecification", array.toString());
+			model.addAttribute("productSpecificationNum", productList.size() + 1);
+		}
+		return basePath+"/product/product_edit_load_specification";
 	}
 	
 	
@@ -386,6 +691,16 @@ public class ProductAction extends BaseAction{
 			array.add(obj);
 		}
 		return ajaxSuccess(array, response);
+	}
+	
+	//删除商品图片
+	@RequestMapping("/deleteProductImg")
+	@ResponseBody
+	public String deleteProductImg(String imgId){
+		
+		productImageService.delete(imgId);
+		
+		return ajaxSuccess("成功", response);
 	}
 	
 	@RequestMapping("/test")

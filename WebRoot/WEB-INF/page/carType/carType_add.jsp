@@ -98,6 +98,13 @@
 	});
 
 	function saveType(){
+		
+		
+		
+		
+		
+		
+		
 		$(function(){
 			checkName();
 			checkJp($("#jp")[0]);
@@ -106,9 +113,10 @@
 			$(".repeat").each(function(){
 				if($(this).val()!="success") flag = false;
 			});
-			if(flag){
-				$("#inputForm").submit();
+			if(!flag){
+				return;
 			}
+			$("#inputForm").submit();
 		});
 	}
 	
@@ -145,6 +153,37 @@
 			$("#jp_error").html("");
 			$(v).next().val("success");
 		}
+	}
+	
+	//获取车系
+	function getCarType(e){
+		var brandId = $(e).val();
+		if(brandId == ""){
+			addCarTypeHTML("");
+			return;
+		}
+		var url = "<%=basePath%>/manage/carType/getCarType";
+		var data = {
+			carBrandId:	brandId
+		};
+		$.post(url,data,function(result){
+			if(result.status == "success"){
+				addCarTypeHTML(result.message);
+			}
+		},"json");
+		/* 
+		var url ="${pageContext.request.contextPath}/manage/carType/add?carBrandId="+$(e).val();
+		location.href=url; */
+	}
+	
+	function addCarTypeHTML(value){
+		var html = "<option value=''>顶级分类</option>";
+		if(value != ""){
+			for(var i in value){
+				html += "<option value='"+value[i].id+"'>"+value[i].name+"</option>";
+			}
+		}
+		$("#parentId").html(html);
 	}
 </script>
 <STYLE type="text/css">
@@ -223,9 +262,10 @@
 								<div class="form-group">
 									<label class="col-sm-4 control-label">所属品牌</label>
 									<div class="col-sm-8">
-										<select id="carBrandId" name="carBrandId" class="selects">
+										<select id="carBrandId" name="carBrandId" class="selects" onchange="getCarType(this)">
+											<option value="" selected="selected">请选择品牌</option>
 											<c:forEach items="${carBrands }" var="carBrand" >
-												<option value="${carBrand.id}">${carBrand.name }</option>
+												<option value="${carBrand.id}" <c:if test="${carBrandId eq carBrand.id }">selected="selected"</c:if>>${carBrand.name }</option>
 											</c:forEach>
 										</select>
 										<span class="errorStyle" id="carBrand_error"></span>
@@ -233,13 +273,10 @@
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">上级分类</label>
+									<label class="col-sm-4 control-label">车系分类</label>
 									<div class="col-sm-8">
 										<select id="parentId" name="parentId" class="selects">
 											<option value="" selected="selected">顶级分类</option>
-											<c:forEach items="${parents }" var="carType" >
-												<option value="${carType.id}">${carType.name }</option>
-											</c:forEach>
 										</select>
 										<span class="errorStyle" id="carType_error"></span>
 									</div>
@@ -249,7 +286,7 @@
 						<div class="panel-footer">
 							<div class="row">
 								<div class="col-sm-9 col-sm-offset-3">
-									<button id="addCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
+									<button id="addCate" class="btn btn-primary mr5" onclick="saveType()" type="button">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
 								</div>
 							</div>

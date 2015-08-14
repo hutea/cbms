@@ -15,7 +15,8 @@
 	<meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=8" />
 	<title>一动车保首页</title>
-	<link href="<%=basePath %>resource/page/css/appdown.css" type="text/css" rel="stylesheet" />
+	<link href="${pageContext.request.contextPath}/resource/page/css/style.css" rel="stylesheet">
+	<%-- <link href="<%=basePath %>resource/page/css/appdown.css" type="text/css" rel="stylesheet" /> --%>
 	<script type="text/javascript" src="<%=basePath %>resource/page/js/jquery.js"></script>
 	<script type="text/javascript" src="<%=basePath %>resource/page/js/function.js"></script>
 	<style type="text/css">
@@ -77,6 +78,30 @@
 	}
 	.top_right li b.b2{
 		background:url(<%=basePath %>resource/page/images/2.png) 0 0 no-repeat;
+	}
+	
+	.top_right .third a {
+		color: #6b6b6b;
+	}
+	.top_right li b.b3 {
+		display: block;
+		width: 35px;
+		height: 25px;
+		position: absolute;
+		top: 0px;
+		background: url(<%=basePath %>resource/page/images/3-3.png) 0 0 no-repeat;
+	}
+	
+	.top_right li.last a {
+		color: #6b6b6b;
+	}
+	.top_right li b.b4 {
+		display: block;
+		width: 35px;
+		height: 25px;
+		position: absolute;
+		top: 0px;
+		background: url(<%=basePath %>resource/page/images/4-4.png) 0 0 no-repeat;
 	}
 	</style>
 </head>

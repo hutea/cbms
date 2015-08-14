@@ -2,6 +2,9 @@ package com.hydom.account.ebean;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.hydom.util.dao.BaseEntity;
@@ -24,6 +27,9 @@ public class Technician extends BaseEntity{
 	/**密码*/
 	@Column(name="password",nullable=false)
 	private String password = "123456";
+	/**推送id*/
+	@Column(name="pushId",nullable=false)
+	private String pushId;
 	/**姓名*/
 	@Column(name="name",nullable=false)
 	private String name;
@@ -39,6 +45,11 @@ public class Technician extends BaseEntity{
 	//false为没上班，true为上班
 	@Column(name="jobstatus")
 	private boolean jobstatus = false;
+	
+	/**当前服务的订单*/
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "order_id")
+	private Order order;
 	
 	public boolean isJobstatus() {
 		return jobstatus;
@@ -65,6 +76,24 @@ public class Technician extends BaseEntity{
 	
 	private Boolean visible = true;
 	
+	public String getPushId() {
+		return pushId;
+	}
+	public void setPushId(String pushId) {
+		this.pushId = pushId;
+	}
+	public Order getOrder() {
+		return order;
+	}
+	public void setOrder(Order order) {
+		this.order = order;
+	}
+	public Boolean getVisible() {
+		return visible;
+	}
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
+	}
 	public Double getLongitude() {
 		return longitude;
 	}

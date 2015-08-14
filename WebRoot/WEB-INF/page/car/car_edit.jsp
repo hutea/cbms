@@ -62,25 +62,19 @@
 <script type="text/javascript">
 	function checkName() {
 		var name = $("#name").val();
-		$
-				.post(
-						"${pageContext.request.contextPath}/manage/car/check",
-						{
-							name : name
-						},
-						function(data) {
-							var n = "${car.name }";
-							if(name == "" || name == null){
-								$("#name_error").html("车型名称不能为空");
-								$("#name").next().val("");
-							} else if (data == true && n!=$("#name").val()) {//表示品牌存在
-								$("#name_error").html("车型名称已经存在");
-								$("#name").next().val("");
-							} else {
-								$("#name_error").html("");
-								$("#name").next().val("success");
-							}
-						});
+		$.post("${pageContext.request.contextPath}/manage/car/check",{name : name},function(data) {
+			var n = "${car.name }";
+			if(name == "" || name == null){
+				$("#name_error").html("车型名称不能为空");
+				$("#name").next().val("");
+			} else if (data == true && n!=$("#name").val()) {//表示品牌存在
+				$("#name_error").html("车型名称已经存在");
+				$("#name").next().val("");
+			} else {
+				$("#name_error").html("");
+				$("#name").next().val("success");
+			}
+		});
 	}
 
 	$(document).ready(function(){
@@ -90,26 +84,89 @@
 	});
 
 	function saveCar(){
-		$(function(){
-			checkName();
-			var flag = true;
-			$(".repeat").each(function(){
-				if($(this).val()!="success") flag = false;
-			});
-			if(flag){
-				$("#inputForm").submit();
+		if($("#carBrandId").val()==""){
+			alert("请选择车辆品牌");
+			return;
+		}
+		
+		if($("#carTypeId").val()==""){
+			alert("请选择所属车系");
+			return;
+		}
+		
+		if($("#name").val() == ""){
+			alert("请输入车辆名称");
+			return;
+		}
+		
+		if(!$("#name").next().val()=="success"){
+			alert("请重新输入车辆名称");
+			return;
+		}
+		
+		
+	/* 	checkName();
+		var flag = true;
+		$(".repeat").each(function(){
+			if($(this).val()!="success"){
+				flag = false;
 			}
 		});
+		alert(1);
+		alert(flag);
+		if(!flag){
+			alert(2);
+			return;
+		} */
+		$("#inputForm").submit();
 	}
+	
+	//获取车系
+	function getCarType(e){
+		var brandId = $(e).val();
+		if(brandId == ""){
+			addCarTypeHTML("");
+			return;
+		}
+		var url = "<%=basePath%>/manage/car/getCarType";
+		var data = {
+			carBrandId:	brandId
+		};
+		$.post(url,data,function(result){
+			if(result.status == "success"){
+				addCarTypeHTML(result.message);
+			}
+		},"json");
+		/* 
+		var url ="${pageContext.request.contextPath}/manage/carType/add?carBrandId="+$(e).val();
+		location.href=url; */
+	}
+	
+	function addCarTypeHTML(value){
+		var html = "<option value=''>请选择车系</option>";
+		if(value != ""){
+			for(var i in value){
+				var subDa = value[i].subDate;
+				var vhtml = "";
+				for(var n in subDa){
+					vhtml += "<option value='"+subDa[n].id+"'>"+subDa[n].name+"</option>";
+				}
+				var str = "<optgroup label='"+value[i].name+"'>"+vhtml+"</optgroup>";
+				html += str;
+			}
+		}
+		$("#carTypeId").html(html);
+	}
+	
 </script>
-<script type="text/javascript">	
+<%-- <script type="text/javascript">	
 	$(document).ready(function(){
 		$("#carBrandId").change(function(){
 			var h = "<%=basePath %>manage/car/edit?carBrandId="+$(this).val()+"&name="+$("#name").val()+"&id="+$("#id").val();
 			location.href=h;
 		});
 	});
-</script>
+</script> --%>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -119,6 +176,16 @@
 
 .selects {
 	height: 40px;
+}
+.img_div{
+	display: inline-block;
+	height: 60px;
+	width: 60px;
+}
+.img_div img{
+	display: inline-block;
+	height: 60px;
+	width: 60px;
 }
 </STYLE>
 </head>
@@ -179,10 +246,34 @@
 									<label class="col-sm-4 control-label">所属车系</label>
 									<div class="col-sm-8">
 										<select id="carTypeId" name="carTypeId" class="selects" onclick="selectCarType()">
-											<c:forEach items="${carTypes }" var="carType" >
-												<option value="${carType.id}" <c:if test="${carType.id eq car.carType.id}">selected="selected"</c:if>>${carType.name }</option>
-											</c:forEach>
+												<option value="">请选择车型</option>
+												<c:forEach var="value" items="${carTypes}">
+													<optgroup label="${value.name }">
+														<c:forEach var="subValue" items="${value.carTypeSet }">
+															<option value="${subValue.id }"
+																<c:if test="${subValue.id eq car.carType.id}">
+																	selected="selected"
+																</c:if>
+															>${subValue.name }</option>
+														</c:forEach>
+													</optgroup>
+												</c:forEach>
 										</select>
+										<input type="hidden" class="repeat"/>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">车型图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="<%=basePath %>/${car.imgPath }" onerror="<%=basePath %>resource/image/default.png" id="show_img"/>
+											<input type="hidden" name="imgPath" value="${car.imgPath}"/>
+										</div>
+										<label>
+											<span id="spanButtonPlaceholder"></span>
+										</label>
+										
 									</div>
 								</div>
 							</div>
@@ -190,7 +281,7 @@
 						<div class="panel-footer">
 							<div class="row">
 								<div class="col-sm-9 col-sm-offset-3">
-									<button id="addCate" class="btn btn-primary mr5" onclick="saveCar()">提交</button>
+									<button id="addCate" class="btn btn-primary mr5" onclick="saveCar()" type="button">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
 								</div>
 							</div>
@@ -205,6 +296,8 @@
 		</div>
 		<!-- mainwrapper -->
 	</section>
+	<!-- 上传图片页面 -->
+	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
 	<script type="text/javascript">
 		$('[data-toggle="tooltip"]').popover();
 	</script>

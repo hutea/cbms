@@ -61,7 +61,7 @@ public class CommonUtil {
 		}
 		return stringBuffer.toString();
 	}
-	
+
 	/**
 	 * 随机获取数字
 	 * 
@@ -74,7 +74,7 @@ public class CommonUtil {
 		if (length <= 0) {
 			return "";
 		}
-		char[] randomChar = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+		char[] randomChar = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 		Random random = new Random();
 		StringBuffer stringBuffer = new StringBuffer();
 		for (int i = 0; i < length; i++) {
@@ -83,8 +83,7 @@ public class CommonUtil {
 		}
 		return stringBuffer.toString();
 	}
-	
-	
+
 	/**
 	 * 根据指定长度 分隔字符串
 	 * 
@@ -172,9 +171,10 @@ public class CommonUtil {
 		}
 		return date;
 	}
-	
+
 	/**
 	 * 将float类型转成int类型
+	 * 
 	 * @param f
 	 * @return
 	 */
@@ -182,9 +182,10 @@ public class CommonUtil {
 		return Integer.parseInt(new BigDecimal(f).setScale(0,
 				BigDecimal.ROUND_HALF_UP).toString());
 	}
-	
+
 	/**
 	 * 判断是否为数字
+	 * 
 	 * @param str
 	 * @return
 	 */
@@ -210,17 +211,43 @@ public class CommonUtil {
 		}
 		return date;
 	}
-	
+
 	/**
 	 * 生存上传文件夹路径
+	 * 
 	 * @return
 	 */
 	public static String getDateFloder() {
 		Calendar ca = Calendar.getInstance();
 		String separator = "/";// File.separator
 		return separator + ca.get(Calendar.YEAR) + separator
-				+ ca.get(Calendar.MONTH) + separator
+				+ (ca.get(Calendar.MONTH) + 1) + separator
 				+ ca.get(Calendar.DAY_OF_MONTH);
+	}
+
+	/**
+	 * 获取上传图片名称
+	 * 
+	 * @return
+	 */
+	public static String getUploadImageName() {
+		String fileName = DateTimeHelper.formatDateTimetoString(new Date(),
+				"yyyyMMddHHmmss");
+		fileName += IDGenerator.getRandomString(6, 1);
+
+		return fileName;
+	}
+
+	/**
+	 * 生成订单编号
+	 * 返回格式：yyyyMMddHHmmss+6位随便机数字
+	 * @return
+	 */
+	public static String getOrderNum() {
+		String orderNumber = DateTimeHelper.formatDateTimetoString(new Date(),
+				"yyyyMMddHHmmss");
+		orderNumber += IDGenerator.getRandomString(6, 1);
+		return orderNumber;
 	}
 
 	/**
@@ -340,6 +367,7 @@ public class CommonUtil {
 
 	/**
 	 * 将中文单个字符转成拼音
+	 * 
 	 * @param c
 	 * @return
 	 */
@@ -358,30 +386,31 @@ public class CommonUtil {
 		// 只取一个发音，如果是多音字，仅取第一个发音
 		return pinyin[0];
 	}
-	
+
 	/**
 	 * 将中文字符串转化成拼音
+	 * 
 	 * @param str
 	 * @return
 	 */
-    public static String getStringPinYin(String str) {
-		  StringBuilder sb = new StringBuilder();
-		  String tempPinyin = null;
-		  for(int i = 0; i < str.length(); ++i)  {
-	           tempPinyin = getCharacterPinYin(str.charAt(i));
-	           if(tempPinyin == null)  {
-	                    // 如果str.charAt(i)非汉字，则保持原样
-	              sb.append(str.charAt(i));
-	           } else {
-	              sb.append(tempPinyin);
-	           }
-		  }
-		  return sb.toString();
-    }
-    
-    //拼音方法测试
-    public static void main(String[] args) {
-    	String m = getStringPinYin("但");
-    	System.out.println(m);
+	public static String getStringPinYin(String str) {
+		StringBuilder sb = new StringBuilder();
+		String tempPinyin = null;
+		for (int i = 0; i < str.length(); ++i) {
+			tempPinyin = getCharacterPinYin(str.charAt(i));
+			if (tempPinyin == null) {
+				// 如果str.charAt(i)非汉字，则保持原样
+				sb.append(str.charAt(i));
+			} else {
+				sb.append(tempPinyin);
+			}
+		}
+		return sb.toString();
+	}
+
+	// 拼音方法测试
+	public static void main(String[] args) {
+		String m = getStringPinYin("但");
+		System.out.println(m);
 	}
 }

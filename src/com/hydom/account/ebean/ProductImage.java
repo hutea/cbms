@@ -5,17 +5,17 @@
  */
 package com.hydom.account.ebean;
 
-import java.io.Serializable;
-
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Transient;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import javax.validation.constraints.Min;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.CompareToBuilder;
 import org.hibernate.validator.constraints.Length;
-import org.springframework.web.multipart.MultipartFile;
+
+import com.hydom.util.dao.BaseEntity;
 
 /**
  * Entity - 商品图片
@@ -23,8 +23,9 @@ import org.springframework.web.multipart.MultipartFile;
  * 
  * 
  */
-@Embeddable
-public class ProductImage implements Serializable, Comparable<ProductImage> {
+@Entity
+@Table(name="t_product_product_image")
+public class ProductImage extends BaseEntity {
 
 	private static final long serialVersionUID = -673883300094536107L;
 
@@ -49,6 +50,17 @@ public class ProductImage implements Serializable, Comparable<ProductImage> {
 	@Column(name = "orders")
 	private Integer order;
 
+	@ManyToOne(fetch=FetchType.LAZY)
+	@JoinColumn(name="product_id")
+	private Product product;
+	
+	public Product getProduct() {
+		return product;
+	}
+
+	public void setProduct(Product product) {
+		this.product = product;
+	}
 
 	/**
 	 * 获取标题
@@ -165,18 +177,5 @@ public class ProductImage implements Serializable, Comparable<ProductImage> {
 	public void setOrder(Integer order) {
 		this.order = order;
 	}
-
 	
-	/**
-	 * 实现compareTo方法
-	 * 
-	 * @param productImage
-	 *            商品图片
-	 * @return 比较结果
-	 */
-	@Override
-	public int compareTo(ProductImage productImage) {
-		return new CompareToBuilder().append(getOrder(), productImage.getOrder()).toComparison();
-	}
-
 }

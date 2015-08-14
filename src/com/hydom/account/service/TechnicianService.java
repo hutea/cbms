@@ -12,6 +12,13 @@ import com.hydom.util.dao.DAO;
 public interface TechnicianService extends DAO<Technician> {
 
 	/**
+	 * 查询是否有空闲技师
+	 * 
+	 * @return
+	 */
+	public boolean isFree();
+
+	/**
 	 * 服务完成要先到数据库里查询没有被接单的订单
 	 */
 	public void serverFinish();

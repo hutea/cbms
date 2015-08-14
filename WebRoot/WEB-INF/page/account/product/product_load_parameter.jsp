@@ -12,9 +12,24 @@
 		<input type="hidden" name="parameterIds" value="${value.id }"/>
 		<label class="col-sm-4 control-label">${value.name }</label>
 		<div class="col-sm-8">
-			<input type="text" name="parameterValues" class="form-control" maxlength="200" />
+			<input type="text" name="parameterValues" class="form-control" maxlength="200" id="${value.id }"/>
 		</div>
 	</div>
 </c:forEach>
-
+<script type="text/javascript">
+	var array = '${productPara}';
+	console.log(array);
+	$(document).ready(function(){
+		setParameterValue();
+	});
+	function setParameterValue(){
+		if(array != ""){
+			var ar = eval("("+array+")");
+			for(var i in ar){
+				var data = ar[i];
+				$("#"+data.id).val(data.value);
+			}
+		}
+	}
+</script>
 

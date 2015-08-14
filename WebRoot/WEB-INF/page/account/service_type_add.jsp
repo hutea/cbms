@@ -63,25 +63,6 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/html5shiv.js"></script>
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
-	
-<script type="text/javascript">
-	function checkUsername() {
-		var username = $("#username").val();
-		$.post("${pageContext.request.contextPath}/manage/serviceType/checkUsername.action",
-		{
-			username : username
-		},
-		function(data) {
-			if (data == 0 && username != "" && username != null) {//表示 帐户存在
-				$("#username_error").html("用户名已经存在");
-				$("#repeat").val("");
-			} else {
-				$("#username_error").html("");
-				$("#repeat").val("success");
-			}
-		});
-	}
-</script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -140,9 +121,8 @@ span.from-span{
 						</div>
 						<form class="form-horizontal form-bordered" id="inputForm"
 							action="<%=basePath%>manage/serviceType/save" method="POST">
-							<input type="hidden" name="id" value="${entity.id }"/>
 							<div class="panel-body nopadding">
-								<div class="form-group">
+								<%-- <div class="form-group">
 									<label class="col-sm-4 control-label">服务类型</label>
 									<div class="col-sm-8">
 										<select id="serviceType" name="type">
@@ -150,20 +130,21 @@ span.from-span{
 											<option value="2" <c:if test="${entity.type eq 2}">selected="selected"</c:if> >美容服务</option>
 										</select>
 									</div>
-								</div>
+								</div> --%>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">服务名称</label>
 									<div class="col-sm-8">
-										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
+										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }" onchange="checkName();"/>
+										<label id="labelName">
+											<span class='success'></span>
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">服务图片</label>
 									<div class="col-sm-8">
 										<div class="img_div">
-											<img alt="" src="
-											<c:if test="${!empty entity}"><%=basePath %>/${entity.imgPath }</c:if>
-											" onerror="<%=basePath %>/resource/image/default.png" id="show_img">
+											<img alt="" src="" onerror="<%=basePath %>/resource/image/default.png" id="show_img">
 											<input type="hidden" name="imgPath" value="${entity.imgPath }"/>
 										</div>
 										<label> <%-- style="position: absolute;  float: right;  margin-left: 20%;" --%>
@@ -174,29 +155,41 @@ span.from-span{
 								<div class="form-group">
 									<label class="col-sm-4 control-label">简介</label>
 									<div class="col-sm-8">
-										<input type="text" name="remark" class="form-control" value="${entity.remark }" placeholder="20字以内" maxlength="20"/>
+										<input type="text" name="remark" class="form-control" value="" placeholder="20字以内" maxlength="20"/>
 									</div>
 								</div>
 								<div class="form-group">
+									<label class="col-sm-4 control-label">服务车型简介</label>
+									<div class="col-sm-8">
+										<input type="text" name="remark1" class="form-control" value="" placeholder="200字以内" maxlength="200"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">服务介绍</label>
+									<div class="col-sm-8">
+										<input type="text" name="remark2" class="form-control" value="" placeholder="200字以内" maxlength="200"/>
+									</div>
+								</div>
+								<%-- <div class="form-group">
 									<label class="col-sm-4 control-label">服务时间</label>
 									<div class="col-sm-8">
 										<input type="text" name="serviceTime" class="form-control" value="${entity.serviceTime }" style="width: 90%;"/><span class="from-span">分钟</span>
 									</div>
-								</div>
+								</div> --%>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">服务单价</label>
+									<label class="col-sm-4 control-label">服务单价(元)</label>
 									<div class="col-sm-8">
-										<input type="text" name="price" class="form-control" value="${entity.price }" style="width: 90%;"/><span class="from-span">元</span>
+										<input type="text" name="price" class="form-control" value="0"/>
 									</div>
 								</div>
-								<div class="form-group">
+								<%-- <div class="form-group">
 									<label class="col-sm-4 control-label">服务方式</label>
 									<div class="col-sm-8 payTypeDiv">
 										<label><input type="radio" name="payType" value="1" <c:if test="${entity.payType eq 1 || empty entity.payType}">checked="checked"</c:if> />全部</label>
 										<label><input type="radio" name="payType" value="2" <c:if test="${entity.payType eq 2 }">checked="checked"</c:if> />上门服务</label>
 										<label><input type="radio" name="payType" value="3" <c:if test="${entity.payType eq 3 }">checked="checked"</c:if> />门店服务</label>
 									</div>
-								</div>
+								</div> --%>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">排序</label>
 									<div class="col-sm-8">
@@ -208,7 +201,7 @@ span.from-span{
 								<div class="row">
 									<div class="col-sm-9 col-sm-offset-3">
 										<button id="addCate" class="btn btn-primary mr5"
-											onclick="saveType()">提交</button>
+											onclick="saveType()" type="button">提交</button>
 										<button class="btn btn-dark" type="reset">重置</button>
 									</div>
 								</div>
@@ -235,8 +228,56 @@ span.from-span{
 			});
 		});
 		function saveType(){
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				alert("请输入服务名称");
+				return;
+			}
+			var m = $("#labelName").find("span.success");
+			if(m.length <= 0){
+				alert("该名称已存在,请重新输入");
+				return;
+			}
+			
+			var price = $("input[name='price']").val();
+			if(isNaN(price)){
+				alert("服务价格请输入数字");
+				return;
+			}
+			
 			$("#inputForm").submit();
 		}
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#labelName").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}else{
+				
+			};
+		}
+		
+		function checkName() {
+			setErrorMessage("",2);
+			var username = $("input[name='name']").val();
+			if(username == ""){
+				return;
+			}
+			var url = "<%=basePath%>manage/serviceType/checkName";
+			var data = {
+				name : username
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		};
 	</script>
 </body>
 </html>

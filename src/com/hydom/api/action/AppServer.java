@@ -1,49 +1,91 @@
 package com.hydom.api.action;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 
+import net.sf.json.JSONObject;
+
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.taglibs.standard.lang.jstl.OrOperator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
+import cn.jpush.api.JPushClient;
+
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.google.gson.Gson;
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.Comment;
+import com.hydom.account.ebean.CommentImg;
+import com.hydom.account.ebean.FeeRecord;
+import com.hydom.account.ebean.Feedback;
+import com.hydom.account.ebean.IndexAdvert;
 import com.hydom.account.ebean.Member;
+import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.News;
 import com.hydom.account.ebean.Order;
+import com.hydom.account.ebean.Parameter;
 import com.hydom.account.ebean.Product;
 import com.hydom.account.ebean.ProductBrand;
 import com.hydom.account.ebean.ProductCategory;
+import com.hydom.account.ebean.ProductImage;
+import com.hydom.account.ebean.ProductLabel;
 import com.hydom.account.ebean.ServerOrder;
 import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.ebean.ServiceType;
+import com.hydom.account.ebean.SystemParam;
+import com.hydom.account.ebean.Technician;
 import com.hydom.account.service.AreaService;
+import com.hydom.account.service.CommentImgService;
+import com.hydom.account.service.CommentService;
+import com.hydom.account.service.FeeRecordService;
+import com.hydom.account.service.FeedbackService;
+import com.hydom.account.service.IndexAdvertService;
+import com.hydom.account.service.MemberCouponService;
 import com.hydom.account.service.MemberService;
 import com.hydom.account.service.NewsService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ProductBrandService;
 import com.hydom.account.service.ProductCategoryService;
 import com.hydom.account.service.ProductService;
+import com.hydom.account.service.ServerOrderDetailService;
+import com.hydom.account.service.ServerOrderService;
 import com.hydom.account.service.ServiceTypeService;
+import com.hydom.account.service.SystemParamService;
 import com.hydom.api.ebean.ShortMessage;
 import com.hydom.api.ebean.Token;
 import com.hydom.api.service.ShortMessageService;
@@ -51,12 +93,20 @@ import com.hydom.api.service.TokenService;
 import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.core.server.ebean.CarType;
+import com.hydom.core.server.ebean.Coupon;
 import com.hydom.core.server.service.CarBrandService;
 import com.hydom.core.server.service.CarService;
 import com.hydom.core.server.service.CarTypeService;
+import com.hydom.core.server.service.CouponService;
 import com.hydom.user.ebean.UserCar;
 import com.hydom.user.service.UserCarService;
+import com.hydom.util.CommonAttributes;
+import com.hydom.util.CommonUtil;
+import com.hydom.util.CouponUseExcepton;
+import com.hydom.util.DateTimeHelper;
 import com.hydom.util.IDGenerator;
+import com.hydom.util.PushUtil;
+import com.hydom.util.UploadImageUtil;
 import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.PageView;
 
@@ -91,19 +141,56 @@ public class AppServer {
 	private ProductService productService;
 	@Resource
 	private NewsService newsService;
+	@Resource
+	private FeedbackService feedbackService;
+	@Resource
+	private IndexAdvertService indexAdvertService;
+	@Resource
+	private MemberCouponService memberCouponService;
+	@Resource
+	private CouponService couponService;
+	@Resource
+	private ServerOrderService serverOrderService;
+	@Resource
+	private ServerOrderDetailService serverOrderDetailService;
+	@Resource
+	private CommentService commentService;
+	@Resource
+	private CommentImgService commentImgService;
+	@Resource
+	private FeeRecordService feeRecordService;
+	@Resource
+	private SystemParamService systemParamService;
+
+	@Autowired
+	private HttpServletRequest request;
 
 	private Log log = LogFactory.getLog("dataServerLog");
+	private ObjectMapper mapper = new ObjectMapper();
+
+	public AppServer() {
+		mapper.getSerializerProvider().setNullValueSerializer(
+				new JsonSerializer<Object>() {
+					@Override
+					public void serialize(Object value, JsonGenerator jg,
+							SerializerProvider sp) throws IOException,
+							JsonProcessingException {
+						jg.writeString("");
+					}
+
+				});
+	}
 
 	/**
 	 * 注册登录
 	 */
 	@RequestMapping("/user/signin")
 	public @ResponseBody
-	String signin(String phone, String code) {
+	String userSignin(String phone, String code) {
 		try {
 			log.info("App【用户登录】：" + "手机号=" + phone + " 验证码=" + code);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			// step1：验证码合法性验证
 			ShortMessage shortMessage = shortMessageService.findByPhoneAndCode(
 					phone, code, 1);
@@ -128,6 +215,8 @@ public class AppServer {
 				member = new Member();
 				member.setMobile(phone);
 				memberService.save(member);
+			} else if (!member.getVisible()) {// 帐号被停用
+				dataMap.put("result", "101");// 帐号被停用？？？
 			}
 			// step3：产生安全令牌-->获取上次的令牌环?
 			Token token = new Token();
@@ -141,6 +230,30 @@ public class AppServer {
 			dataMap.put("uid", member.getId());
 			dataMap.put("token", token.getAuthid());
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 退出登录
+	 */
+	@RequestMapping("/user/signout")
+	public @ResponseBody
+	String userSignout(String uid, String token) {
+		try {
+			log.info("App【用户退出登录】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Token tk = tokenService.findToken(uid, token);
+			if (token != null) {
+				tokenService.delete(tk.getId());
+			}
+			dataMap.put("result", "001");
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -153,12 +266,12 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/server/category", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String category(@RequestParam(required = false) String uid,
+	String serverCategory(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token) {
 		try {
 			log.info("App【获取服务类型】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 服务类型 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("type", "desc");// 使得上门洗车和上门保养排前
@@ -166,6 +279,49 @@ public class AppServer {
 			StringBuffer jpql = new StringBuffer("o.visible=?1");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			List<ServiceType> types = serviceTypeService.getScrollData(0, 10,
+					jpql.toString(), params.toArray(), orderby).getResultList();
+			for (ServiceType type : types) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("scid", type.getId());
+				map.put("scname", type.getName());
+				map.put("scimage", type.getImgPath());
+				map.put("scremark", type.getRemark());
+				map.put("scremark1", type.getRemark1());
+				map.put("scremark2", type.getRemark2());
+				map.put("scprice", type.getPrice());
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取服务时保养类型
+	 */
+	@RequestMapping(value = "/server/maintenance", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverMaintenance(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【获取服务保养类型】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 服务类型 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("order", "asc");
+			StringBuffer jpql = new StringBuffer("o.visible=?1 and o.type=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(1);
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 			List<ServiceType> types = serviceTypeService.getScrollData(
 					jpql.toString(), params.toArray(), orderby).getResultList();
@@ -183,6 +339,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -195,12 +352,12 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/server/carbrand", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String carbrand(@RequestParam(required = false) String uid,
+	String serverCarbrand(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token) {
 		try {
 			log.info("App【获取车辆品牌信息】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 车辆品牌 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -213,7 +370,7 @@ public class AppServer {
 			for (CarBrand brand : brands) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("cbid", brand.getId());
-				map.put("name", brand.getName());
+				map.put("cbname", brand.getName());
 				map.put("fletter", brand.getJp());
 				map.put("cbimage", brand.getImgPath());
 				list.add(map);
@@ -221,6 +378,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -233,21 +391,23 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/server/carseries", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String carseries(@RequestParam(required = false) String uid,
+	String serverCarSeries(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, String cbid) {
 		try {
 			log.info("App【获取车系信息】：" + "uid=" + uid + " token=" + token
 					+ " 品牌cbid=" + cbid);
 			new MappingJackson2HttpMessageConverter();
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 顶级车系 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
-			StringBuffer jpql = new StringBuffer("o.visible=?1 and o.level=?2");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.level=?2 and o.carBrand.id=?3");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(1);
+			params.add(cbid);
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 			List<CarType> topCarTypes = carTypeService.getScrollData(
 					jpql.toString(), params.toArray(), orderby).getResultList();
@@ -261,7 +421,7 @@ public class AppServer {
 				for (CarType type : types) {
 					Map<String, Object> ctMap = new LinkedHashMap<String, Object>();
 					ctMap.put("csid", type.getId());
-					ctMap.put("name", type.getName());
+					ctMap.put("csname", type.getName());
 					csList.add(ctMap);
 				}
 				map.put("cslist", csList);
@@ -270,6 +430,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -282,13 +443,13 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/server/carmodel", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String carmodel(@RequestParam(required = false) String uid,
+	String serverCarmodel(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, String csid) {
 		try {
 			log.info("App【获取车型信息】：" + "uid=" + uid + " token=" + token
 					+ " 车系csid=" + csid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 车型 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -303,12 +464,13 @@ public class AppServer {
 			for (Car car : cars) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("cmid", car.getId());
-				map.put("name", car.getName());
+				map.put("cmname", car.getName());
 				list.add(map);
 			}
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -324,14 +486,15 @@ public class AppServer {
 	 * @param scid
 	 * @return
 	 */
+	@Deprecated
 	@RequestMapping(value = "/server/arealist", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String arealist(@RequestParam(required = false) String uid,
+	String serverArealist(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token) {
 		try {
 			log.info("App【获取贵阳市 下属地区信息】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 区信息 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -352,6 +515,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -359,15 +523,16 @@ public class AppServer {
 		}
 	}
 
+	@Deprecated
 	@RequestMapping(value = "/server/streetlist", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String streetlist(@RequestParam(required = false) String uid,
+	String serverStreetlist(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, String aid) {
 		try {
 			log.info("App【获取贵阳市 下属地区信息】：" + "uid=" + uid + " token=" + token
 					+ " 区ID=" + aid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 区信息 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -388,6 +553,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -395,43 +561,209 @@ public class AppServer {
 		}
 	}
 
-	/***
-	 * 获取预约时间
-	 * 
-	 * @param date
-	 *            预约日期
-	 * @param sid
-	 *            街道ID
-	 * @param scid
-	 *            服务类型
-	 * @return
-	 */
-	@RequestMapping(value = "/server/subscribe", produces = "text/html;charset=UTF-8")
+	@RequestMapping(value = "/server/area/top/list", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String subscribe(@RequestParam(required = false) String uid,
-			@RequestParam(required = false) String token, String sid,
-			String scid, String date) {
+	String serverAreaTopList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
 		try {
-			log.info("App【获取预约时间】：" + "uid=" + uid + " token=" + token
-					+ " sid=" + sid + " scid=" + scid + " date=" + date);
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date nowDate = sdf.parse(date);
+			log.info("App【获取顶级地区信息】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
-			/** 数据获取 **/
-			List<DateMapBean> dmbs = orderService.getDateMapBean(sid, nowDate,
-					scid);
+
+			/** 区信息 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.parent is null");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-			SimpleDateFormat timeSDF = new SimpleDateFormat("HH:mm");
-			for (DateMapBean dmb : dmbs) {
+			List<Area> areas = areaService.getScrollData(jpql.toString(),
+					params.toArray(), orderby).getResultList();
+			for (Area area : areas) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
-				map.put("stime", timeSDF.format(dmb.getStartDate()));
-				map.put("etime", timeSDF.format(dmb.getEndDate()));
+				map.put("aid", area.getId());
+				map.put("name", area.getName());
 				list.add(map);
 			}
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	@RequestMapping(value = "/server/area/child/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverAreaChildList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, String aid) {
+		try {
+			log.info("App【获取 下属地区信息】：" + "uid=" + uid + " token=" + token
+					+ " 区ID=" + aid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 区信息 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.parent.id=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(aid);
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			List<Area> areas = areaService.getScrollData(jpql.toString(),
+					params.toArray(), orderby).getResultList();
+			for (Area area : areas) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("aid", area.getId());
+				map.put("name", area.getName());
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 查询是否有空闲的技师
+	 * 
+	 * @param uid
+	 * @param token
+	 * @param scid
+	 * @param bid
+	 * @param pcid
+	 * @param cmid
+	 * @return
+	 */
+	@RequestMapping(value = "/server/technician", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverTechnician(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【查询是否有空闲技师】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			dataMap.put("result", "001");
+			dataMap.put("canserver", 1);// 暂时设定为1
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	@RequestMapping(value = "/server/date", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverDate(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【查询是否有空闲技师】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Calendar calendar = Calendar.getInstance();
+			int hour = calendar.get(Calendar.HOUR_OF_DAY);
+			Date now = new Date();
+			if (hour >= 16) { // 16:00以后
+				Date thirdDay = DateTimeHelper.addDays(now, 2);
+				dataMap.put("result", "001");
+				dataMap.put("date", sdf.format(thirdDay));
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			} else {
+				Date secondDay = DateTimeHelper.addDays(now, 1);
+				dataMap.put("result", "001");
+				dataMap.put("date", sdf.format(secondDay));
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 是否有可用的优惠券
+	 */
+	@RequestMapping(value = "server/coupon", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverCoupon(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, double money,
+			@RequestParam(required = false) String pid) {
+		try {
+			log.info("App【判断是否有可用的优惠券】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			String[] pids = null;
+			if (pid != null && !"".equals(pid)) {
+				pids = pid.split("#");
+			}
+			dataMap.put("result", "001");
+			dataMap.put("usable",
+					memberCouponService.canUse(money, uid, pids) ? 1 : 0);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 是否有可用的优惠券
+	 */
+	@RequestMapping(value = "server/coupon/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String serverCouponList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, double money,
+			String pid) {
+		try {
+			log.info("App【判断是否有可用的优惠券】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			String[] pids = pid.split("#");
+			dataMap.put("result", "001");
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (MemberCoupon mc : memberCouponService.canUseList(money, uid,
+					pids)) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("cpid", mc.getId());
+				map.put("cptype", mc.getType());
+				map.put("cpname", mc.getName());
+				map.put("cpintroduction", mc.getIntroduction());
+				map.put("cpimg", mc.getImgPath());
+				if (mc.getType() == 1) {// 1=满额打折
+					map.put("cpminprice", mc.getMinPrice() + "");
+					map.put("cprate", mc.getRate() + "");
+					map.put("cpmoney", "");
+				} else if (mc.getType() == 2) {// 2=满额减免
+					map.put("cpminprice", mc.getMinPrice() + "");
+					map.put("cprate", "");
+					map.put("cpmoney", mc.getDiscount());
+
+				} else if (mc.getType() == 3) {// 3=免额多少
+					map.put("cpminprice", "");
+					map.put("cprate", "");
+					map.put("cpmoney", mc.getDiscount());
+				}
+				list.add(map);
+			}
+			dataMap.put("usable",
+					memberCouponService.canUse(money, uid, pids) ? 1 : 0);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -452,7 +784,7 @@ public class AppServer {
 			log.info("App【获取商品品牌】：" + "uid=" + uid + " token=" + token
 					+ " scid=" + scid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -473,6 +805,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -492,7 +825,7 @@ public class AppServer {
 			log.info("App【获取商品类型】：" + "uid=" + uid + " token=" + token
 					+ " scid=" + scid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -515,6 +848,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -523,7 +857,7 @@ public class AppServer {
 	}
 
 	/***
-	 * 获取默认商品
+	 * 根据车型和服务类型 获取默认商品
 	 * 
 	 */
 	@RequestMapping(value = "/product/default", produces = "text/html;charset=UTF-8")
@@ -535,31 +869,37 @@ public class AppServer {
 			log.info("App【获取商品类型】：" + "uid=" + uid + " token=" + token
 					+ " scid=" + scid + " cmid=" + cmid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 数据获取 **/
-			Product product = productService.defaultForServer(scid, cmid);
-			if (product != null) {
-				dataMap.put("result", "001");
-				dataMap.put("pid", product.getId());
-				dataMap.put("pame", product.getName());
-				dataMap.put("pimage", product.getImgPath());
-				dataMap.put("pbuynum", 12);// 商品购买数
-				dataMap.put("price", product.getPrice());
-				dataMap.put("pcomts", 200);
-				dataMap.put("result", "001");
-				String json = mapper.writeValueAsString(dataMap);
-				return json;
-			} else {
-				dataMap.put("result", "001");
-				dataMap.put("pid", "");
-				dataMap.put("pame", "");
-				dataMap.put("pimage", "");
-				dataMap.put("pbuynum", 0);
-				dataMap.put("price", 0);
-				dataMap.put("pcomts", 0);
-				String json = mapper.writeValueAsString(dataMap);
-				return json;
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			String[] sids = scid.split("#");
+			for (String sid : sids) {
+				Product product = productService.defaultForServer(sid, cmid);
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				if (product != null) {
+					map.put("scid", sid);
+					map.put("pid", product.getId());
+					map.put("pname", product.getName());
+					map.put("pimage", product.getImgPath());
+					map.put("pbuynum", 12);// 商品购买数
+					map.put("price", product.getPrice());
+					map.put("pcomts", 200);
+					list.add(map);
+				} else {
+					// map.put("scid", sid);
+					// map.put("pid", "");
+					// map.put("pname", "");
+					// map.put("pimage", "");
+					// map.put("pbuynum", 0);
+					// map.put("price", 0);
+					// map.put("pcomts", 0);
+				}
 			}
+			dataMap.put("result", "001");
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -567,34 +907,36 @@ public class AppServer {
 	}
 
 	/***
-	 * 获取商品列表
-	 * 
+	 * 获取商品列表 已选商品pids字串集(以#分隔)
 	 */
 	@RequestMapping(value = "/product/list", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String productList(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, String scid,
-			String cmid, @RequestParam(required = false) String[] pids,
-			int page, int maxresult) {
+			String cmid, @RequestParam(required = false) String pids, int page,
+			int maxresult) {
 		try {
-			log.info("App【获取商品类型】：" + "uid=" + uid + " token=" + token
-					+ " scid=" + scid + " cmid=" + cmid + " pids length="
-					+ pids.length);
+			log.info("App【获取商品列表】：" + "uid=" + uid + " token=" + token
+					+ " scid=" + scid + " cmid=" + cmid + " pids =" + pids);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 数据获取 **/
+			String[] pid = null;
+			if (pids != null && !"".equals(pids)) {
+				pid = pids.split("#");
+			}
 			PageView<Product> pageView = new PageView<Product>(maxresult, page);
 			pageView.setTotalrecord(productService.countForServer(scid, cmid,
-					pids));
+					pid));
 			pageView.setRecords(productService.listForServer(scid, cmid,
-					pageView.getFirstResult(), maxresult, pids));
+					pageView.getFirstResult(), maxresult, pid));
 
 			List<Product> products = pageView.getRecords();
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 			for (Product product : products) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("pid", product.getId());
-				map.put("pame", product.getName());
+				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
 				map.put("pbuynum", 12);// 商品购买数
 				map.put("price", product.getPrice());
@@ -602,9 +944,287 @@ public class AppServer {
 				list.add(map);
 			}
 			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
 
+	/***
+	 * 获取商品详细
+	 * 
+	 */
+	@RequestMapping(value = "/product/detail", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productDetail(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, String pid) {
+		try {
+			log.info("App【获取商品详细】：" + "uid=" + uid + " token=" + token
+					+ " pid=" + pid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			Product product = productService.find(pid);
+			dataMap.put("result", "001");
+			dataMap.put("pid", product.getId());
+			dataMap.put("pname", product.getName());
+			dataMap.put("pbuynum", 12);// 商品购买数
+			dataMap.put("pimage", product.getImgPath());
+			if (product.getProuductUniqueType() != null
+					&& product.getProuductUniqueType() == 3) {// 特价商品：显示折扣后的价格
+				dataMap.put("price", product.getDiscountMoney());
+			} else {
+				dataMap.put("price", product.getPrice());
+			}
+			dataMap.put("pcomts", commentService.countByPid(product.getId()));
+			dataMap.put("purl", "/webpage/product/" + product.getId());
+			dataMap.put("cmsup", product.getUseAllCar());
+			List<ProductImage> piList = product.getProductImages();
+			List<Map<String, String>> imglist = new ArrayList<Map<String, String>>();
+			/** 商品图片列表 */
+			for (ProductImage image : piList) {
+				Map<String, String> map = new LinkedHashMap<String, String>();
+				map.put("pimg", image.getMedium());
+				imglist.add(map);
+			}
+			dataMap.put("imglist", imglist);
+
+			/** 商品支持的售后服务名称列表 */
+			List<Map<String, String>> suplist = new ArrayList<Map<String, String>>();
+			Set<ProductLabel> plList = product.getLabels();
+			for (ProductLabel pl : plList) {
+				Map<String, String> map = new LinkedHashMap<String, String>();
+				map.put("suname", pl.getLabelName());
+				suplist.add(map);
+			}
+			dataMap.put("suplist", suplist);
+
+			/** 商品参数信息列表 */
+			Map<Parameter, String> paramMap = product.getParameterValue();
+			List<Map<String, String>> paramlist = new ArrayList<Map<String, String>>();
+			for (Parameter para : paramMap.keySet()) {
+				Map<String, String> map = new LinkedHashMap<String, String>();
+				map.put("paramname", para.getName());
+				map.put("paramvalue", paramMap.get(para));
+				paramlist.add(map);
+			}
+			dataMap.put("paramlist", paramlist);
+
+			/** 支持的车型信息 */
+			List<Map<String, String>> cmlist = new ArrayList<Map<String, String>>();
+			if (product.getUseAllCar() != 0) {// 0表示支持所有车型
+				Set<Car> cars = product.getCarSet();
+				for (Car car : cars) {
+					Map<String, String> map = new LinkedHashMap<String, String>();
+					CarType cartype = car.getCarType();
+					CarBrand carBrand = cartype.getCarBrand();
+					map.put("cmname",
+							carBrand.getName() + " " + cartype.getName() + " "
+									+ car.getName());
+					cmlist.add(map);
+				}
+			}
+			dataMap.put("cmlist", cmlist);
+
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * app首页品牌推荐
+	 * 
+	 */
+	@RequestMapping(value = "/product/brand/recommend", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productBrandRecommend(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【获取品牌推荐信息】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			ProductBrand productBrand = productBrandService
+					.findOneRecommendBrand();
+			dataMap.put("result", "001");
+			if (productBrand != null) {
+				dataMap.put("bname", productBrand.getName());
+				dataMap.put("bimage", productBrand.getImgPath());
+			} else {
+				dataMap.put("bname", "");
+				dataMap.put("bimage", "");
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取品牌推荐下的商品列表
+	 * 
+	 */
+	@RequestMapping(value = "product/brand/recommend/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productBrandRecommendList(
+			@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, int page,
+			int maxresult) {
+		try {
+			log.info("App【获取品牌推荐 商品列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			ProductBrand productBrand = productBrandService
+					.findOneRecommendBrand();
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			if (productBrand != null) {
+				PageView<Product> pageView = new PageView<Product>(maxresult,
+						page);
+				LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+				orderby.put("id", "desc");
+				StringBuffer jpql = new StringBuffer(
+						"o.visible=?1 and o.productBrand.id=?2");
+				List<Object> params = new ArrayList<Object>();
+				params.add(true);
+				params.add(productBrand.getId());
+				pageView.setQueryResult(productService.getScrollData(
+						pageView.getFirstResult(), maxresult, jpql.toString(),
+						params.toArray(), orderby));
+				List<Product> products = pageView.getRecords();
+				for (Product product : products) {
+					Map<String, Object> map = new LinkedHashMap<String, Object>();
+					map.put("pid", product.getId());
+					map.put("pname", product.getName());
+					map.put("pimage", product.getImgPath());
+					map.put("pbuynum", 12);// 商品购买数
+					map.put("price", product.getPrice());
+					map.put("pcomts", 200);
+					list.add(map);
+				}
+				dataMap.put("result", "001");
+				dataMap.put("pages", pageView.getTotalPage());
+				dataMap.put("list", list);
+			} else {
+				dataMap.put("result", "001");
+				dataMap.put("pages", 0);
+				dataMap.put("list", list);
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取精品推荐下的商品列表
+	 * 
+	 */
+	@RequestMapping(value = "product/boutique/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productBoutiqueList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, int page,
+			int maxresult) {
+		try {
+			log.info("App【获取精品推荐 商品列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			PageView<Product> pageView = new PageView<Product>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.prouductUniqueType=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(2);// 2、限量精品 3、天天特价 4、绿色出行
+			pageView.setQueryResult(productService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<Product> products = pageView.getRecords();
+			for (Product product : products) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pid", product.getId());
+				map.put("pname", product.getName());
+				map.put("pimage", product.getImgPath());
+				map.put("ptotalnum", product.getProductCount());// 商口总数
+				map.put("pbuynum", product.getBuyProductCount());// 已抢数
+				map.put("price", product.getPrice());
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取绿色出行的商品列表
+	 * 
+	 */
+	@RequestMapping(value = "product/green/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productGreenList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, int page,
+			int maxresult) {
+		try {
+			log.info("App【获取绿色出行 商品列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+			PageView<Product> pageView = new PageView<Product>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.prouductUniqueType=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(4);// 2、限量精品 3、天天特价 4、绿色出行
+			pageView.setQueryResult(productService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<Product> products = pageView.getRecords();
+			for (Product product : products) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pid", product.getId());
+				map.put("pname", product.getName());
+				map.put("pimage", product.getImgPath());
+				map.put("pbuynum", 12);// 商品购买数
+				map.put("price", product.getPrice());
+				map.put("pcomts", 200);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -613,32 +1233,316 @@ public class AppServer {
 	}
 
 	/**
-	 * 查询是否有空闲的技师
+	 * 获取商品评论分页数据
 	 * 
-	 * @param uid
-	 * @param token
-	 * @param scid
-	 * @param bid
-	 * @param pcid
-	 * @param cmid
 	 * @return
 	 */
-	@RequestMapping(value = "/server/Technician", produces = "text/html;charset=UTF-8")
+	@RequestMapping(value = "product/comment/list", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String serverTechnician(@RequestParam(required = false) String uid,
-			@RequestParam(required = false) String token) {
+	String productCommentList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, int page,
+			int maxresult, String pid) {
 		try {
-			log.info("App【查询是否有空闲技师】：" + "uid=" + uid + " token=" + token);
+			log.info("App【商品评论 列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
 
+			/** 数据获取 **/
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+			PageView<Comment> pageView = new PageView<Comment>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.serverOrderDetail.product.id=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(pid);
+			pageView.setQueryResult(commentService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<Comment> commentList = pageView.getRecords();
+			for (Comment comt : commentList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("cid", comt.getId());
+				map.put("cphoto", comt.getMember().getPhoto());
+				map.put("cperson", comt.getMember().getNickname());
+				map.put("cmname", comt.getServerOrderDetail().getOrder()
+						.getCar().getName());
+				map.put("star", comt.getStar() + "");
+				map.put("ctime", comt.getServerOrder()); // 1小时前
+				map.put("content", 200);
+				List<Map<String, String>> imglist = new ArrayList<Map<String, String>>();
+				for (CommentImg img : commentImgService.listForTheComment(comt
+						.getId())) {
+					Map<String, String> imap = new LinkedHashMap<String, String>();
+					imap.put("img", img.getImgPath());
+					imglist.add(imap);
+				}
+				map.put("imglist", 200);
+				list.add(map);
+			}
 			dataMap.put("result", "001");
-			dataMap.put("canserver", 1);// 暂时设定为1
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取天天特价的商品列表
+	 * 
+	 */
+	@RequestMapping(value = "product/special/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productSpecialList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token, int page,
+			int maxresult) {
+		try {
+			log.info("App【获取天天特价 商品列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			PageView<Product> pageView = new PageView<Product>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.prouductUniqueType=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(3); // 2、限量精品 3、天天特价 4、绿色出行
+			pageView.setQueryResult(productService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<Product> products = pageView.getRecords();
+			for (Product product : products) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pid", product.getId());
+				map.put("pname", product.getName());
+				map.put("pimage", product.getImgPath());
+				map.put("pbuynum", 12);// 商品购买数
+				map.put("poriprice", product.getPrice()); // 商品原价
+				map.put("pdisprice", product.getDiscountMoney()); // 商品折后价
+				map.put("pdiscount", product.getDiscount()); // 商品折扣值
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取首页热卖分类列表
+	 * 
+	 */
+	@RequestMapping(value = "product/category/hot", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productCategoryHot(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【获取热卖分类列表】：" + "uid=" + uid + " token=" + token
+					+ " page=");
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("modifyDate", "desc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.hotProductCategory=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(1); // 0 非热卖 1 热卖
+			List<ProductCategory> pcList = productCategoryService
+					.getScrollData(0, 4, jpql.toString(), params.toArray(),
+							orderby).getResultList();
+			for (ProductCategory pc : pcList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pcid", pc.getId());
+				map.put("pcname", pc.getName());
+				map.put("pcimage", pc.getImgPath());
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 获取所有分类列表：进行二级分类展示
+	 * 
+	 */
+	@RequestMapping(value = "product/category/more", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productCategoryMore(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【获取热卖分类列表】：" + "uid=" + uid + " token=" + token
+					+ " page=");
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("modifyDate", "desc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer("o.visible=?1 and o.grade=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(0); // 0顶级、然后子类依次增加
+			List<ProductCategory> topList = productCategoryService
+					.getScrollData(0, 4, jpql.toString(), params.toArray(),
+							orderby).getResultList();
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (ProductCategory topPC : topList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("topid", topPC.getId());
+				map.put("topname", topPC.getName());
+				List<ProductCategory> childList = productCategoryService
+						.listChildCategory(topPC.getId());
+
+				List<Map<String, Object>> pcList = new ArrayList<Map<String, Object>>();
+				if (childList != null && childList.size() > 0) {// 有子分类
+					for (ProductCategory pc : childList) {
+						Map<String, Object> pcmap = new LinkedHashMap<String, Object>();
+						pcmap.put("pcid", pc.getId());
+						pcmap.put("pcname", pc.getName());
+						pcList.add(pcmap);
+					}
+				} else {
+					Map<String, Object> pcmap = new LinkedHashMap<String, Object>();
+					pcmap.put("pcid", topPC.getId());
+					pcmap.put("pcname", topPC.getName());
+					pcList.add(pcmap);
+				}
+				map.put("pclist", pcList);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 根据分类ID获取该分类及子分类下的所有商品
+	 * 
+	 * @param uid
+	 * @param token
+	 * @param page
+	 * @param maxresult
+	 * @return
+	 */
+	@RequestMapping(value = "product/category/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String productCategoryList(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token,
+			@RequestParam(required = false) String ucid, String pcid, int page,
+			int maxresult) {
+		try {
+			log.info("App【获取指定分类下的所有 商品列表】：" + "uid=" + uid + " token=" + token
+					+ " page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			PageView<Product> pageView = new PageView<Product>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+
+			// 准备所有子分类ID 数据
+			List<String> typeids = new ArrayList<String>();
+			typeids.add(pcid);
+			getTypeids(typeids, new String[] { pcid });
+
+			StringBuffer n = new StringBuffer();
+			for (int i = 0; i < typeids.size(); i++) {
+				n.append('?').append((i + 2)).append(',');
+			}
+			n.deleteCharAt(n.length() - 1);
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.productCategory.id in(" + n + ")");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			for (int i = 0; i < typeids.size(); i++) {
+				params.add(typeids.get(i));
+			}
+			if (ucid != null && !"".equals(ucid)) {// 适配用户车型
+				Car car = userCarService.find(ucid).getCar();
+				jpql.append("and( o.carSet in (?" + (params.size() + 1)
+						+ ") or o.useAllCar=0)");
+				params.add(car.getId());
+			}
+			pageView.setQueryResult(productService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<Product> products = pageView.getRecords();
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (Product product : products) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pid", product.getId());
+				map.put("pname", product.getName());
+				map.put("pimage", product.getImgPath());
+				map.put("pbuynum", 12);// 商品购买数
+				map.put("price", product.getPrice());
+				map.put("pcomts", 200);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 递归计算出所有子分类ID
+	 * 
+	 * @param allids
+	 *            最终的ID数组
+	 * @param pcids
+	 *            父类ID数组
+	 */
+	private void getTypeids(List<String> allids, String[] pcids) {
+		List<String> subtypeids = productCategoryService.getSubTypeid(pcids);
+		if (subtypeids != null && subtypeids.size() > 0) {
+			allids.addAll(subtypeids);
+			String[] ids = new String[subtypeids.size()];
+			for (int i = 0; i < subtypeids.size(); i++) {
+				ids[i] = subtypeids.get(i);
+			}
+			getTypeids(allids, ids);
 		}
 	}
 
@@ -673,7 +1577,6 @@ public class AppServer {
 	 *            支付方式
 	 * @return
 	 */
-
 	@RequestMapping(value = "/order/carwash/save", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String orderCarWashSave(String uid, String token, String ucid, String scid,
@@ -688,8 +1591,11 @@ public class AppServer {
 					+ lng + " address=" + address + " cleanType=" + cleanType
 					+ " payWay=" + payWay + " cpid=" + cpid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+			/** 核实价格 */
+			String[] scids = { scid };
+
+			Map<String, String> priceMap = this.calcPrice(scids, null, cpid);
 
 			/** 数据获取 **/
 			Member member = memberService.find(uid);
@@ -700,24 +1606,35 @@ public class AppServer {
 			order.setContact(contact);
 			order.setPhone(phone);
 			order.setType(1);// 表示是洗车订单
+			order.setLat(lat);
+			order.setLng(lng);
 			order.setAddress(address);
 			order.setServerWay(1);// 上门服务
 			order.setPayWay(payWay);
 			order.setCleanType(cleanType);
 			order.setMember(member);
 			order.setCar(userCar.getCar());
+			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			order.setStatus(1); // 派单中
 			/* 存储服务类型 */
 			ServerOrder serverOrder = new ServerOrder();
 			serverOrder.setName(serviceType.getName());
+			serverOrder.setPrice(serviceType.getPrice());
 			serverOrder.setServiceType(serviceType);
 			serverOrder.setOrder(order);
 			order.getServerOrder().add(serverOrder);
 			orderService.save(order);
-			orderService.bindTechnician(order.getId()); // 分配技师
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
 			String json = mapper.writeValueAsString(dataMap);
+			// new BindPushThread(order.getId()).start(); //开辟线程需处理osiv问题
+			new BindPushThread(order.getId()).run();
+			log.info("App【数据响应】：" + json);
 			return json;
+		} catch (CouponUseExcepton cue) {
+			cue.printStackTrace();
+			return "{\"result\":\"000\"}";
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -725,48 +1642,98 @@ public class AppServer {
 	}
 
 	/**
+	 * 绑定技师，推送线程
+	 * 
+	 * @author Administrator
+	 * 
+	 */
+	class BindPushThread extends Thread {
+		private String orderid;
+
+		public BindPushThread(String orderid) {
+			this.orderid = orderid;
+		}
+
+		@Override
+		public void run() {
+			boolean bindResult = orderService.bindTechnician(orderid); // 分配技师
+			if (bindResult) {// 执行推送
+				Order order = orderService.find(orderid);
+				Map<String, String> dataMap = new LinkedHashMap<String, String>();
+				dataMap.put("orderId", order.getId());
+				dataMap.put("orderNum", order.getNum());
+				dataMap.put("contact", order.getContact());
+				dataMap.put("phone", order.getPhone());
+				dataMap.put("car", order.getCar().getName());
+				dataMap.put("carNum", order.getCarNum());
+				dataMap.put("carColor", order.getCarColor());
+				dataMap.put("cleanType", order.getCleanType() + "");
+				dataMap.put("mlng", order.getLng() + "");
+				dataMap.put("mlat", order.getLat() + "");
+				try {// 保留时长根据 “几分钟用户不响应重新分配订单”来设定
+					String json = mapper.writeValueAsString(dataMap);
+					PushUtil.push("一动车保", "您有一个新的订单，请查收.", 86400, dataMap,
+							order.getTechMember().getPushId());
+					log.info("【推送】" + json);
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	/**
 	 * 提交保养订单
 	 * 
-	 * @param uid
-	 * @param token
-	 * @param cmid
-	 *            车型ID
-	 * @param stime
-	 *            预约时间
-	 * @param phone
-	 *            联系电话
-	 * @param contact
-	 *            联系人
-	 * @param address
-	 *            详细地址
-	 * @param payWay
-	 *            支付方式
-	 * @param plateNumber
-	 *            车牌号
-	 * @param color
-	 *            车辆颜色
 	 * @param httpData
 	 *            json数据格式
 	 *            {"scid1":{"p1":1,"p2":2},"scid2":{"p3":2,"p4":3,"p5":3}}
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	@RequestMapping(value = "/order/save", produces = "text/html;charset=UTF-8")
+	@RequestMapping(value = "/order/server/save", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String orderServerSave(String uid, String token, String ucid, String stime,
-			String contact, String phone, String plateNumber, String color,
-			double lat, double lng, String address, int payWay,
-			String httpData, @RequestParam(required = false) String cpid) {
+			String etime, String contact, String phone, String plateNumber,
+			String color, double lat, double lng, String address, int payWay,
+			String httpData, @RequestParam(required = false) String cpid,
+			@RequestParam(required = false) String remark) {
 		try {
 			log.info("App【提交保养订单】：" + "uid=" + uid + " token=" + token
-					+ " ucid=" + ucid + " stime=" + stime + " contract="
-					+ contact + " phone=" + phone + " plateNumber="
-					+ plateNumber + " color=" + color + " lat=" + lat + " lng="
-					+ lng + " address=" + address + " payWay=" + payWay
-					+ " httpData=" + httpData + " cpid=" + cpid);
+					+ " ucid=" + ucid + " stime=" + stime + " etime=" + etime
+					+ " contract=" + contact + " phone=" + phone
+					+ " plateNumber=" + plateNumber + " color=" + color
+					+ " lat=" + lat + " lng=" + lng + " address=" + address
+					+ " payWay=" + payWay + " httpData=" + httpData + " cpid="
+					+ cpid + " remark=" + remark);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+			/**************** 再次检查预约服务 时间 STRART **************/
+			Calendar calendar = Calendar.getInstance();
+			int hour = calendar.get(Calendar.HOUR_OF_DAY);
+			Date now = new Date();
+			if (hour >= 16) { // 16:00以后
+				SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd");
+				Date thirdDay = DateTimeHelper.addDays(now, 2);
+				String shouldDate = sdfDate.format(thirdDay);
+				if (!stime.contains(shouldDate) || !etime.contains(shouldDate)) { // 非正常日期
+					dataMap.put("result", "501");// 预约服务日期过期
+					String json = mapper.writeValueAsString(dataMap);
+					return json;
+				}
+			} else {
+				SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd");
+				Date secondDay = DateTimeHelper.addDays(now, 1);
+				String shouldDate = sdfDate.format(secondDay);
+				if (!stime.contains(shouldDate) || !etime.contains(shouldDate)) { // 非正常日期
+					dataMap.put("result", "501");// 预约服务日期过期
+					String json = mapper.writeValueAsString(dataMap);
+					return json;
+				}
+			}
+			/**************** 再次检查预约服务 时间END **************/
 
 			/** 数据获取 **/
 			Member member = memberService.find(uid);
@@ -777,12 +1744,17 @@ public class AppServer {
 			order.setStartDate(sdf.parse(stime));
 			order.setPhone(phone);
 			order.setContact(contact);
+			order.setType(2); // 上门保养订单
 			order.setAddress(address);
 			order.setServerWay(1);
 			order.setPayWay(payWay);
 			order.setMember(member);
 			order.setCar(car);
-			// order.setServiceType(serviceType);
+			order.setStartDate(sdf.parse(stime));
+			order.setEndDate(sdf.parse(etime));
+			order.setRemark(remark);
+			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			order.setStatus(11); // 预约成功
 			/** 解析httpData Json数据包 **/
 			Map<String, Map<String, Integer>> packMap = mapper.readValue(
 					httpData, Map.class);
@@ -790,29 +1762,184 @@ public class AppServer {
 				ServiceType serviceType = serviceTypeService.find(scid);
 				ServerOrder so = new ServerOrder();
 				so.setName(serviceType.getName());
+				so.setPrice(serviceType.getPrice());
 				so.setServiceType(serviceType);
 				so.setOrder(order);
-				order.getServerOrder().add(so); // 添加对应服务
 				Map<String, Integer> pmap = packMap.get(scid);
 				for (String pid : pmap.keySet()) {
 					Product product = productService.find(pid);
 					ServerOrderDetail sod = new ServerOrderDetail();
 					sod.setPrice(product.getPrice());
+					sod.setCount(pmap.get(pid).floatValue());
 					sod.setName(product.getName());
 					sod.setServerOrder(so);
 					sod.setOrder(order);
+					sod.setProduct(product);
 					order.getServerOrderDetail().add(sod);
+					so.getServerOrderDetail().add(sod);
 				}
+				order.getServerOrder().add(so); // 添加对应服务
 			}
 			orderService.save(order);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
 		}
+	}
+
+	/**
+	 * 提交产品订单 《没有对应的地区数据》
+	 */
+	@RequestMapping(value = "/order/product/save", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String orderProductSave(String uid, String token, String pid,
+			String pnumber, String contact, String phone, String plateNumber,
+			String aid, String address, int payWay,
+			@RequestParam(required = false) String cpid,
+			@RequestParam(required = false) String ucid) {
+		try {
+			log.info("App【提交产品订单】：" + "uid=" + uid + " token=" + token
+					+ " ucid=" + ucid + " contract=" + contact + " phone="
+					+ phone + " plateNumber=" + plateNumber + " address="
+					+ address + " ucid=" + ucid + " payWay=" + payWay
+					+ " cpid=" + cpid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			/** 数据获取 **/
+			Member member = memberService.find(uid);
+			Order order = new Order();
+			order.setPhone(phone);
+			order.setContact(contact);
+			order.setType(3); // 纯商品订单
+			order.setAddress(address);
+			order.setServerWay(1);
+			order.setPayWay(payWay);
+			order.setMember(member);
+			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			order.setStatus(21); // 已下单
+
+			if (ucid != null && !"".equals(ucid)) {
+				UserCar userCar = userCarService.find(ucid);
+				if (userCar != null) {
+					Car car = userCar.getCar();
+					order.setCar(car);
+				}
+			}
+			Product product = productService.find(pid);
+			ServerOrderDetail sod = new ServerOrderDetail();
+			sod.setPrice(product.getPrice());
+			sod.setProduct(product);
+			sod.setName(product.getName());
+			sod.setOrder(order);
+			sod.setCount(Float.parseFloat(pnumber));
+			order.getServerOrderDetail().add(sod);
+			orderService.save(order);
+			dataMap.put("result", "001");
+			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 计算订单价格
+	 */
+	@RequestMapping(value = "/order/price/calc", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String orderPriceCalc(String uid, String token,
+			@RequestParam(required = false) String scid,
+			@RequestParam(required = false) String pid,
+			@RequestParam(required = false) String cpid) {
+		try {
+			log.info("App【计算价格】：" + "uid=" + uid + " token=" + token);
+			String[] scids = null;
+			if (scid != null && scid.length() > 0) {
+				scids = scid.split("#");
+			}
+			String[] pids = null;
+			if (pid != null && pid.length() > 0) {
+				pids = pid.split("#");
+			}
+			String json = mapper.writeValueAsString(this.calcPrice(scids, pids,
+					cpid));
+			return json;
+		} catch (CouponUseExcepton cue) {// 优惠券使用异常
+			return "{\"result\":\"502\"}";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/***
+	 * 功能：计算价格 如果优惠券使用错误抛出异常
+	 * 
+	 * @param scids
+	 * @param pids
+	 * @param cpid
+	 * @return map.put("ocmoney", ocmoney + ""); // 服务品总价<br>
+	 *         map.put("opmoney", ocmoney + ""); // 商品总价<br>
+	 *         map.put("orimoney", orimoney + ""); // 应付总价<br>
+	 *         map.put("cpmonney", cpmonney + ""); // 优惠的价<br>
+	 *         map.put("paymoney", paymoney + ""); // 实付价<br>
+	 * @throws CouponUseExcepton
+	 */
+	private Map<String, String> calcPrice(String[] scids, String[] pids,
+			String cpid) throws CouponUseExcepton {
+		double ocmoney = 0; // 服务总价
+		double opmoney = 0; // 产品总价
+		if (scids != null && scids.length > 0) {
+			for (String scid : scids) {
+				ocmoney = ocmoney + serviceTypeService.find(scid).getPrice();
+			}
+		}
+		if (pids != null && pids.length > 0) {
+			for (String pid : pids) {
+				opmoney = opmoney + productService.find(pid).getPrice();
+			}
+		}
+		double orimoney = ocmoney + opmoney; // 应支付的价钱
+		double cpmonney = 0; // 优惠的价钱
+		double paymoney = orimoney; // 实际支付金额
+		if (cpid != null) {
+			MemberCoupon memberCoupon = memberCouponService.find(cpid);
+			if (memberCoupon.getType() == 1) { // 1满额打折优惠券
+				if (orimoney < memberCoupon.getMinPrice()) {
+					throw new CouponUseExcepton("优惠券使用不正确");
+				} else {
+					cpmonney = orimoney * memberCoupon.getRate();
+					paymoney = orimoney - cpmonney;
+				}
+
+			} else if (memberCoupon.getType() == 2) {// 2满额减免优惠券
+				if (orimoney < memberCoupon.getMinPrice()) {
+					throw new CouponUseExcepton("优惠券使用不正确");
+				} else {
+					cpmonney = memberCoupon.getDiscount();
+					paymoney = orimoney - cpmonney;
+				}
+			} else if (memberCoupon.getType() == 3) { // 3免额多少优惠券
+				cpmonney = memberCoupon.getDiscount();
+				paymoney = orimoney - cpmonney;
+			}
+		}
+		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("ocmoney", ocmoney + ""); // 产品总价
+		map.put("opmoney", ocmoney + ""); // 服务总价
+		map.put("orimoney", orimoney + ""); // 应付总价
+		map.put("cpmonney", cpmonney + ""); // 优惠的价
+		map.put("paymoney", paymoney + ""); // 实付价
+		return map;
 	}
 
 	/**
@@ -824,7 +1951,7 @@ public class AppServer {
 		try {
 			log.info("App【获取用户所有车辆信息列表】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 数据获取 */
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
@@ -862,12 +1989,14 @@ public class AppServer {
 				map.put("csname", carType.getName());
 				map.put("cbid", carBrand.getId());
 				map.put("cbname", carBrand.getName());
+				map.put("cbimage", carBrand.getImgPath());
 				list.add(map);
 			}
 			dataMap.put("result", "001");
 			dataMap.put("list", list);
 
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -884,7 +2013,7 @@ public class AppServer {
 		try {
 			log.info("App【获取用户默认车辆信息】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			/** 获取数据 */
 			UserCar userCar = userCarService.defaultCar(uid);
 			if (userCar == null) {
@@ -903,6 +2032,7 @@ public class AppServer {
 				dataMap.put("csname", "");
 				dataMap.put("cbid", "");
 				dataMap.put("cbname", "");
+				dataMap.put("cbimage", "");
 				String json = mapper.writeValueAsString(dataMap);
 				return json;
 			}
@@ -930,7 +2060,9 @@ public class AppServer {
 			dataMap.put("csname", carType.getName());
 			dataMap.put("cbid", carBrand.getId());
 			dataMap.put("cbname", carBrand.getName());
+			dataMap.put("cbimage", carBrand.getImgPath());
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -957,7 +2089,7 @@ public class AppServer {
 					+ "cmid=" + cmid + " fule=" + fuel + " drange=" + drange
 					+ " engines=" + engines + " date=" + date);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			Member member = memberService.find(uid);
 			if (member == null) {
@@ -998,6 +2130,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("ucid", userCar.getId());
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1012,8 +2145,9 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/user/caredit", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String userCarEdit(String uid, String token, String ucid, String cmid,
-			int defaultCar, @RequestParam(required = false) String color,
+	String userCarEdit(String uid, String token, String ucid,
+			@RequestParam(required = false) String cmid, int defaultCar,
+			@RequestParam(required = false) String color,
 			@RequestParam(required = false) String plateNumber,
 			@RequestParam(required = false) Double fuel,
 			@RequestParam(required = false) Double drange,
@@ -1024,7 +2158,7 @@ public class AppServer {
 					+ "cmid=" + cmid + " fule=" + fuel + " drange=" + drange
 					+ " engines=" + engines + " date=" + date);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			/** 数据获取 **/
 			UserCar userCar = userCarService.find(ucid);
@@ -1033,7 +2167,7 @@ public class AppServer {
 				String json = mapper.writeValueAsString(dataMap);
 				return json;
 			}
-			if (!userCar.getMember().getId().equals(ucid)) {// 非自己的车
+			if (!userCar.getMember().getId().equals(uid)) {// 非自己的车
 				dataMap.put("result", "105");
 				String json = mapper.writeValueAsString(dataMap);
 				return json;
@@ -1068,6 +2202,7 @@ public class AppServer {
 			userCarService.update(userCar);
 			dataMap.put("result", "001");
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1075,6 +2210,1106 @@ public class AppServer {
 		}
 	}
 
+	/**
+	 * 删除用户的车辆信息
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/cardelete", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCarDelete(String uid, String token, String ucid) {
+		try {
+			log.info("App【删除用户当前的车型】：" + "uid=" + uid + " token=" + token
+					+ "ucid=" + ucid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			UserCar userCar = userCarService.find(ucid);
+			if (userCar == null) { // 没有对应的车辆信息
+				dataMap.put("result", "104");
+			} else if (userCar.getDefaultCar()) { // 默认车辆不能删除
+				dataMap.put("result", "107");
+			} else if (!userCar.getMember().getId().equals(uid)) {// 非自己的车
+				dataMap.put("result", "105");
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			} else {
+				dataMap.put("result", "001");
+				userCarService.delete(ucid);
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	@RequestMapping(value = "/user/order/proceed", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderProceed(String uid, String token, int page, int maxresult) {
+		try {
+			log.info("App【获取用户下在进行的订单列表】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 */
+			PageView<Order> pageView = new PageView<Order>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("createDate", "desc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.status>?2 and o.status<?3 and o.member.id=?4");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(0); // 进行中的订单status>0
+			params.add(31); // 未取消
+			params.add(uid);
+			List<Order> orders = orderService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby).getResultList();
+
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (Order order : orders) {
+				/**
+				 * 已完结 0 <br>
+				 * 洗车服务订单状态 1派单中 2路途中 3服务中 1-9洗车状态 <br>
+				 * 保养服务订单状态 11 预约成功 12 已分配车队 11-19 保养服务状态<br>
+				 * 纯商品订单状态 21已下单 22配货中 23送货中 21-29 纯商品订单状态 <br>
+				 * 取消订单状态 31待审核 32 审核中 33 退款中 34已退款 35未通过 36已完结【待定】 31-39取消订单状态<br>
+				 */
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("oid", order.getId());
+				map.put("onum", order.getNum());
+				map.put("otype", order.getType());
+				map.put("ostatus", order.getStatusString());
+				map.put("oprice", order.getPrice());
+				if (order.getStatus() == 1 || order.getStatus() == 11
+						|| order.getStatus() == 21) { // 派单中=1、预约成功=11、已下单=21，这三种情况可“取消订单”
+					map.put("ocanop", 1);
+				} else if (order.getStatus() == 23) {// 发货中=23，可进行“确认收货”
+					map.put("ocanop", 2);
+				} else {
+					map.put("ocanop", 0);
+				}
+				if (order.getType() == 1 && order.getStatus() == 2
+						&& order.getTechMember() != null) { // 洗车订单并且技师已接单（路途中表示已接单）
+					map.put("ocontact", "服务技师："
+							+ order.getTechMember().getName());
+					map.put("ophone", "联系电话："
+							+ order.getTechMember().getPhonenumber());
+				} else if (order.getType() == 2 && order.getStatus() == 12
+						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
+					map.put("ocontact", "车队联系人："
+							+ order.getCarTeam().getHeadMember());
+					map.put("ophone", "联系电话："
+							+ order.getCarTeam().getHeadPhone());
+				} else {
+					map.put("ocontact", "");
+					map.put("ophone", "");
+				}
+
+				List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
+				if (order.getType() == 1) {// 洗车订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", so.getServiceType().getId()); // 对应服务
+																		// ID
+						spmap.put("pimg", so.getServiceType().getImgPath());
+						spmap.put("pname", so.getName());
+						spmap.put("premark", so.getServiceType().getRemark2());//
+						spmap.put("pprice", so.getPrice());
+						spmap.put("pnum", 0);
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				} else if (order.getType() == 2) {// 保养类订单
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+						scmap.put("scid", so.getServiceType().getId());
+						scmap.put("scimg", so.getServiceType().getImgPath());
+						scmap.put("scname", so.getName());
+						scmap.put("scprice", so.getPrice());
+						List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+						for (ServerOrderDetail sod : so.getServerOrderDetail()) {
+							Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+							spmap.put("pid", sod.getProduct().getId());// 对应于商品ID
+							spmap.put("pimg", sod.getProduct().getImgPath());
+							spmap.put("pname", sod.getName());
+							spmap.put("premark", "");
+							spmap.put("pprice", sod.getPrice() == null ? 0
+									: sod.getPrice());
+							spmap.put("pnum",
+									sod.getCount() == null ? 0 : sod.getCount());
+							plist.add(spmap);
+						}
+						scmap.put("plist", plist);
+						sclist.add(scmap);
+					}
+				} else {// 纯商品订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", sod.getProduct().getId());// 对应于商品ID
+						spmap.put("pimg", sod.getProduct().getImgPath());
+						spmap.put("pname", sod.getName());
+						spmap.put("premark", "");
+						spmap.put("pprice",
+								sod.getPrice() == null ? 0 : sod.getPrice());
+						spmap.put("pnum",
+								sod.getCount() == null ? 0 : sod.getCount());
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				}
+				map.put("sclist", sclist);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 查询已完结的订单列表
+	 * 
+	 * @param uid
+	 * @param token
+	 * @param page
+	 * @param maxresult
+	 * @return
+	 */
+	@RequestMapping(value = "/user/order/finish", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderFinish(String uid, String token, int page, int maxresult) {
+		try {
+			log.info("App【获取用户下已完结的订单列表】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 */
+			PageView<Order> pageView = new PageView<Order>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("createDate", "desc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.status=?2 and o.member.id=?3");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(0); // 已完结的订单
+			params.add(uid);
+			List<Order> orders = orderService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby).getResultList();
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (Order order : orders) {
+				/**
+				 * 已完结 0 <br>
+				 * 洗车服务订单状态 1派单中 2路途中 3服务中 1-9洗车状态 <br>
+				 * 保养服务订单状态 11 预约成功 12 已分配车队 11-19 保养服务状态<br>
+				 * 纯商品订单状态 21已下单 22配货中 23送货中 21-29 纯商品订单状态 <br>
+				 * 取消订单状态 31待审核 32 审核中 33 退款中 34已退款 35未通过 36已完结【待定】 31-39取消订单状态<br>
+				 */
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("oid", order.getId());
+				map.put("onum", order.getNum());
+				map.put("otype", order.getType());
+				map.put("ostatus", order.getStatusString());
+				map.put("oprice", order.getPrice() + "");
+				map.put("ocomt", 1);
+
+				if (order.getType() == 1 && order.getStatus() == 2
+						&& order.getTechMember() != null) { // 洗车订单并且技师已接单（路途中表示已接单）
+					map.put("ocontact", "服务技师："
+							+ order.getTechMember().getName());
+					map.put("ophone", "联系电话："
+							+ order.getTechMember().getPhonenumber());
+				} else if (order.getType() == 2 && order.getStatus() == 12
+						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
+					map.put("ocontact", "车队联系人："
+							+ order.getCarTeam().getHeadMember());
+					map.put("ophone", "联系电话："
+							+ order.getCarTeam().getHeadPhone());
+				} else {
+					map.put("ocontact", "");
+					map.put("ophone", "");
+				}
+
+				List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
+				if (order.getType() == 1) {// 洗车订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					scmap.put("sccomt", 0); // 洗车服务-》转商品，这里不能进行评论
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", so.getId()); // 为评论准备 ID数据
+						spmap.put("pimg", so.getServiceType().getImgPath());
+						spmap.put("pname", so.getName());
+						spmap.put("premark", so.getServiceType().getRemark2());//
+						spmap.put("pprice", so.getPrice());
+						spmap.put("pnum", 0);
+						spmap.put("pcomt", so.getComment() == null ? 1 : 0);// 能否评论商品：洗车类型特指能否评论洗车服务
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				} else if (order.getType() == 2) {// 保养类订单
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+						scmap.put("scid", so.getId()); // 为评论准备 ID数据
+						scmap.put("scimg", so.getServiceType().getImgPath());
+						scmap.put("scname", so.getName());
+						scmap.put("scprice", so.getPrice());
+						scmap.put("sccomt", so.getComment() == null ? 1 : 0); // 能否评论服务
+						List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+						for (ServerOrderDetail sod : so.getServerOrderDetail()) {
+							Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+							spmap.put("pid", sod.getId());// //为评论准备 ID数据
+							spmap.put("pimg", sod.getProduct().getImgPath());
+							spmap.put("pname", sod.getName());
+							spmap.put("premark", "");
+							spmap.put("pprice", sod.getPrice() == null ? 0
+									: sod.getPrice());
+							spmap.put("pnum",
+									sod.getCount() == null ? 0 : sod.getCount());
+							spmap.put("pcomt", sod.getComment() == null ? 1 : 0);// 能否评论商品
+							plist.add(spmap);
+						}
+						scmap.put("plist", plist);
+						sclist.add(scmap);
+					}
+				} else {// 纯商品订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					scmap.put("sccomt", 0); // 能否评论服务
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", sod.getId());// 为评论准备 ID数据
+						spmap.put("pimg", sod.getProduct().getImgPath());
+						spmap.put("pname", sod.getName());
+						spmap.put("premark", "");
+						spmap.put("pprice",
+								sod.getPrice() == null ? 0 : sod.getPrice());
+						spmap.put("pnum",
+								sod.getCount() == null ? 0 : sod.getCount());
+						spmap.put("pcomt", sod.getComment() == null ? 1 : 0);// 能否评论商品
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				}
+				map.put("sclist", sclist);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 查询已取消的订单列表
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/order/cancel", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderCancel(String uid, String token, int page, int maxresult,
+			int type) {
+		try {
+			log.info("App【获取用户下已完结的订单列表】：" + "uid=" + uid + " token=" + token
+					+ " type=" + type);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 */
+			PageView<Order> pageView = new PageView<Order>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("createDate", "desc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.member.id=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(uid);
+			if (type == 1) {// 待审核
+				jpql.append(" and o.status=?3");
+				params.add(31);
+			} else if (type == 2) {// 审核中
+				jpql.append(" and o.status=?3");
+				params.add(32);
+			} else if (type == 3) {// 退款中
+				jpql.append(" and o.status=?3");
+				params.add(33);
+			} else if (type == 4) {// 已完结
+				jpql.append(" and (o.status=?3 or o.status=?4)");
+				params.add(34);
+				params.add(35);
+			}
+			List<Order> orders = orderService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby).getResultList();
+
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			for (Order order : orders) {
+				/**
+				 * 已完结 0 <br>
+				 * 洗车服务订单状态 1派单中 2路途中 3服务中 1-9洗车状态 <br>
+				 * 保养服务订单状态 11 预约成功 12 已分配车队 11-19 保养服务状态<br>
+				 * 纯商品订单状态 21已下单 22配货中 23送货中 21-29 纯商品订单状态 <br>
+				 * 取消订单状态 31待审核 32 审核中 33 退款中 34已退款 35未通过 36已完结【待定】 31-39取消订单状态<br>
+				 */
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("oid", order.getId());
+				map.put("onum", order.getNum());
+				map.put("otype", order.getType());
+				map.put("ostatus", order.getStatusString());
+				map.put("oprice", order.getPrice());
+				if (order.getStatus() == 35) { // 未通过 可“取消订单”
+					map.put("ocanop", 1);
+				} else {
+					map.put("ocanop", 0);
+				}
+				if (order.getType() == 1 && order.getStatus() == 2
+						&& order.getTechMember() != null) { // 洗车订单并且技师已接单（路途中表示已接单）
+					map.put("ocontact", "服务技师："
+							+ order.getTechMember().getName());
+					map.put("ophone", "联系电话："
+							+ order.getTechMember().getPhonenumber());
+				} else if (order.getType() == 2 && order.getStatus() == 12
+						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
+					map.put("ocontact", "车队联系人："
+							+ order.getCarTeam().getHeadMember());
+					map.put("ophone", "联系电话："
+							+ order.getCarTeam().getHeadPhone());
+				} else {
+					map.put("ocontact", "");
+					map.put("ophone", "");
+				}
+
+				List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
+				if (order.getType() == 1) {// 洗车订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", so.getServiceType().getId()); // 对应服务ID
+						spmap.put("pimg", so.getServiceType().getImgPath());
+						spmap.put("pname", so.getName());
+						spmap.put("premark", so.getServiceType().getRemark2());//
+						spmap.put("pprice", so.getPrice());
+						spmap.put("pnum", 0);
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				} else if (order.getType() == 2) {// 保养类订单
+					for (ServerOrder so : order.getServerOrder()) {
+						Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+						scmap.put("scid", so.getServiceType().getId());
+						scmap.put("scimg", so.getServiceType().getImgPath());
+						scmap.put("scname", so.getName());
+						scmap.put("scprice", so.getPrice());
+						scmap.put("sccomt", 1); // 能否评论服务
+						List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+						for (ServerOrderDetail sod : so.getServerOrderDetail()) {
+							Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+							spmap.put("pid", sod.getProduct().getId());// 对应于商品ID
+							spmap.put("pimg", sod.getProduct().getImgPath());
+							spmap.put("pname", sod.getName());
+							spmap.put("premark", "");
+							spmap.put("pprice", sod.getPrice() == null ? 0
+									: sod.getPrice());
+							spmap.put("pnum",
+									sod.getCount() == null ? 0 : sod.getCount());
+							plist.add(spmap);
+						}
+						scmap.put("plist", plist);
+						sclist.add(scmap);
+					}
+				} else {// 纯商品订单
+					Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+					scmap.put("scid", "");
+					scmap.put("scimg", "");
+					scmap.put("scname", "");
+					scmap.put("scprice", 0);
+					List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+					for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+						Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+						spmap.put("pid", sod.getProduct().getId());// 对应于商品ID
+						spmap.put("pimg", sod.getProduct().getImgPath());
+						spmap.put("pname", sod.getName());
+						spmap.put("premark", "");
+						spmap.put("pprice",
+								sod.getPrice() == null ? 0 : sod.getPrice());
+						spmap.put("pnum",
+								sod.getCount() == null ? 0 : sod.getCount());
+						plist.add(spmap);
+					}
+					scmap.put("plist", plist);
+					sclist.add(scmap);
+				}
+				map.put("sclist", sclist);
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 用户【取消订单】
+	 */
+	@RequestMapping(value = "/user/order/op/cancel", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderOpCancel(String uid, String token, String oid) {
+		try {
+			log.info("App【用户取消订单】：" + "oid=" + oid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Order order = orderService.find(oid);
+			if (!order.getMember().getId().equals(uid)) {// 非自己的订单
+				dataMap.put("result", "105");
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			}
+			if (order.getStatus() == 1 || order.getStatus() == 11
+					|| order.getStatus() == 21) { // 在这些状态下才能取消订单
+				order.setStatus(31);
+				orderService.update(order);
+				dataMap.put("result", "001");
+			} else {
+				dataMap.put("result", "109");// 用户不能取消订单
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 用户【确认收货】
+	 */
+	@RequestMapping(value = "/user/order/op/confrim", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderOpConfirm(String uid, String token, String oid) {
+		try {
+			log.info("App【用户确认收货】：" + "oid=" + oid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Order order = orderService.find(oid);
+			if (!order.getMember().getId().equals(uid)) {// 非自己的订单
+				dataMap.put("result", "105");
+			}
+			if (order.getStatus() == 22) { // 配货中才能确认收货
+				order.setStatus(0); //
+				orderService.update(order);
+				dataMap.put("result", "001");
+			} else {
+				dataMap.put("result", "110");
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 洗车订单详情
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/order/carwash/detail", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderCarwashDetail(String uid, String token, String oid) {
+		try {
+			log.info("App【获取用户下在进行的订单列表】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Order order = orderService.find(oid);
+			if (order.getType() != 1) {// 非洗车订单
+				dataMap.put("result", "113"); // 订单请求类型错误
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			}
+			dataMap.put("result", "001");
+			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
+			dataMap.put("ostatus", order.getStatusString());
+			dataMap.put("ocontact", order.getContact());
+			dataMap.put("ophone", order.getContact());
+			dataMap.put("ocmname", order.getCar().getName());
+			dataMap.put("ocleanType", order.getCleanType() + "");// 清洗方式 1 内部清洗
+																	// 2 内外清洗
+			dataMap.put("oplateNum", order.getCarNum());
+			dataMap.put("ocarcolor", order.getCarColor());
+
+			ServerOrder serverOrder = null;
+			for (ServerOrder so : order.getServerOrder()) {
+				serverOrder = so;
+				break;
+			}
+			dataMap.put("osimgpath", serverOrder.getServiceType().getImgPath());
+			dataMap.put("osname", serverOrder.getName());
+			dataMap.put("osremark", serverOrder.getServiceType().getRemark1());
+			dataMap.put("osprice", serverOrder.getPrice() + "");
+
+			dataMap.put("address", order.getAddress());
+			dataMap.put("lat", order.getLat());
+			dataMap.put("lng", order.getLng());
+			dataMap.put("payway", order.getPayWay() + "");
+			dataMap.put("usecoup", order.getMemberCoupon() != null ? "已使用"
+					: "未使用");
+			dataMap.put("orimoney", order.getAmount_money() + "");
+			dataMap.put("cpmoney", order.getAmount_paid() + "");
+			dataMap.put("paymoney", order.getPrice() + "");
+
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 保养服务订单详情
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/order/server/detail", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderServerDetail(String uid, String token, String oid) {
+		try {
+			log.info("App【获取用户下在进行的订单列表】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Order order = orderService.find(oid);
+			if (order.getType() != 2) {// 非保养订单
+				dataMap.put("result", "113"); // 订单请求类型错误
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			}
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+			SimpleDateFormat sdfSDate = new SimpleDateFormat("MM月dd日");
+			SimpleDateFormat sdfSTime = new SimpleDateFormat("HH:mm");
+			dataMap.put("result", "001");
+			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
+			dataMap.put("ostatus", order.getStatusString());
+			dataMap.put("ocontact", order.getContact());
+			dataMap.put("ophone", order.getContact());
+			dataMap.put("ocmname", order.getCar().getName());
+			dataMap.put("odate", sdf.format(order.getCreateDate()));
+			dataMap.put("oplateNum", order.getCarNum());
+			dataMap.put("ocarcolor", order.getCarColor());
+			dataMap.put("address", order.getAddress());
+			dataMap.put("lat", order.getLat());
+			dataMap.put("lng", order.getLng());
+			dataMap.put("payway", order.getPayWay() + "");
+			dataMap.put("usecoup", order.getMemberCoupon() != null ? "已使用"
+					: "未使用");
+			try {
+				dataMap.put("stime", sdfSDate.format(order.getStartDate())
+						+ " " + sdfSTime.format(order.getStartDate()) + "-"
+						+ sdfSTime.format(order.getEndDate()));
+			} catch (Exception e) {
+				dataMap.put("stime", "");
+			}
+
+			float opmoney = 0;
+			float ocmoney = 0;
+			List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
+			for (ServerOrder so : order.getServerOrder()) {
+				Map<String, Object> scmap = new LinkedHashMap<String, Object>();
+				scmap.put("scimg", so.getServiceType().getImgPath());
+				scmap.put("scname", so.getName());
+				scmap.put("scprice", so.getPrice());
+				List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
+				for (ServerOrderDetail sod : so.getServerOrderDetail()) {
+					Map<String, Object> spmap = new LinkedHashMap<String, Object>();
+					spmap.put("pimg", sod.getProduct().getImgPath());
+					spmap.put("pname", sod.getName());
+					spmap.put("pprice", sod.getPrice() + "");
+					spmap.put("pnum", sod.getCount() + "");
+					plist.add(spmap);
+					opmoney = opmoney + sod.getPrice();
+				}
+				scmap.put("plist", plist);
+				sclist.add(scmap);
+				ocmoney = ocmoney + so.getPrice();
+			}
+			dataMap.put("opmoney", opmoney + "");
+			dataMap.put("ocmoney", ocmoney + "");
+			dataMap.put("cpmoney", order.getAmount_paid() + "");
+			dataMap.put("paymoney", order.getPrice() + "");
+			dataMap.put("sclist", sclist);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 商品订单详情
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/order/product/detail", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userOrderProductDetail(String uid, String token, String oid) {
+		try {
+			log.info("App【获取用户下在进行的订单列表】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Order order = orderService.find(oid);
+			if (order.getType() != 3) {// 非商品订单
+				dataMap.put("result", "113"); // 订单请求类型错误
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			}
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+			dataMap.put("result", "001");
+			dataMap.put("oid", order.getId());
+			dataMap.put("onum", order.getNum());
+			dataMap.put("ostatus", order.getStatusString());
+			dataMap.put("ocontact", order.getContact());
+			dataMap.put("ophone", order.getContact());
+			try {
+				dataMap.put("ocmname", order.getCar().getName());
+			} catch (Exception e) {
+				dataMap.put("ocmname", "");
+			}
+			dataMap.put("odate", sdf.format(order.getCreateDate()));
+			dataMap.put("oplateNum", order.getCarNum());
+			dataMap.put("ocarcolor", order.getCarColor());
+
+			ServerOrderDetail serverOrderDetail = null;
+			for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+				serverOrderDetail = sod;
+			}
+			dataMap.put("opimgpath", serverOrderDetail.getProduct()
+					.getImgPath());
+			dataMap.put("opname", serverOrderDetail.getName());
+			dataMap.put("oprice", serverOrderDetail.getPrice() + "");
+			dataMap.put("opnum", serverOrderDetail.getCount() + "");
+
+			dataMap.put("address", order.getAddress());
+			dataMap.put("lat", order.getLat());
+			dataMap.put("lng", order.getLng());
+			dataMap.put("payway", order.getPayWay() + "");
+			dataMap.put("usecoup", order.getMemberCoupon() != null ? "已使用"
+					: "未使用");
+			dataMap.put("orimoney", order.getAmount_money() + "");
+			dataMap.put("cpmoney", order.getAmount_paid() + "");
+			dataMap.put("paymoney", order.getPrice() + "");
+
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 获取用户当前领取的优惠券
+	 */
+	@RequestMapping(value = "/user/coupon/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCouponList(String uid, String token, int page, int maxresult,
+			int type) {
+		try {
+			log.info("App【获取用户领取过的优惠券】：" + "uid=" + uid + " token=" + token
+					+ "page=" + page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			PageView<MemberCoupon> pageView = new PageView<MemberCoupon>(
+					maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer("o.visible=?1");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			if (type == 1) {// 查询未过期的
+				jpql.append(" and (o.endDate>=?2 or o.endDate is null)");
+				params.add(new Date());
+			} else if (type == 0) {// 查询过期的
+				jpql.append(" and o.endDate<?2");
+				params.add(new Date());
+			}
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			pageView.setQueryResult(memberCouponService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<MemberCoupon> mcs = pageView.getRecords();
+			for (MemberCoupon mc : mcs) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("cpid", mc.getId());
+				map.put("cptype", mc.getType());
+				map.put("cpname", mc.getImgPath());
+				map.put("cpintroduction", mc.getIntroduction());
+				map.put("cpimg", mc.getImgPath());
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 获取用户当前领取的优惠券
+	 */
+	@RequestMapping(value = "user/coupon/exchange/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCouponExchangeList(String uid, String token) {
+		try {
+			log.info("App【获取用户领取过的优惠券】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("point", "asc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer("o.visible=?1");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			List<Coupon> couponList = couponService.getScrollData(0, 20,
+					jpql.toString(), params.toArray(), orderby).getResultList();
+			for (Coupon cp : couponList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("cpid", cp.getId());
+				map.put("cptype", cp.getType());
+				map.put("cpname", cp.getName());
+				map.put("cpintroduction", cp.getIntroduction());
+				map.put("cpimg", cp.getImgPath());
+				map.put("cpexscore",
+						cp.getPoint() == null ? "0" : cp.getPoint() + "");
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("score", memberService.find(uid).getAmount());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 兑换优惠券
+	 * 
+	 */
+	@RequestMapping(value = "/user/coupon/exchange", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCouponExchange(String uid, String token, String cpid) {
+		try {
+			log.info("App【用户兑换优惠券】：" + "cpid=" + cpid);
+			int exchangeResult = memberCouponService.exchange(uid, cpid);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			if (exchangeResult == 1) {// 兑换成功
+				dataMap.put("result", "001");
+			} else if (exchangeResult == 0) {// 积分不足
+				dataMap.put("result", "108");
+			} else {// 兑换招出异常
+				dataMap.put("result", "000");
+			}
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 上传图片
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/comment/upload", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCommentUpload(String uid, String token, MultipartFile imageFile) {
+		try {
+			log.info("App【上传图片】：" + "uid=" + uid + " imageFile="
+					+ imageFile.getSize() + " "
+					+ imageFile.getOriginalFilename());
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Map<String, String> map = UploadImageUtil.uploadFile(imageFile,
+					request);
+			String url = map.get("source");
+			dataMap.put("result", "001");
+			dataMap.put("imgurl", url);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 保存评论
+	 * 
+	 * @param uid
+	 * @param token
+	 * @param imgurl
+	 *            图片路径地址，多个以#分隔
+	 * @param content
+	 * @param oid
+	 * @param pid
+	 *            ServerOder 为ServerOrderDeatai ID
+	 * @param type
+	 *            1=评论商品；2=评论服务
+	 * @return
+	 */
+	@RequestMapping(value = "/user/comment/save", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCommentSave(String uid, String token,
+			@RequestParam(required = false) String imgurl, int star,
+			String content, String oid, String pid, int type) {
+		try {
+			log.info("App【保存评论】：" + "content=" + content);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Member member = memberService.find(uid);
+			Comment comment = new Comment();
+			if (type == 1) {// 评论商品
+				comment.setServerOrder(serverOrderService.find(pid));
+			} else if (type == 2) {
+				comment.setServerOrderDetail(serverOrderDetailService.find(pid));
+			}
+			comment.setContent(content);
+			comment.setStar(star);
+			comment.setMember(member);
+			commentService.save(comment);
+			if (imgurl != null && imgurl.length() > 0) {
+				String[] imgs = imgurl.split("#");
+				for (String imgPath : imgs) {
+					CommentImg ci = new CommentImg();
+					ci.setComment(comment);
+					ci.setImgPath(imgPath);
+					commentImgService.save(ci);
+				}
+			}
+			dataMap.put("result", "001");
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 获取个人资料
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/profile", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userProfile(String uid, String token) {
+		try {
+			log.info("App【修改个人资料】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Member member = memberService.find(uid);
+			memberService.update(member);
+			dataMap.put("result", "001");
+			dataMap.put("nickname", member.getNickname());
+			dataMap.put("photo", member.getPhoto());
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 修改个人资料
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/user/profile/edit", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userProfileEdit(String uid, String token,
+			@RequestParam(required = false) MultipartFile photo,
+			@RequestParam(required = false) String nickname) {
+		try {
+			log.info("App【修改个人资料】：" + "uid=" + uid + " token=" + token
+					+ "nickname=" + nickname + " photo=" + photo);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Member member = memberService.find(uid);
+			if (nickname != null && !"".equals(nickname)) {
+				member.setNickname(nickname);
+			}
+			if (photo != null) {
+				Map<String, String> map = UploadImageUtil.uploadFile(photo,
+						request);
+				member.setPhoto(map.get("source"));
+			}
+			memberService.update(member);
+			dataMap.put("result", "001");
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 提交反馈信息
+	 */
+	@RequestMapping(value = "/user/feedback", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userFeedback(String uid, String token, String content) {
+		try {
+			log.info("App【用户反馈】：" + "content=" + content);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			Feedback feedback = new Feedback();
+			feedback.setContent(content);
+			feedback.setMember(memberService.find(uid));
+			feedbackService.save(feedback);
+			dataMap.put("result", "001");
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	@RequestMapping(value = "/user/fee/record/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userfeeRecordList(String uid, String token, int page, int maxresult,
+			int type) {
+		try {
+			log.info("App【费用信息】：" + "uid=" + uid + " token=" + token + "page="
+					+ page + " maxresult=" + maxresult);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			/** 数据获取 **/
+			PageView<FeeRecord> pageView = new PageView<FeeRecord>(maxresult,
+					page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.member.id=?2");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(uid);
+			if (type > 0) {
+				jpql.append(" and o.type=?3");
+				params.add(type);
+			}
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			pageView.setQueryResult(feeRecordService.getScrollData(
+					pageView.getFirstResult(), maxresult, jpql.toString(),
+					params.toArray(), orderby));
+			List<FeeRecord> frList = pageView.getRecords();
+			for (FeeRecord feeRecord : frList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				if (feeRecord.getType() == 1) { // 充值
+					map.put("ftext",
+							"充值"
+									+ (feeRecord.getPayWay() == 2 ? "(支付宝)"
+											: feeRecord.getPayWay() == 3 ? "(银联)"
+													: feeRecord.getPayWay() == 4 ? "(微信)"
+															: "(未知)")); // 费用描述
+					map.put("fdate", sdf.format(feeRecord.getCreateDate())); // 充值/消费日期
+					map.put("fmoney", "+" + feeRecord.getFee()); // 金额描述
+				} else if (feeRecord.getType() == 2) { // 消费
+					map.put("ftext", "消费(订单号：" + feeRecord.getOrder().getNum()
+							+ ")"); // 费用描述
+					map.put("fdate", sdf.format(feeRecord.getCreateDate())); // 充值/消费日期
+					map.put("fmoney", "-" + feeRecord.getFee()); // 金额描述
+
+				}
+				list.add(map);
+			}
+			Member member = memberService.find(uid);
+			dataMap.put("result", "001");
+			dataMap.put("balance", member.getMoney() + "");
+			dataMap.put("pages", pageView.getTotalPage());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 发现、新闻列表
+	 */
 	@RequestMapping(value = "/extra/news", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String extraNews(String uid, String token, int page, int maxresult) {
@@ -1082,7 +3317,7 @@ public class AppServer {
 			log.info("App【获取新闻列表】：" + "uid=" + uid + " token=" + token
 					+ "page=" + page + " maxresult=" + maxresult);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			/** 数据获取 **/
 			PageView<News> pageView = new PageView<News>(maxresult, page);
@@ -1103,13 +3338,14 @@ public class AppServer {
 				map.put("nwimage", nw.getImgPath());
 				map.put("nwdate", sdf.format(nw.getCreateDate()));
 				map.put("nwstar", 12);// 暂时无此属性
-				map.put("nwhtml", "");// ...
+				map.put("nwurl", "/webpage/news/" + nw.getId());//
 				list.add(map);
 			}
 			dataMap.put("result", "001");
 			dataMap.put("pages", pageView.getTotalPage());
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1117,13 +3353,177 @@ public class AppServer {
 		}
 	}
 
+	/**
+	 * 获取支持的地区文本信息
+	 * 
+	 * @param uid
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping(value = "/extra/support/area", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String extraSupportArea(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【支持的服务地区】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			dataMap.put("result", "001");
+			dataMap.put("text", CommonAttributes.getInstance().getSystemBean()
+					.getContent());
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 显示新闻 详细页面
+	 */
+	@RequestMapping("/webpage/news/{nwid}")
+	public ModelAndView webpageNews(@PathVariable String nwid) {
+		ModelAndView mav = new ModelAndView("api/news_view");
+		News nw = newsService.find(nwid);
+		System.out.println(nw.getTitle() + "---?");
+		mav.addObject("news", nw);
+		return mav;
+	}
+
+	/**
+	 * 显示产品 详细页面
+	 */
+	@RequestMapping("/webpage/product/{pid}")
+	public ModelAndView webpageProduct(@PathVariable String pid) {
+		ModelAndView mav = new ModelAndView("api/product_view");
+		Product product = productService.find(pid);
+		mav.addObject("product", product);
+		return mav;
+	}
+
+	/**
+	 * 显示首页广告 详细页面
+	 */
+	@RequestMapping("/webpage/advert/{adid}")
+	public ModelAndView webpageAdvert(@PathVariable String adid) {
+		ModelAndView mav = new ModelAndView("api/advert_view");
+		IndexAdvert advert = indexAdvertService.find(adid);
+		mav.addObject("advert", advert);
+		return mav;
+	}
+
 	@RequestMapping("/test")
 	public @ResponseBody
 	String test() {
-		String[] pids = { "123", "345" };
-		productService.listForServer("sc2",
-				"65377a5e-081f-4a28-a5ba-1d80c53932a4", 0, 20, null);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("createDate", "desc");
+		orderby.put("id", "desc");
+		StringBuffer jpql = new StringBuffer("o.num is null");
+		List<Object> params = new ArrayList<Object>();
+		List<Order> orders = orderService.getScrollData(jpql.toString(),
+				params.toArray(), orderby).getResultList();
+		for (Order o : orders) {
+			o.setNum(CommonUtil.getOrderNum());
+			orderService.update(o);
+		}
 		return "test";
+
+	}
+
+	/**
+	 * 首页统一 接口
+	 */
+	@RequestMapping(value = "/common/index", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String commonIndex(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
+		try {
+			log.info("App【获取服务类型】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			/** 广告 数据获取 **/
+			LinkedHashMap<String, String> adOrderby = new LinkedHashMap<String, String>();
+			adOrderby.put("modifyDate", "desc");
+			StringBuffer adJpql = new StringBuffer("o.visible=?1");
+			List<Object> adParams = new ArrayList<Object>();
+			adParams.add(true);
+			List<Map<String, Object>> adlist = new ArrayList<Map<String, Object>>();
+			List<IndexAdvert> adverts = indexAdvertService.getScrollData(0, 3,
+					adJpql.toString(), adParams.toArray(), adOrderby)
+					.getResultList();
+			for (IndexAdvert ad : adverts) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("adid", ad.getId());
+				map.put("adimg", ad.getImgPath());
+				map.put("adurl", "/webpage/advert/" + ad.getId());
+				adlist.add(map);
+			}
+
+			/** 服务类型 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("type", "desc");// 使得上门洗车和上门保养排前
+			orderby.put("order", "asc");
+			StringBuffer jpql = new StringBuffer("o.visible=?1");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
+			List<ServiceType> types = serviceTypeService.getScrollData(0, 10,
+					jpql.toString(), params.toArray(), orderby).getResultList();
+			for (ServiceType type : types) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("scid", type.getId());
+				map.put("scname", type.getName());
+				map.put("scimage", type.getImgPath());
+				map.put("scremark", type.getRemark());
+				map.put("scremark1", type.getRemark1());
+				map.put("scremark2", type.getRemark2());
+				map.put("scprice", type.getPrice());
+				sclist.add(map);
+			}
+
+			/** 推荐品牌 数据获取 **/
+			List<Map<String, Object>> blist = new ArrayList<Map<String, Object>>();
+			ProductBrand productBrand = productBrandService
+					.findOneRecommendBrand();
+			if (productBrand != null) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("bname", productBrand.getName());
+				map.put("bimage", productBrand.getImgPath());
+				blist.add(map);
+			}
+
+			/** 热卖分类 数据获取 **/
+			List<Map<String, Object>> pclist = new ArrayList<Map<String, Object>>();
+			LinkedHashMap<String, String> pcOrderby = new LinkedHashMap<String, String>();
+			pcOrderby.put("modifyDate", "desc");
+			pcOrderby.put("id", "desc");
+			StringBuffer pcJpql = new StringBuffer(
+					"o.visible=?1 and o.hotProductCategory=?2");
+			List<Object> pcParams = new ArrayList<Object>();
+			pcParams.add(true);
+			pcParams.add(1); // 0 非热卖 1 热卖
+			List<ProductCategory> pcList = productCategoryService
+					.getScrollData(0, 4, pcJpql.toString(), pcParams.toArray(),
+							pcOrderby).getResultList();
+			for (ProductCategory pc : pcList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("pcid", pc.getId());
+				map.put("pcname", pc.getName());
+				map.put("pcimage", pc.getImgPath());
+				pclist.add(map);
+			}
+
+			dataMap.put("result", "001");
+			dataMap.put("adlist", adlist);
+			dataMap.put("sclist", sclist);
+			dataMap.put("blist", blist);
+			dataMap.put("pclist", pclist);
+			String json = mapper.writeValueAsString(dataMap);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
 	}
 
 	/**
@@ -1139,7 +3539,7 @@ public class AppServer {
 		try {
 			log.info("App【验证码发送】：" + "电话=" + phone + " type=" + type);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
+
 			// 发送时间间隔判断
 			ShortMessage lastSMS = shortMessageService.lastSMS(phone, type);
 			if (lastSMS != null) {
@@ -1225,12 +3625,6 @@ public class AppServer {
 
 	/***
 	 * 发送HTTP GET请求
-	 * 
-	 * @param path
-	 * @param params
-	 * @param encoding
-	 * @return
-	 * @throws Exception
 	 */
 	private String sendGetRequest(String path, Map<String, String> params,
 			String encoding) throws Exception {
@@ -1257,40 +3651,5 @@ public class AppServer {
 	}
 
 	public static void main(String[] args) {
-		try {
-			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			ObjectMapper mapper = new ObjectMapper();
-
-			Map<String, Integer> map1 = new LinkedHashMap<String, Integer>();
-			map1.put("p1", 1);
-			map1.put("p2", 2);
-
-			Map<String, Integer> map2 = new LinkedHashMap<String, Integer>();
-			map2.put("p3", 2);
-			map2.put("p4", 3);
-			map2.put("p5", 3);
-
-			dataMap.put("scid1", map1);
-			dataMap.put("scid2", map2);
-			String httpData = mapper.writeValueAsString(dataMap);
-			System.out.println(httpData);
-
-			Map<String, Map<String, Integer>> packMap = mapper.readValue(
-					httpData, Map.class);
-			for (String scid : packMap.keySet()) {
-				Map<String, Integer> pmap = packMap.get(scid);
-				for (String pid : pmap.keySet()) {
-					System.out.println(scid + "#" + pid + "#" + pmap.get(pid));
-				}
-			}
-			// String [] value = rmap.get(key);
-			// System.out.println(key+":"+value);
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 }

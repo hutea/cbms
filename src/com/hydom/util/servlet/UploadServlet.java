@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -25,6 +26,8 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.hydom.util.CommonUtil;
+import com.hydom.util.DateTimeHelper;
+import com.hydom.util.IDGenerator;
 
 /**
  * 图片上传
@@ -81,7 +84,7 @@ public class UploadServlet extends HttpServlet{
 			JSONObject json = new JSONObject();
 			json.put(CODE, 0);
 //			json.put("url", root.substring(1, root.length()) + fileName + ".jpg");
-			json.put("url", path + "/" + fileName + ".jpg");
+			json.put("url", path + "/" + fileName );
 			System.out.println(json.toString());
 			response.getWriter().write(json.toString());
 		} catch (Exception e) {
@@ -94,17 +97,13 @@ public class UploadServlet extends HttpServlet{
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public String uploadImage(HttpServletRequest request, String diskPath) throws IOException {
-	    // 获取本地文件路径
-		String path = request.getServletContext().getRealPath(diskPath);
-		String fileName = UUID.randomUUID().toString() ;
-    	File file = new File(path, fileName + ".jpg");
-    	file.getParentFile().mkdirs();
-    	file.createNewFile();
+	   
     	
     	FileItemFactory factory = new DiskFileItemFactory();
 		ServletFileUpload upload = new ServletFileUpload(factory);
 		// 中文乱码
 		upload.setHeaderEncoding("utf-8");
+		
 		try {
 			List items = upload.parseRequest(request);
 			Map fields = new HashMap();
@@ -119,6 +118,17 @@ public class UploadServlet extends HttpServlet{
 			
 			// 获取上传表单中的file
 			FileItem uplFile = (FileItem) fields.get("file");
+			String name = uplFile.getName();
+			
+			String oriExtName = name.substring(name.lastIndexOf("."));
+			
+			 // 获取本地文件路径
+			String path = request.getServletContext().getRealPath(diskPath);
+			String fileName = CommonUtil.getUploadImageName() + oriExtName;
+	    	File file = new File(path, fileName);
+	    	file.getParentFile().mkdirs();
+	    	file.createNewFile();
+			
 			InputStream ins = uplFile.getInputStream();
 			OutputStream ous = new FileOutputStream(file);
 			try {
@@ -131,9 +141,10 @@ public class UploadServlet extends HttpServlet{
 				ous.close();
 				ins.close();
 			}
+			return fileName;
 		} catch (FileUploadException e) {
 			e.printStackTrace();
 		}
-	    return fileName;
+	    return "";
 	}
 }

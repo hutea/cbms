@@ -211,6 +211,17 @@
 												<select name="productCategory.id" onchange="changeProductCategory(this);" class="mg10">
 													<option value="">请选择商品分类</option>
 													<c:forEach var="category" items="${productCategorys }">
+														<option value="${category.id }">
+															<c:if test="${category.grade gt 0}">
+																<c:forEach begin="1" end="${category.grade }">
+																	&nbsp;&nbsp;
+																</c:forEach>
+															</c:if>
+															${category.name}
+														</option>
+													</c:forEach>
+													
+													<%-- <c:forEach var="category" items="${productCategorys }">
 														<option value="${category.id }">${category.name }</option>			
 													</c:forEach>
 													
@@ -223,7 +234,7 @@
 															</c:if>
 															${category.name}
 														</option>
-													</c:forEach>
+													</c:forEach> --%>
 												</select>
 											</div>
 										</div>
@@ -287,13 +298,58 @@
 												</c:forEach>
 											</div>
 										</div>
+										<script type="text/javascript">
+											function prouductUniqueTypeChange(obj){
+												var selectValue = $(obj).val();
+												closeHIDEdiv();
+												if(selectValue == "2"){
+													$("#productCountDIV").show();
+												}else{
+													$("#discountDIV").show();
+												}
+											}
+											function closeHIDEdiv(){
+												$("#productCountDIV").hide();
+												$("#discountDIV").hide();
+											}
+											function blurInput(obj){
+												var value = $(obj).val();
+												var marketPrice = $("input[name='marketPrice']").val();
+												var price = parseFloat(parseFloat(value) * parseFloat(marketPrice)).toFixed(2);
+												$("#discountPrice").text(price);
+											}
+										</script>
+										<div class="form-group">
+											<label class="col-sm-4 control-label">特色市场</label>
+											<div class="col-sm-8">
+												<select name="prouductUniqueType" class="mg10" onchange="prouductUniqueTypeChange(this);">
+													<option value="">无</option>
+													<!-- <option value="1">品牌推荐 </option> -->
+													<option value="2">限量精品</option>
+													<option value="3">天天特价</option>
+													<option value="4">绿色出行</option>
+												</select>
+											</div>
+										</div>
+										<div class="form-group" id="productCountDIV" style="display: none;">
+											<label class="col-sm-4 control-label">限量数量</label>
+											<div class="col-sm-8">
+												<input type="text" name="productCount" class="form-control" value="0"/>
+											</div>
+										</div>
+										<div class="form-group" id="discountDIV" style="display: none;">
+											<label class="col-sm-4 control-label">特价折扣</label>
+											<div class="col-sm-8">
+												<input type="text" name="discount" class="form-control" value="0" onblur="blurInput(this);"/>折后价<span id="discountPrice">0</span>
+											</div>
+										</div>
 									</div>
                                 </div><!-- tab-pane -->
                                 
                               	<!-- 商品介绍 -->
                                 <div class="tab-pane" id="profile">
                                     <script id="editor" type="text/plain" style="width:100%;height:400px;"></script>
-									<textarea class="form-control"  style="display:none;" id="content" rows="5" name="content" required title="内容为必填项!"></textarea>
+									<textarea class="form-control"  style="display:none;" id="content" rows="5" name="introduction" required title="内容为必填项!"></textarea>
                                 </div><!-- tab-pane -->
                               	<script type="text/javascript">
                               		function addTableImage(){
@@ -557,6 +613,24 @@
 			documentCarBind();
 		});
 		
+		//页面在product load 里面
+		function setSpecificationInputValue(){
+			var tr = $("tr.specification_value");
+			for(var i = 0; i<tr.length; i++){
+				var selects = $(tr[i]).find("select");
+				var specificationValue = "";
+				for(var v = 0; v<selects.length; v++){
+					var select = $(selects[v]).val();
+					if(specificationValue!=""){
+						specificationValue +=",";
+					}
+					specificationValue += select;
+				}
+				$(tr[i]).find("input[name='specificationValueIds']").val(specificationValue);
+				
+			}
+		}
+		
 		function saveForm(){
 			//设置规格值
 			setSpecificationInputValue();
@@ -564,6 +638,9 @@
 			if(!checkCar()){
 				return;
 			}
+			
+			$("#content").val(ue.getContent());
+			
 			$("#inputForm").submit();
 		}
 				

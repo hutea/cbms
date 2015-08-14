@@ -41,6 +41,31 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			   },"json");
 			}
 		}
+	  	
+	  	function restPassWord(id){
+	  		/* var id = $("input[name='id']").val(); */
+	  		if(confirm('您确定要将密码初始化吗？')){
+	  			var url = "<%=base%>manage/technician/restPassWord";
+	  			var data = {
+	  					id : id	
+	  			};
+	  			$.post(url,data,function(result){
+	  				console.log(result);
+	  			},"json");
+	  			/* $.post("${pageContext.request.contextPath}/manage/technician/restPassWord",
+						{
+							id : id
+						},
+						function(data) {
+							alert("密码已重置为:123456");
+						});
+	  			
+				} */
+	  			alert("密码已重置为:123456");
+	  		}
+	  	}	
+			
+			
 	</script>
 </head>
 
@@ -95,7 +120,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									联系电话
 								</th>
 								<th>
+									星级
+								</th>
+								<th>
 									状态
+								</th>
+								<th>
+									工作状态
 								</th>
 								<th>
 									操作
@@ -117,12 +148,20 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									${technician.phonenumber}
 								</td>
 								<td>
-									<c:if test="${0==technician.stats}">空闲</c:if>
-									<c:if test="${1==technician.stats}">路途中</c:if>
-									<c:if test="${2==technician.stats}">工作中</c:if>
+									${technician.level}星
+								</td>
+								<td>
+									<c:if test="${0==technician.stats}">空闲中</c:if>
+									<c:if test="${1==technician.stats}">派单中</c:if>
+									<c:if test="${2==technician.stats}">服务中</c:if>
+								</td>
+								<td>
+									<c:if test="${false eq technician.jobstatus }">休息中</c:if>
+									<c:if test="${true eq technician.jobstatus }">工作中</c:if>
 								</td>
 								<td>
 									<a href="<%=base %>manage/technician/edit?id=${technician.id}">修改</a>
+									<button id="restpassword" onclick="restPassWord('${technician.id}')" type="button">重置密码</button>
 								</td>
 							</tr>
 						  </c:forEach>

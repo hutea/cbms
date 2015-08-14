@@ -61,7 +61,7 @@ if(adminBean!=null){
 		        <div class="media-body">
 		          <ul class="breadcrumb">
 		            <li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-		            <li><a href="">系统帐号列表</a></li>
+		            <li><a href="">首页</a></li>
 		          </ul>
 		        </div>
 		      </div><!-- media -->

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hydom.account.ebean.Product;
 import com.hydom.util.dao.DAO;
+import com.hydom.util.dao.PageView;
 
 public interface ProductService extends DAO<Product> {
 
@@ -46,4 +47,26 @@ public interface ProductService extends DAO<Product> {
 	 * @return
 	 */
 	long countForServer(String stid, String cid, String[] pids);
+	
+	/**
+	 * 
+	 * @param serviceTypeId
+	 * @param carId
+	 * @param brandId
+	 * @param attribute
+	 * @param first
+	 * @param end
+	 * @return
+	 */
+	public PageView<Product> getListByQuery(String serviceTypeId, String carId, String brandId,String attributeNum,
+			String attribute, PageView<Product> pageView);
+	
+	
+	/**
+	 * 根据商品系列 跟当前商品 返回这个系列中 其他的列表数据
+	 * @param goodsNum
+	 * @param id
+	 * @return
+	 */
+	public List<Product> getProductByGoodsNum(String goodsNum, String id);
 }

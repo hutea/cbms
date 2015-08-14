@@ -102,7 +102,7 @@ public class ServiceType extends BaseEntity {
 	private Integer order;
 	
 	/**
-	 * 商品分类
+	 * 商品分类 
 	 */
 	@OneToMany(mappedBy="serviceType",fetch=FetchType.LAZY)
 	@OrderBy("order asc")

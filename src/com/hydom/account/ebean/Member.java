@@ -5,8 +5,10 @@
  */
 package com.hydom.account.ebean;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -15,7 +17,9 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.hydom.user.ebean.UserCar;
 import com.hydom.util.dao.BaseEntity;
@@ -36,25 +40,27 @@ public class Member extends BaseEntity {
 	 * 性别
 	 */
 	public class Gender {
-		
+
 		public final static int male = 0;
 		public final static int female = 1;
 	}
 
-	/** 用户名
-	@Column(nullable=false,unique=true)
-	private String username; */
+	/**
+	 * 用户名
+	 * 
+	 * @Column(nullable=false,unique=true) private String username;
+	 */
 
 	/** 密码 */
 	private String password;
 
 	/** E-mail */
 	private String email;
-	
+
 	/** 姓名 */
 	private String name;
 
-	/** 性别  0 男 1女*/
+	/** 性别 0 男 1女 */
 	private Integer gender;
 
 	/** 出生日期 */
@@ -66,54 +72,70 @@ public class Member extends BaseEntity {
 	/** 电话 */
 	private String phone;
 
+	/** 头像路径 */
+	private String photo;
+
+	/** 昵称 */
+	private String nickname;
+
 	/** 手机 */
-	@Column(nullable=false,unique=true)
+	@Column(nullable = false, unique = true)
 	private String mobile;
-	
-	@ManyToOne(fetch=FetchType.LAZY,optional=true)
-	@JoinColumn(name="area_id",updatable=false)
+
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	@JoinColumn(name = "area_id", updatable = false)
 	private Area area;
-	
+
 	/**
 	 * 积分
 	 */
 	private Float amount = 0f;
-	
+
 	/**
 	 * 余额
 	 */
 	private Float money = 0f;
-	
+
 	/**
-	 * 用户状态 1 正常  0 不正常
+	 * 用户状态 1 正常 0 不正常
 	 */
 	private Integer status = 1;
-	
+
 	/**
 	 * 是否删除
 	 */
 	private Boolean visible = true;
-	
+
 	/**
 	 * 会员等级
 	 */
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="member_rank_id")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "member_rank_id")
 	private MemberRank memberRank;
-	
+
 	/**
 	 * 用户车辆
+	 * 
 	 * @return
 	 */
-	@OneToMany(fetch=FetchType.LAZY,mappedBy="member")
-	private Set<UserCar> userCarSet = new HashSet<UserCar>();
-	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
+	@OrderBy("createDate desc")
+	private List<UserCar> userCarSet = new ArrayList<UserCar>();
+
 	/**
 	 * 用户领取的优惠卷
 	 */
-	@OneToMany(fetch=FetchType.LAZY,mappedBy="member")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
 	private Set<MemberCoupon> couponSet = new HashSet<MemberCoupon>();
-	
+
+	@Transient
+	private String getMemberNamePhone() {
+		String phone = this.phone;
+		String codePhone = phone.replaceAll("(\\d{3})\\d{4}(\\d{4})",
+				"$1****$2");
+		return codePhone;
+	}
+
 	public Set<MemberCoupon> getCouponSet() {
 		return couponSet;
 	}
@@ -122,11 +144,11 @@ public class Member extends BaseEntity {
 		this.couponSet = couponSet;
 	}
 
-	public Set<UserCar> getUserCarSet() {
+	public List<UserCar> getUserCarSet() {
 		return userCarSet;
 	}
 
-	public void setUserCarSet(Set<UserCar> userCarSet) {
+	public void setUserCarSet(List<UserCar> userCarSet) {
 		this.userCarSet = userCarSet;
 	}
 
@@ -241,5 +263,21 @@ public class Member extends BaseEntity {
 	public void setArea(Area area) {
 		this.area = area;
 	}
-	
+
+	public String getPhoto() {
+		return photo;
+	}
+
+	public void setPhoto(String photo) {
+		this.photo = photo;
+	}
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
 }

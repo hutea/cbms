@@ -60,7 +60,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		        </div>
 		      </div><!-- media -->
 		    </div>
-		    <form id="pageList" action="${pageContext.request.contextPath}/manage/productBrand/list" method="post">
+		    <form id="pageList" action="${pageContext.request.contextPath}/manage/product/list" method="post">
 			    <div class="contentpanel">
 			      <div class="search-header">
 			        <div class="btn-list">

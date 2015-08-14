@@ -23,6 +23,7 @@ public class UploadImageUtil {
 	private final static int BANNER_SMALL_WIDTH = 640;
 	private final static int BANNER_SMALL_HEGIHT = 240;
 
+	
 	/**
 	 * 上传文件处理
 	 * 
@@ -44,8 +45,11 @@ public class UploadImageUtil {
 		// 路径
 		String path = root + CommonUtil.getDateFloder();
 
+		String oriFileName = file.getOriginalFilename();
+		String oriExtName = oriFileName.substring(oriFileName.lastIndexOf("."));
+		
 		// 生成唯一的文件名称
-		String fileName = CommonUtil.getUUID() + realName.substring(realName.lastIndexOf("."));
+		String fileName = CommonUtil.getUploadImageName()+oriExtName;
 
 		// 是否是图片
 		boolean isImage = fileName.matches(REG_IMAGE);

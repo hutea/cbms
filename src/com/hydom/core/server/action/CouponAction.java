@@ -76,6 +76,9 @@ public class CouponAction extends BaseAction{
 	 */
 	@RequestMapping("/save")
 	public ModelAndView save(@ModelAttribute Coupon coupon) {
+		if(coupon.getRate()!=null){
+			coupon.setRate(coupon.getRate()/10);
+		}
 		couponService.save(coupon);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		mav.addObject("m", 9);

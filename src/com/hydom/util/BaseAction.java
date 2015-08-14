@@ -26,6 +26,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.InitBinder;
 
+import com.hydom.util.bean.AdminBean;
 import com.hydom.util.bean.MemberBean;
 
 /**
@@ -101,6 +102,19 @@ public class BaseAction {
 	
 	
 	protected void removeMemberBean(HttpServletRequest request,String session){
+		request.getSession().removeAttribute(session);
+	}
+	
+
+	/**
+	 * 获取后台用户登录者信息
+	 * @return
+	 */
+	protected AdminBean getAdminBean(HttpServletRequest request){
+		return (AdminBean)request.getSession().getAttribute(AdminBean.ADMIN_SESSION);
+	}
+	
+	protected void removeAdminBean(HttpServletRequest request,String session){
 		request.getSession().removeAttribute(session);
 	}
 	

@@ -112,6 +112,9 @@
 #memberRankSelect{
 	margin-top: 10px;
 }
+.mg10{
+	margin-top: 8px;
+}
 </STYLE>
 </head>
 <body>
@@ -169,6 +172,18 @@
 									<label class="col-sm-4 control-label">网址</label>
 									<div class="col-sm-8">
 										<input type="text" name="url" class="form-control" value="${entity.url }"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">介绍</label>
+									<div class="col-sm-8">
+										<input type="text" name="remark" class="form-control" value="${entity.remark }"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-4 control-label">品牌推荐</label>
+									<div class="col-sm-8">
+										<label class="mg10"><input type="checkbox" name="commandBrand" value="1" <c:if test="${entity.commandBrand eq 1}">checked="checked"</c:if> />推荐</label>
 									</div>
 								</div>
 								<div class="form-group">

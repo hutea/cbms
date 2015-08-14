@@ -69,7 +69,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			          <thead>
 						<tr>
 		                   <th><input id="selectAll" type="checkbox" /></th>
-		                   <th>区域</th>
+		                   <!-- <th>区域</th> -->
 		                   <th>车队负责人</th>
 		                   <th>负责人电话</th>
 		                   <th>备注</th>
@@ -80,11 +80,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			          	<c:forEach items="${pageView.records}" var="entry" varStatus="s">
 			           	  	<tr id="tr_${entry.id}">
 			           	  		 <td><input type="checkbox" name="ids" value="${entry.id}"></td>
-				           		 <td>
-									<c:forEach items="${entry.area }" var="area">
-										${area.fullName }
-									</c:forEach>
-				           		 </td>
+				           		<%--  <td>
+				           		 	${area.treeFull }
+				           		 </td> --%>
 				           		 <td>${entry.headMember}</td>
 				           		 <td>${entry.headPhone}</td>
 				           		 <td>${entry.remark}</td>

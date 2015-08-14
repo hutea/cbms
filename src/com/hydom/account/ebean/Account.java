@@ -39,6 +39,9 @@ public class Account extends BaseEntity {
 	/** 昵称 **/
 	private String nickname;
 
+	/** 系统初始帐户 不能删除 **/
+	private Boolean initSign = false;
+
 	/** 逻辑删除标志 **/
 	private Boolean visible = true;
 
@@ -85,5 +88,14 @@ public class Account extends BaseEntity {
 	public void setGroups(Set<PrivilegeGroup> groups) {
 		this.groups = groups;
 	}
+
+	public Boolean getInitSign() {
+		return initSign;
+	}
+
+	public void setInitSign(Boolean initSign) {
+		this.initSign = initSign;
+	}
+	
 
 }

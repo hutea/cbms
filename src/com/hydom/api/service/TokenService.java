@@ -13,4 +13,5 @@ public interface TokenService extends DAO<Token> {
 	 * @return
 	 */
 	public Token findToken(String uid, String authId);
+
 }

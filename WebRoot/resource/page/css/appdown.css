@@ -1,6 +1,6 @@
 /**********reset**************/
 html, body, div, span, h1, h2, h3, h4, p, a, em, img, strong, ul, li, dl, dt, dd, form, label, table, caption, tbody, tfoot, thead, tr, th, td {padding: 0; margin: 0; border: none; outline: 0; }
-body {background-color: none; font-family: "微软雅黑"; font-size: 12px; color: #000; }
+body {background-color: none; font-family: "寰蒋闆呴粦"; font-size: 12px; color: #000; }
 h1, h2, h3 {color: #434343; font-weight: normal;}
 a {color: #6b6b6b; text-decoration: none; }
 a:hover {text-decoration: none; }
@@ -28,13 +28,13 @@ textarea {outline: 0px; resize: none; }
 
 /**********box********/
 
-#box {width: 100%; height: auto; overflow: hidden; position: relative;}  /*图片横向拉伸*/
-#box img {width: 100%; }  /*图片横向拉伸*/
+#box {width: 100%; height: auto; overflow: hidden; position: relative;}  /*鍥剧墖妯悜鎷変几*/
+#box img {width: 100%; }  /*鍥剧墖妯悜鎷変几*/
 #box .list {position: relative; width: 100%; height: 334px; overflow: hidden; }
 #box .list li {position: absolute; top:0; left: 0; width: 100%; /* height: 446px; */ opacity: 0; filter: alpha(opacity=0); }
 #box .list li.current {opacity: 1; filter: alpha(opacity=100); }
-#box .num {position: absolute; right: 300px; bottom: 50px; text-indent: -999px; width: 140px; z-index: 100; /*为了ie兼容圆角*/}
-#box .num li {color:#fff; float:left; width: 10px; height: 10px; border-radius: 5px; behavior: url(js/PIE.htc); /*为了ie兼容圆角*/ text-align: center; cursor: pointer; margin-right: 15px; overflow: hidden; background: #fff; opacity: 0.7; filter: alpha(opacity=70); }
+#box .num {position: absolute; right: 300px; bottom: 50px; text-indent: -999px; width: 140px; z-index: 100; /*涓轰簡ie鍏煎鍦嗚*/}
+#box .num li {color:#fff; float:left; width: 10px; height: 10px; border-radius: 5px; behavior: url(js/PIE.htc); /*涓轰簡ie鍏煎鍦嗚*/ text-align: center; cursor: pointer; margin-right: 15px; overflow: hidden; background: #fff; opacity: 0.7; filter: alpha(opacity=70); }
 #box .num li.current {color: #fff; opacity: 1; filter: alpha(opacity=100); font-weight: 700; background: #3dccfc; }
 
 /**********mid**************/
@@ -99,8 +99,8 @@ p{margin:10px auto; width:920px;}
 
 /***********down************/
 .down {clear: both; }
-.span4 {width: 100%; height: auto; overflow: hidden; position: relative; } /*图片横向拉伸*/
-.span4 img {width: 100%;}  /*图片横向拉伸*/
+.span4 {width: 100%; height: auto; overflow: hidden; position: relative; } /*鍥剧墖妯悜鎷変几*/
+.span4 img {width: 100%;}  /*鍥剧墖妯悜鎷変几*/
 .span4 .span42 {z-index: 10; color: #fff; width: 368px; position: absolute; top: 75px; left: 240px; }
 .span4 .span42 h2 {z-index: 10; font-size: 18px; line-height: 35px; color: #fff; }
 .span4 .span42 p {z-index: 10; font-size: 12px; line-height: 25px; color: #fff; width: 325px; margin-left: 0px;}
@@ -126,7 +126,7 @@ p{margin:10px auto; width:920px;}
 
 
 /*****************************************************newslist1.css**************************************************************************/
-/*横线*/
+/*妯嚎*/
 
 .top_right .second a {color: #6b6b6b;}
 .top_right li b.b3 {background: url(../images/3-3.png) 0 0 no-repeat;}
@@ -164,7 +164,7 @@ p{margin:10px auto; width:920px;}
 .top_right li b.b3 {background: url(../images/3-3.png) 0 0 no-repeat;}
 .service {height: auto; margin-bottom: 35px; margin-top: -36px;  }
 .service_left {float: left; width: 180px; height: 238px; background: url(../images/ser_nav_bg.png) 0 0 no-repeat; padding-top: 8px; text-align: center; }
-.service_left li.hover a {color: #925901; }  /* 这里是要改变的！！！*/
+.service_left li.hover a {color: #925901; }  /* 杩欓噷鏄鏀瑰彉鐨勶紒锛侊紒*/
 .service_left li a {font-size: 16px; line-height: 40px; color: #fff3d7; cursor: pointer; }
 .service_left li a:hover {color: #925901; }
 .service_right {float: right; width: 790px; height: 850px; overflow: hidden; }
@@ -209,7 +209,7 @@ p{margin:10px auto; width:920px;}
 .buy_total2_right p span {color: #cd0000;}
 .buy_total2_right button{border: none; background: url(../images/buy_btn.png) 0 0 no-repeat; width: 206px; height: 50px; cursor: pointer; }
 
-/*******弹出层*******/
+/*******寮瑰嚭灞�******/
 .popup {width: 666px; height: 750px; border: 6px solid #868585; margin: 0 auto; position: fixedp; }
 .popup_top {position: relative; height: 33px; background-color: #f4f4f4;}
 .popup_top li {float: left; padding: 0 30px; }
@@ -222,8 +222,8 @@ p{margin:10px auto; width:920px;}
 
 
 /**************************************app.css**********************************************************************/
-..span4_1 {width: 100%; height: auto; overflow: hidden; position: relative; } /*图片横向拉伸*/
-.span4_1 img.aap_bg {width: 100%;  }  /*图片横向拉伸*/
+..span4_1 {width: 100%; height: auto; overflow: hidden; position: relative; } /*鍥剧墖妯悜鎷変几*/
+.span4_1 img.aap_bg {width: 100%;  }  /*鍥剧墖妯悜鎷変几*/
 .app_right { position: absolute; right: 220px; top: 270px; background: url(../images/app_right_2.png) 0 0 no-repeat; width: 480px; height: 255px; }
 .app_right_left {float: left; padding: 15px; }
 .app_right_right {float: right; }

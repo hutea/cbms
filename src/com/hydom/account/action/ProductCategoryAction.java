@@ -103,7 +103,8 @@ public class ProductCategoryAction extends BaseAction{
 		
 		//服务类型
 		jpql = "o.type = 1 and o.visible = true ";
-		List<ServiceType> serviceTypes = serviceTypeService.getList(jpql, null, orderby);
+		List<ServiceType> serviceTypes = serviceTypeService.getServiceType(1);
+		
 		List<ServiceType> newServiceTypes = new ArrayList<ServiceType>();
 		for(ServiceType serviceType : serviceTypes){
 			if(serviceType.getProductCategory().size() <= 0){
@@ -150,6 +151,17 @@ public class ProductCategoryAction extends BaseAction{
 		//该分类下的所有子分(页面上过滤掉所有的该分类的子分类)
 		model.addAttribute("children", productCategoryService.findProductCategory(productCategory));
 		
+		if(productCategory.getServiceType() == null){
+			List<ServiceType> serviceTypes = serviceTypeService.getServiceType(1);
+			List<ServiceType> newServiceTypes = new ArrayList<ServiceType>();
+			for(ServiceType serviceType : serviceTypes){
+				if(serviceType.getProductCategory().size() <= 0){
+					newServiceTypes.add(serviceType);
+				}
+			}
+			model.addAttribute("serviceTypes", newServiceTypes);
+		}
+		
 		return  basePath+"/product_category_edit";
 	}
 	
@@ -164,43 +176,34 @@ public class ProductCategoryAction extends BaseAction{
 			entity.setProductBrandSet(productBrandSet);
 		}
 		
+		if(StringUtils.isNotEmpty(entity.getServiceType().getId())){
+			ServiceType serviceType = serviceTypeService.find(entity.getServiceType().getId());
+			entity.setServiceType(serviceType);
+		}else{
+			entity.setServiceType(null);
+		}
+		
+		if(StringUtils.isEmpty(entity.getParent().getId())){//说明是顶级分类
+			entity.setParent(null);
+		}else{
+			ProductCategory parent = productCategoryService.find(entity.getParent().getId());
+			entity.setParent(parent);
+		}
+		
 		if(StringUtils.isNotEmpty(entity.getId())){
-			
 			ProductCategory productEntity = productCategoryService.find(entity.getId());
 			productEntity.setProductBrandSet(entity.getProductBrandSet());
 			productEntity.setName(entity.getName());
 			productEntity.setOrder(entity.getOrder());
+			productEntity.setHotProductCategory(entity.getHotProductCategory());
+			productEntity.setServiceType(entity.getServiceType());
+			productEntity.setParent(entity.getParent());
+			productEntity.setImgPath(entity.getImgPath());
 			
-			if(StringUtils.isEmpty(entity.getParent().getId())){//说明是顶级分类
-				//entity.setTreePath(null);
-				productEntity.setParent(null);
-				//entity.setGrade(0);
-			}else{
-				ProductCategory parent = productCategoryService.find(entity.getParent().getId());
-			//	entity.setTreePath(entity.getParent().getTreePath()+","+entity.getId());
-				productEntity.setParent(parent);
-			//	entity.setGrade(parent.getGrade() + 1);
-			}
 			productCategoryService.update(productEntity);
 		}else{
-			if(StringUtils.isEmpty(entity.getParent().getId())){
-				//entity.setTreePath(ProductCategory.TREE_PATH_SEPARATOR);
-				entity.setParent(null);
-				//entity.setGrade(0);
-			}else{
-				ProductCategory parent = productCategoryService.find(entity.getParent().getId());
-			//	entity.setTreePath(entity.getParent().getTreePath() + entity.getParent().getId() + ProductCategory.TREE_PATH_SEPARATOR);
-				entity.setParent(parent);
-				//entity.setGrade(parent.getGrade() + 1);
-			}
-			productCategoryService.save(entity);
 			
-			/*if(entity.getParent() != null){
-				entity.setTreePath(entity.getParent().getTreePath() + entity.getParent().getId() + ProductCategory.TREE_PATH_SEPARATOR);
-			}else{
-				entity.setTreePath(ProductCategory.TREE_PATH_SEPARATOR);
-			}
-			productCategoryService.update(entity);*/
+			productCategoryService.save(entity);
 		}
 		return  "redirect:list";
 	}

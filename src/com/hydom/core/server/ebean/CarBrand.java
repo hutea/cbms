@@ -10,6 +10,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Where;
+
 import com.hydom.util.dao.BaseEntity;
 
 /**
@@ -55,9 +57,24 @@ public class CarBrand extends BaseEntity{
 	 * 车系集合
 	 */
 	@OneToMany(fetch=FetchType.LAZY,mappedBy="carBrand")
+	@Where(clause="visible = 1")
 	@OrderBy("createDate desc")
 	private List<CarType> carTypeList = new ArrayList<CarType>();
 	
+	/**
+	 * 车辆集合
+	 */
+	@OneToMany(fetch=FetchType.LAZY,mappedBy="carBrand")
+	@Where(clause="visible = 1")
+	@OrderBy("createDate desc")
+	private List<Car> carList = new ArrayList<Car>();
+	
+	public List<Car> getCarList() {
+		return carList;
+	}
+	public void setCarList(List<Car> carList) {
+		this.carList = carList;
+	}
 	public List<CarType> getCarTypeList() {
 		return carTypeList;
 	}

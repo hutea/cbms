@@ -5,13 +5,16 @@
  */
 package com.hydom.account.ebean;
 
+
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
+import com.hydom.util.CommonUtil;
 import com.hydom.util.dao.BaseEntity;
 
 /**
@@ -21,6 +24,8 @@ import com.hydom.util.dao.BaseEntity;
 @Entity
 @Table(name = "t_order_server_detail")
 public class ServerOrderDetail extends BaseEntity {
+
+
 
 	/**
 	 * serialVersionUID.
@@ -55,7 +60,12 @@ public class ServerOrderDetail extends BaseEntity {
 	@ManyToOne(fetch=FetchType.LAZY)
 	@JoinColumn(name="server_order_id")
 	private ServerOrder serverOrder;
-	
+	/**
+	 * 订单商品评论
+	 */
+	@OneToOne
+	@JoinColumn(name="comment_id")
+	private Comment comment;
 	/**
 	 * 订单
 	 */
@@ -111,7 +121,18 @@ public class ServerOrderDetail extends BaseEntity {
 		this.order = order;
 	}
 	
-	
+	public Comment getComment() {
+		return comment;
+	}
+
+	public void setComment(Comment comment) {
+		this.comment = comment;
+	}
+	@Transient
+	public String getSum(){
+		Float sum = CommonUtil.mul(this.price+"", this.count+"");
+		return ""+sum;
+	}
 	
 	
 }

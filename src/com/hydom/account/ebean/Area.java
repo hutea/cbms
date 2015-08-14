@@ -41,6 +41,12 @@ public class Area extends BaseEntity {
 
 	private static final long serialVersionUID = -2158109459123036967L;
 
+	public Area(){}
+	public Area(String id){
+		super(id);
+	}
+	
+	
 	/** 名称 */
 	@NotEmpty
 	@Length(max = 100)
@@ -156,7 +162,7 @@ public class Area extends BaseEntity {
 		}else{
 			return area.getName();
 		}*/
-		System.out.println(area);
+	//	System.out.println(area);
 		if(area.getParent()==null){
 			return area.getName();
 		}else{

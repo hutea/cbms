@@ -64,9 +64,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			    <div class="contentpanel">
 			      <div class="search-header">
 			        <div class="btn-list">
-			          <%-- <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/serviceType" disabled>删除</button> --%>
+			         <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/serviceType" disabled>删除</button>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
-					  <%-- <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/serviceType">添加</button> --%>
+					 <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/serviceType">添加</button>
 			          <div style="float: right;max-width: 340px;height: 37px;">
 			            <div class="input-group" style="float: left;max-width: 240px;">
 			              <input id="searchValue" placeholder="关键字查询" name="queryContent" value="${queryContent}" type="text" class="form-control" maxlength="50" style="height: 37px">
@@ -82,9 +82,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			        <table id="listTable" class="table table-info" >
 			        	<thead>
 							<tr>
-								<!-- <th class="check">
+								 <th class="check">
 									<input type="checkbox" id="selectAll"/>
-								</th> -->
+								</th>
 								<th>
 									编号
 								</th>
@@ -107,9 +107,11 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						</thead>
 						<c:forEach items="${pageView}" var="services" varStatus="s">  
 							<tr>
-								<%-- <td>
-									<input type="checkbox" name="ids" value="${services.id}" />
-								</td> --%>
+								<td>
+									<c:if test="${services.type eq 1}">
+										<input type="checkbox" name="ids" value="${services.id}" />
+									</c:if>
+								</td>
 								<td>
 									${s.index + 1}
 								</td>

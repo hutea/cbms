@@ -121,7 +121,7 @@
 						<div class="media-body">
 							<ul class="breadcrumb">
 								<li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-								<li><a href="">商品添加</a></li>
+								<li><a href="">商品编辑</a></li>
 							</ul>
 						</div>
 					</div>
@@ -145,14 +145,17 @@
                             </ul>
     
                             <!-- Tab panes -->
-                            <form class="form-horizontal form-bordered" id="inputForm" action="<%=basePath%>manage/product/save" method="POST" enctype="multipart/form-data">
+                            <form class="form-horizontal form-bordered" id="inputForm" action="<%=basePath%>manage/product/update" method="POST" enctype="multipart/form-data">
                             <div class="tab-content mb30">
                             	<!-- 商品介绍 -->
+                            	<input type="hidden" name="productId" value="${entity.id }"/>
                             	<script type="text/javascript">
                             		//改变商品分类
                             		//1、改变品牌 2、改变商品参数 3、改变商品筛选属性 4、商品规格
-                            		function changeProductCategory(e){
-                            			var id = $(e).find("option:selected").val();
+                            		var productBrand = "${entity.productBrand.id}";
+                            		var productId = "${entity.id}";
+                            		function changeProductCategory(){
+                            			var id = $("#productCategorySelect").find("option:selected").val();
                             			if(id == ""){
                             				return;
                             			}
@@ -178,7 +181,11 @@
                             		function addBrandSelect(value){
                             			var html = "<option value=''>请选择品牌</option>";
                             			for(var i in value){
-                            				html += "<option value='"+value[i].id+"'>"+value[i].name+"</option>";
+											var select = "";                            				
+                            				if(productBrand == value[i].id){
+                            					select = "selected='selected'";   
+                            				}
+                            				html += "<option value='"+value[i].id+"' "+select+">"+value[i].name+"</option>";
                             			}
                             			$("#productBrandSelect").html(html);
                             		}
@@ -186,20 +193,23 @@
                             		function changeAttribute(id){
                             			
                             			var url = base + "manage/product/loadAttribute";
-                            			var data = {productCategoryId:id};
+                            			var data = {
+                            					productCategoryId:id,
+                            					productId:productId
+                            			};
                             			$("#attribute").load(url,data,function(){});
                             			
                             		}
                             		//商品参数
                             		function changeParameter(id){
                             			var url = base + "manage/product/loadParameter";
-                            			var data = {productCategoryId:id};
+                            			var data = {productCategoryId:id,productId:productId};
                             			$("#contact").load(url,data,function(){});
                             		}
                             		//商品规格
                             		function changeSpecification(id){
-                            			var url = base + "manage/product/loadSpecification";
-                            			var data = {productCategoryId:id};
+                            			var url = base + "manage/product/loadEditSpecification";
+                            			var data = {productCategoryId:id,productId:productId};
                             			$("#special").load(url,data,function(){});
                             		}
                             	</script>
@@ -208,29 +218,15 @@
                                     	<div class="form-group">
 											<label class="col-sm-4 control-label">商品分类</label>
 											<div class="col-sm-8">
-												<select name="productCategory.id" onchange="changeProductCategory(this);" class="mg10">
-													<option value="">请选择商品分类</option>
-													<c:forEach var="category" items="${productCategorys }">
-														<option value="${category.id }">${category.name }</option>			
-													</c:forEach>
-													
-													<c:forEach var="category" items="${categorys }">
-														<option value="${category.id }">
-															<c:if test="${category.grade gt 0}">
-																<c:forEach begin="1" end="${category.grade }">
-																	&nbsp;&nbsp;
-																</c:forEach>
-															</c:if>
-															${category.name}
-														</option>
-													</c:forEach>
+												<select name="productCategory.id" class="mg10" id="productCategorySelect">
+													<option value="${entity.productCategory.id }">${entity.productCategory.name }</option>
 												</select>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">商品名称</label>
 											<div class="col-sm-8">
-												<input type="text" name="name" class="form-control" maxlength="200" />
+												<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
 											</div>
 										</div>
 										<div class="form-group">
@@ -250,19 +246,19 @@
 										<div class="form-group">
 											<label class="col-sm-4 control-label">成本价</label>
 											<div class="col-sm-8">
-												<input type="text" name="cost" class="form-control" value="${entity.url }"/>
+												<input type="text" name="cost" class="form-control" value="${entity.cost }"/>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">市场价</label>
 											<div class="col-sm-8">
-												<input type="text" name="marketPrice" class="form-control" value="${entity.url }"/>
+												<input type="text" name="marketPrice" class="form-control" value="${entity.marketPrice }"/>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">赠送积分</label>
 											<div class="col-sm-8">
-												<input type="text" name="point" class="form-control" value="${entity.url }"/>
+												<input type="text" name="point" class="form-control" value="${entity.point }"/>
 											</div>
 										</div>
 										<div class="form-group">
@@ -276,24 +272,68 @@
 										<div class="form-group">
 											<label class="col-sm-4 control-label">优惠卷</label>
 											<div class="col-sm-8">
-												<label class="mg10"><input type="checkbox" name="useCoupon" value="0"/>可以使用</label>
+												<label class="mg10"><input type="checkbox" name="useCoupon" value="0" <c:if test="${entity.useCoupon eq 0}">checked="checked"</c:if>/>可以使用</label>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">售后服务</label>
 											<div class="col-sm-8">
 												<c:forEach var="value" items="${labels }">
-													<label class="mg10"><input type="checkbox" name="labelIds" value="${value.id }" checked="checked"/>${value.labelName }</label>
+													<label class="mg10"><input type="checkbox" name="labelIds" value="${value.id }" <c:if test="${fn:contains(labelSet,value.id) }">checked="checked"</c:if>/>${value.labelName }</label>
 												</c:forEach>
+											</div>
+										</div>
+										<script type="text/javascript">
+											function prouductUniqueTypeChange(obj){
+												var selectValue = $(obj).val();
+												closeHIDEdiv();
+												if(selectValue == "2"){
+													$("#productCountDIV").show();
+												}else{
+													$("#discountDIV").show();
+												}
+											}
+											function closeHIDEdiv(){
+												$("#productCountDIV").hide();
+												$("#discountDIV").hide();
+											}
+											function blurInput(obj){
+												var value = $(obj).val();
+												var marketPrice = $("input[name='marketPrice']").val();
+												var price = parseFloat(parseFloat(value) * parseFloat(marketPrice)).toFixed(2);
+												$("#discountPrice").text(price);
+											}
+										</script>
+										<div class="form-group">
+											<label class="col-sm-4 control-label">特色市场</label>
+											<div class="col-sm-8">
+												<select name="prouductUniqueType" class="mg10" onchange="prouductUniqueTypeChange(this);">
+													<option value="">无</option>
+													<!-- <option value="1">品牌推荐 </option> -->
+													<option value="2" <c:if test="${entity.prouductUniqueType eq 2}">selected="selected"</c:if> >限量精品</option>
+													<option value="3" <c:if test="${entity.prouductUniqueType eq 3}">selected="selected"</c:if> >天天特价</option>
+													<option value="4" <c:if test="${entity.prouductUniqueType eq 4}">selected="selected"</c:if> >绿色出行</option>
+												</select>
+											</div>
+										</div>
+										<div class="form-group" id="productCountDIV" style="display: none;">
+											<label class="col-sm-4 control-label">限量数量</label>
+											<div class="col-sm-8">
+												<input type="text" name="productCount" class="form-control" value="${entity.productCount }"/>
+											</div>
+										</div>
+										<div class="form-group" id="discountDIV" style="display: none;">
+											<label class="col-sm-4 control-label">特价折扣</label>
+											<div class="col-sm-8">
+												<input type="text" name="discount" class="form-control" value="0" onblur="blurInput(this);" value="${entity.discount }"/>折后价<span id="discountPrice">0</span>
 											</div>
 										</div>
 									</div>
                                 </div><!-- tab-pane -->
-                                
                               	<!-- 商品介绍 -->
                                 <div class="tab-pane" id="profile">
                                     <script id="editor" type="text/plain" style="width:100%;height:400px;"></script>
-									<textarea class="form-control"  style="display:none;" id="content" rows="5" name="content" required title="内容为必填项!"></textarea>
+									<textarea class="form-control"  style="display:none;" id="content" rows="5" name="introduction" required title="内容为必填项!">${entity.introduction }</textarea>
                                 </div><!-- tab-pane -->
                               	<script type="text/javascript">
                               		function addTableImage(){
@@ -310,6 +350,19 @@
                               			var tr = $(e).closest("tr");
                               			tr.remove();
                               		}
+                              		//删除图片
+                              		function deleteImg(imgId,e){
+                              			var url = base + "manage/product/deleteProductImg";
+                              			var data = {
+                              				imgId:imgId
+                              			};
+                              			$.post(url,data,function(result){
+                              				if(result.status == "success"){
+                              					deleteImage(e);
+                              				}
+                              			});
+                              		}
+                              		
                               	</script>
                               	<!-- 商品图片 -->
                                 <div class="tab-pane" id="about">
@@ -323,6 +376,17 @@
 														<th style="width: 10%;">操作</th>
 													</tr>
 												</thead>
+												<c:forEach var="img" items="${entity.productImages }">
+													<tr>
+														<td>
+															<a href="<%=basePath %>${img.source}" target="_blank">查看</a>
+			                              				</td>
+														<td>
+															<a href="javascript:void(0);" onclick="deleteImg('${img.id}');">[删除]</a>
+														</td>
+													</tr>
+												</c:forEach>
+												
 												<!-- <tbody class="table_tbody">
 													<tr>
 														<td>
@@ -382,6 +446,9 @@
                                 <script type="text/javascript">
                                 	//车型事件绑定
                                 	function documentCarBind(){
+                                		
+                                		initProductCar();
+                                		
                                 		$(document).on("click","input[name='carBrandIds']",function(){
                                 			var carBrandId = $(this).val();
                                 			if(carBrandId == "-1"){
@@ -406,6 +473,12 @@
                                 			}else{//取消
                                 				$("."+carTypeId).closest("label").remove();
                                 			}
+                                		});
+                                		
+                                		$(document).on("click","input.carIds",function(){
+											  var carName = $(this).attr("name");
+											  var carId = $(this).attr("id");
+                                				var html = ""
                                 		});
                                 	}
                                 	//当起选择不限的时
@@ -442,6 +515,7 @@
                                 			html += "<label><input value='"+value[i].id+"' type='checkbox' name='carTypeIds' class='"+obj+"'/>"+value[i].text+"</label>";
                                 		}
                                 		$("#carTypeLabel").append(html);
+                                		checkedCarType();
                                 	}
                                 	//车型
                                 	function addCar(obj,parentId){
@@ -464,9 +538,10 @@
                                 	function addCarHTML(value,obj,parentId){
                                 		var html = "";
                                 		for(var i in value){
-                                			html += "<label><input value='"+value[i].id+"' type='checkbox' name='carIds' class='"+obj+" "+parentId+"'/>"+value[i].text+"</label>";
+                                			html += "<label><input value='"+value[i].id+"' type='checkbox' class='"+obj+" "+parentId+" carIds' name='carIds'/>"+value[i].text+"</label>";
                                 		}
                                 		$("#carLabel").append(html);
+                                		checkedCar();
                                 	}
                                 	
                                 	function checkCar(){
@@ -494,6 +569,53 @@
                                 			}
                                 		}
                                 	}
+                                	
+                                	//选中品牌
+                        			var chooseBrands = '${chooseBrandIds}';
+                        			var brandsDate = eval("("+chooseBrands+")");
+                        			
+                        			//选中车系
+                        			var chooseCarTypes = '${chooseCarTypeIds}';
+                        			var carTypeDate = eval("("+chooseCarTypes+")");
+                        			
+                        			//选中车型
+                        			var cars = '${chooseCar}';
+                        			var carDate = eval("("+cars+")");
+                        			
+                                	function initProductCar(){
+                                		console.log(brandsDate);
+                            			console.log(carTypeDate);
+                            			console.log(carDate);
+                                		var useAllCar = "${entity.useAllCar}";
+                                		if(useAllCar != "0"){//车辆不限
+                                			$("#useAllCar").prop("checked",false);
+                                			checkedBrand();
+                                			//根据选中车辆品牌 获取 车系
+                                			for(var i in brandsDate){
+                                				addCarType(brandsDate[i]);
+                                			}
+                                			//选中车型
+                                			for(var i in carTypeDate){
+                                				addCar(carTypeDate[i].id, carTypeDate[i].parentId);
+                                			}
+                                			
+                                		}
+                                	}
+                                	function checkedBrand(){
+                            			for(var i in brandsDate){
+                            				$("input[name='carBrandIds'][value='"+brandsDate[i]+"']").prop("checked",true);
+                            			}
+                            		}
+                                	function checkedCarType(){
+                                		for(var i in carTypeDate){
+                            				$("input[name='carTypeIds'][value='"+carTypeDate[i].id+"']").prop("checked",true);
+                            			}
+                                	}
+                                	function checkedCar(){
+                                		for(var i in carDate){
+                            				$("input[name='carIds'][value='"+carDate[i]+"']").prop("checked",true);
+                            			}
+                                	}
                                 </script>
                                 <!-- 适用车型 -->
                                  <div class="tab-pane" id="carType">
@@ -501,7 +623,7 @@
 										<div class="form-group">
 											<label class="col-sm-4 control-label">车辆品牌</label>
 											<div class="col-sm-8">
-												<label><input type="checkbox" value="-1" name="carBrandIds" checked="checked"/>不限</label>
+												<label><input type="checkbox" value="-1" name="carBrandIds" checked="checked" id="useAllCar"/>不限</label>
 												<c:forEach var="value" items="${carBrands }">
 													<label><input type="checkbox" value="${value.id }" name="carBrandIds"/>${value.name }</label>
 												</c:forEach>
@@ -519,6 +641,23 @@
 												
 											</div>
 										</div>
+										<%-- <div class="form-group" id="carIdDiv">
+											<label class="col-sm-4 control-label">已选车型</label>
+											<div class="col-sm-8" id="chooseCarLabel">
+												<c:choose>
+													<c:when test="${entity.useAllCar eq 0}">
+														<label><input type="checkbox" value="-1" name="carBrandIds" checked="checked"/>不限</label>
+													</c:when>
+													<c:otherwise>
+														<label><input type="checkbox" value="-1" name="carBrandIds"/>不限</label>
+														<c:forEach var="value" items="${entity.carSet }">
+															<label><input type="checkbox" value="${value.id }" name="carIds" checked="checked"/>${value.name }</label>
+														</c:forEach>
+													</c:otherwise>	
+												</c:choose>
+												
+											</div>
+										</div> --%>
 									</div>
                                  </div><!-- tab-pane -->
                             </div><!-- tab-content -->
@@ -555,11 +694,16 @@
 			});
 			//适用车辆绑定事件
 			documentCarBind();
+			changeProductCategory();
 		});
 		
 		function saveForm(){
 			//设置规格值
 			setSpecificationInputValue();
+			//修改规格值
+			setOldSpecificationInputValue();
+			//alert(ue.getContent());
+			$("#content").val(ue.getContent());
 			
 			if(!checkCar()){
 				return;

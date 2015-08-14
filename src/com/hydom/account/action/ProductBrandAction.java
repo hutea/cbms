@@ -91,6 +91,8 @@ public class ProductBrandAction extends BaseAction{
 			productBrand.setName(entity.getName());
 			productBrand.setOrder(entity.getOrder());
 			productBrand.setUrl(entity.getUrl());
+			productBrand.setRemark(entity.getRemark());
+			productBrand.setCommandBrand(entity.getCommandBrand());
 			productBrandService.update(productBrand);
 		}else{
 			productBrandService.save(entity);

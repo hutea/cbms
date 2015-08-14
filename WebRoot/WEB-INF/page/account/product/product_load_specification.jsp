@@ -16,8 +16,9 @@
 		</c:forEach>
 	</div>
 </div> --%>
+<c:if test="${specifications.size() > 0 }">
 <button type="button" onclick="addSpecificationValue();"
-	style="margin-bottom: 10px;">添加规格值</button>
+		style="margin-bottom: 10px;">添加规格值</button>
 <div class="panel-body nopadding">
 	<div class="table-responsive">
 		<table id="addSpecificationListTable" class="table table-info">
@@ -45,6 +46,7 @@
 		</table>
 	</div>
 </div>
+</c:if>
 <script type="text/javascript">
 	var defaultTHML = "";
 	$(document).ready(function(){
@@ -61,23 +63,5 @@
 	function deletSpecification(obj){
 		$(obj).closest("tr.specification_value").remove();
 	}
-	
-	function setSpecificationInputValue(){
-		var tr = $("tr.specification_value");
-		for(var i = 0; i<tr.length; i++){
-			var selects = $(tr[i]).find("select");
-			var specificationValue = "";
-			for(var v = 0; v<selects.length; v++){
-				var select = $(selects[v]).val();
-				if(specificationValue!=""){
-					specificationValue +=",";
-				}
-				specificationValue += select;
-			}
-			$(tr[i]).find("input[name='specificationValueIds']").val(specificationValue);
-			
-		}
-	}
-	
 	
 </script>

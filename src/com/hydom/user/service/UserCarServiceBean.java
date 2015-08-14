@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.hydom.user.ebean.UserCar;
 import com.hydom.util.dao.DAOSupport;
 
-@Service
+@Service("userCarService")
 public class UserCarServiceBean extends DAOSupport<UserCar> implements
 		UserCarService {
 

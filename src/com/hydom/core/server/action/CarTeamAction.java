@@ -53,8 +53,8 @@ public class CarTeamAction extends BaseAction{
 		orderby.put("id", "desc");
 		StringBuffer jpql = new StringBuffer("o.visible = 1");
 		Object[] params = new Object[]{};
-		if(queryContent!=null){
-			jpql.append(" and (o.area.fullName like ?1 or o.area.name like ?1 or o.headMember like ?1 or o.headPhone like ?1)");
+		if(queryContent!=null){//o.area.name like ?1 or o.area.name like ?1 or 
+			jpql.append(" and (o.headMember like ?1 or o.headPhone like ?1)");
 			params=new Object[]{"%"+queryContent+"%"};
 		}
 		pageView.setQueryResult(carTeamService.getScrollData(pageView.getFirstResult(), maxresult, jpql+"", params, orderby));
@@ -122,8 +122,13 @@ public class CarTeamAction extends BaseAction{
 	public ModelAndView edit(@ModelAttribute CarTeam carTeam) {
 		CarTeam entity = carTeamService.find(carTeam.getId());
 		carTeam.setCreateDate(entity.getCreateDate());
-		for(int i=0;i<carTeam.getArea().size();i++){
-			if(carTeam.getArea().get(i).getId()==null) carTeam.getArea().set(i, null);
+		System.out.println(carTeam.getArea());
+		if(carTeam.getArea() == null){
+			carTeam.setArea(null);
+		}else{
+			for(int i=0;i<carTeam.getArea().size();i++){
+				if(carTeam.getArea().get(i).getId()==null) carTeam.getArea().set(i, null);
+			}
 		}
 		carTeamService.update(carTeam);
 		ModelAndView mav = new ModelAndView("redirect:list");

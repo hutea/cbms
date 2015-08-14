@@ -49,15 +49,18 @@
 			<a href=""><i class="fa fa-bars"></i><span>帐号管理</span></a>
 			<ul class="children">
 				<li><a href='${pageContext.request.contextPath}/manage/account/list'>系统帐号管理</a></li>
-				<li><a href='${pageContext.request.contextPath}/manage/user/list'>用户帐号管理</a></li>
 				<li><a href='${pageContext.request.contextPath}/manage/account/group/list'>角色定义</a></li>
-				<li><a href='${pageContext.request.contextPath}/manage/technician/list'>技师帐号管理</a></li>
+				
 			</ul>
 		</li>
 		<li class="<c:if test="${param.m==5||m==5}">active</c:if> parent" >
 			<a href=""><i class="fa fa-bars"></i><span>订单管理</span></a>
 			<ul class="children">
 				<li><a href='${pageContext.request.contextPath}/manage/order/list'>订单管理</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/order/list?endOrder=true'>已完结订单</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/order/market_list'>市场部带审核列表</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/order/finance_list'>财务部带审核列表</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/order/cancel_list'>退款成功列表</a></li>
 			</ul>
 		</li>
 		
@@ -90,9 +93,10 @@
 			</ul>
 		</li>
 		<li class="<c:if test="${param.m==10||m==10}">active</c:if> parent" >
-			<a href=""><i class="fa fa-bars"></i><span>车队管理</span></a>
+			<a href=""><i class="fa fa-bars"></i><span>车队/技师管理</span></a>
 			<ul class="children">
 				<li><a href='${pageContext.request.contextPath}/manage/carTeam/list'>车队管理</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/technician/list'>技师帐号管理</a></li>
 			</ul>
 		</li>
 		<li class="<c:if test="${param.m==11||m==11}">active</c:if> parent" >
@@ -100,12 +104,33 @@
 			<ul class="children">
 				<li><a href='${pageContext.request.contextPath}/manage/news/list'>新闻管理</a></li>
 				<li><a href='${pageContext.request.contextPath}/manage/news/add'>新增新闻</a></li>
+
+
+			<%-- 	<li><a href='${pageContext.request.contextPath}/user/order/list?memberId=92dea7a9-5ec7-4044-a73a-ba99b91a2af2'>订单</a></li> --%>
+
+
+				<%-- <li><a href='${pageContext.request.contextPath}/web/order/list?memberId=92dea7a9-5ec7-4044-a73a-ba99b91a2af2'>订单</a></li> --%>
+
+			</ul>
+		</li>
+		<li class="<c:if test="${param.m==13||m==13}">active</c:if> parent" >
+			<a href=""><i class="fa fa-bars"></i><span>广告管理</span></a>
+			<ul class="children">
+				<li><a href='${pageContext.request.contextPath}/manage/advert/list'>广告管理</a></li>
+				<li><a href='${pageContext.request.contextPath}/manage/advert/add'>添加广告</a></li>
 			</ul>
 		</li>
 		<li class="<c:if test="${param.m==12||m==12}">active</c:if> parent" >
 			<a href=""><i class="fa fa-bars"></i><span>系统设置</span></a>
 			<ul class="children">
-				<li><a href='${pageContext.request.contextPath}/manage/server/list'>关于我们</a></li>
+				<li><a name="memberId" href='${pageContext.request.contextPath}/manage/system/view'>系统参数</a></li>
+				<li><a name="memberId" href='${pageContext.request.contextPath}/manage/server/list'>关于我们</a></li>
+			</ul>
+		</li>
+		<li class="<c:if test="${param.m==14||m==14}">active</c:if> parent" >
+			<a href=""><i class="fa fa-bars"></i><span>用户反馈</span></a>
+			<ul class="children">
+				<li><a name="memberId" href='${pageContext.request.contextPath}/manage/feedback/list'>用户反馈</a></li>
 			</ul>
 		</li>
 	</ul>

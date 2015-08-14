@@ -29,7 +29,33 @@
 		}
 		.top_right li b.b3{
 			background:url(<%=basePath %>resource/page/images/3.png) 0 0 no-repeat;
-		}	 --%>	
+		}	 --%>
+		
+		.top_right li.last a {
+			color: #6b6b6b;
+		}
+			
+		.top_right li b.b4 {
+			display: block;
+			width: 35px;
+			height: 25px;
+			position: absolute;
+			top: 0px;
+			background: url(<%=basePath %>resource/page/images/4-4.png) 0 0 no-repeat;
+		}	
+		
+		.top_right li.second a {
+			color: #6b6b6b;
+		}
+			
+		.top_right li b.b2 {
+			display: block;
+			width: 35px;
+			height: 25px;
+			position: absolute;
+			top: 0px;
+			background: url(<%=basePath %>resource/page/images/2-2.png) 0 0 no-repeat;
+		}	
 	</style>
 </head>
 

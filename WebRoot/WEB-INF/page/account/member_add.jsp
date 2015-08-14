@@ -65,25 +65,6 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/html5shiv.js"></script>
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
-	
-<script type="text/javascript">
-	function checkUsername() {
-		var username = $("#username").val();
-		$.post("${pageContext.request.contextPath}/manage/serviceType/checkUsername.action",
-		{
-			username : username
-		},
-		function(data) {
-			if (data == 0 && username != "" && username != null) {//表示 帐户存在
-				$("#username_error").html("用户名已经存在");
-				$("#repeat").val("");
-			} else {
-				$("#username_error").html("");
-				$("#repeat").val("success");
-			}
-		});
-	}
-</script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -147,15 +128,18 @@
 							<input type="hidden" name="id" value="${entity.id }"/>
 							<div class="panel-body nopadding">
 								<div class="form-group">
-									<label class="col-sm-4 control-label">邮箱</label>
+									<label class="col-sm-4 control-label">手机号码</label>
 									<div class="col-sm-8">
-										<input type="text" name="email" class="form-control" maxlength="200" value=""/>
+										<input type="text" name="mobile" class="form-control" maxlength="200" value="" onchange="checkName();"/>
+										<label id="labelName">
+											<span class='success'></span>
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">手机号码</label>
+									<label class="col-sm-4 control-label">邮箱</label>
 									<div class="col-sm-8">
-										<input type="text" name="mobile" class="form-control" maxlength="200" value=""/>
+										<input type="text" name="email" class="form-control" maxlength="200" value=""/>
 									</div>
 								</div>
 								<div class="form-group">
@@ -173,13 +157,13 @@
 								<div class="form-group">
 									<label class="col-sm-4 control-label">积分</label>
 									<div class="col-sm-8">
-										<input type="text" name="amount" class="form-control"/>
+										<input type="text" name="amount" class="form-control" value="0"/>
 									</div>
 								</div>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">余额</label>
 									<div class="col-sm-8">
-										<input type="text" name="money" class="form-control"/>
+										<input type="text" name="money" class="form-control" value="0"/>
 									</div>
 								</div>
 								<div class="form-group">
@@ -288,7 +272,32 @@
 				allClear : true
 			});
 		});
+		
+		function checkMobile(str){
+		    var re = /^1\d{10}$/;
+		    if (re.test(str)) {
+		        return true;
+		    } 
+		    return false;
+		}
 		function saveForm(){
+			
+			var username = $("input[name='mobile']").val();
+			if(username == ""){
+				alert("请输入电话号码");
+				return;
+			}
+			
+			if($("#labelName").find("span.success").length <= 0){
+				alert("请重新输入电话号码");
+				return;
+			}
+			
+			if(!checkMobile(username)){
+				alert("请输入正确的电话号码");
+				return;
+			}
+			
 			$("#inputForm").submit();
 		}
 		//设置时间
@@ -332,8 +341,40 @@
 			}
 			var select = "<select onchange='getAreaList(this);'>"+options+"</select>";
 			$("#area_div_select").append(select);
-			
 		}
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#labelName").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#labelName").html(html);
+			}else{
+				
+			};
+		}
+		
+		function checkName() {
+			setErrorMessage("",2);
+			var mobile = $("input[name='mobile']").val();
+			if(mobile == ""){
+				return;
+			}
+			var url = "<%=basePath%>manage/member/checkName";
+			var data = {
+				mobile : mobile
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		};
+		
+		
 	</script>
 </body>
 </html>

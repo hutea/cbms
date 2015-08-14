@@ -24,20 +24,18 @@ import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hydom.core.server.ebean.Car;
-import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.util.dao.BaseEntity;
 
 /**
@@ -69,7 +67,6 @@ public class Product extends BaseEntity {
 
 	/** 全称规格分隔符 */
 	public static final String FULL_NAME_SPECIFICATION_SEPARATOR = " ";
-	
 
 	/**
 	 * 排序类型
@@ -95,20 +92,27 @@ public class Product extends BaseEntity {
 		dateDesc
 	}
 
+	public Product() {
+	}
+
+	public Product(String id) {
+		super(id);
+	}
+
 	/** 编号 */
 	@JsonProperty
 	@Column(nullable = false, unique = true, length = 100)
 	private String sn;
-	
+
 	/**
-	 * 商品系列   由规格值 分小类   但是都是一个系列
+	 * 商品系列 由规格值 分小类 但是都是一个系列
 	 */
-	@Column(name="goods_numb")
+	@Column(name = "goods_numb")
 	private String goods_num;
-	
+
 	/** 名称 */
 	@JsonProperty
-	@Column(nullable = false,length=200)
+	@Column(nullable = false, length = 200)
 	private String name;
 
 	/** 全称 */
@@ -118,7 +122,7 @@ public class Product extends BaseEntity {
 
 	/** 销售价 */
 	@JsonProperty
-	@Column(nullable = false,precision = 21, scale = 6)
+	@Column(nullable = false, precision = 21, scale = 6)
 	private Float price;
 
 	/** 成本价 */
@@ -134,11 +138,11 @@ public class Product extends BaseEntity {
 	private Float marketPrice;
 
 	/** 展示图片 */
-	@Column(length=200)
+	@Column(length = 200)
 	private String imgPath;
 
 	/** 单位 */
-	@Column(length=200)
+	@Column(length = 200)
 	private String unit;
 
 	/** 重量 */
@@ -151,17 +155,17 @@ public class Product extends BaseEntity {
 	private Integer allocatedStock;
 
 	/** 库存备注 */
-	@Column(length=2000)
+	@Column(length = 2000)
 	private String stockMemo;
 
 	/** 赠送积分 */
 	private Long point;
-	
+
 	/**
 	 * 是否可以使用优惠卷 0可以使用 其他不能使用
 	 */
 	private Integer useCoupon;
-	
+
 	/** 是否上架 */
 	private Boolean isMarketable;
 
@@ -179,7 +183,7 @@ public class Product extends BaseEntity {
 	private String introduction;
 
 	/** 备注 */
-	@Length(max=200)
+	@Length(max = 200)
 	private String memo;
 
 	/** 评分 */
@@ -311,27 +315,25 @@ public class Product extends BaseEntity {
 	private String attributeValue19;
 
 	/** 商品分类 */
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="product_category_id",nullable = false)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "product_category_id", nullable = false)
 	private ProductCategory productCategory;
 
 	/** 品牌 */
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="product_brand_id")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "product_brand_id")
 	private ProductBrand productBrand;
 
 	/** 商品图片 */
-	@Valid
-	@ElementCollection
-	@CollectionTable(name = "t_product_product_image")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "product")
 	private List<ProductImage> productImages = new ArrayList<ProductImage>();
-	
+
 	/** 规格 */
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "t_product_specification",joinColumns={@JoinColumn(name="product_id")},inverseJoinColumns={@JoinColumn(name="specification_id")})
+	@JoinTable(name = "t_product_specification", joinColumns = { @JoinColumn(name = "product_id") }, inverseJoinColumns = { @JoinColumn(name = "specification_id") })
 	@OrderBy("order asc")
 	private Set<Specification> specifications = new HashSet<Specification>();
-	
+
 	/**
 	 * 规格值
 	 */
@@ -339,36 +341,95 @@ public class Product extends BaseEntity {
 	@JoinTable(name = "t_product_specification_value")
 	@OrderBy("specification asc")
 	private Set<SpecificationValue> specificationValues = new HashSet<SpecificationValue>();
-	
+
 	/**
 	 * 商品 绑定 车型
 	 */
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "t_product_car",joinColumns={@JoinColumn(name="product_id")},inverseJoinColumns={@JoinColumn(name="car_id")})
+	@JoinTable(name = "t_product_car", joinColumns = { @JoinColumn(name = "product_id") }, inverseJoinColumns = { @JoinColumn(name = "car_id") })
 	private Set<Car> carSet = new HashSet<Car>();
-	
-	
+
 	/** 参数值 */
 	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name = "t_product_parameter_value")
 	private Map<Parameter, String> parameterValue = new HashMap<Parameter, String>();
-	
+
 	/**
 	 * 是否适用于所有的车型 0 true 1 false
 	 */
-	@Column(name="user_all_car")
+	@Column(name = "user_all_car")
 	private Integer useAllCar = 0;
-	
+
+	/**
+	 * 2、限量精品 3、天天特价 4、绿色出行
+	 */
+	@Column(name = "prouduct_unique_type")
+	private Integer prouductUniqueType;
+
+	/**
+	 * 精品两个字段
+	 */
+	/**
+	 * 商品总数
+	 */
+	@Column(name = "product_count")
+	private Integer productCount;
+
+	/**
+	 * 已买数量
+	 */
+	@Column(name = "buy_product_count")
+	private Integer buyProductCount;
+
+	/**
+	 * 天天特价
+	 */
+	/**
+	 * 折扣
+	 */
+	@Column(name = "discount")
+	private Float discount;
+
+	/**
+	 * 折扣价格
+	 */
+	@Column(name = "discount_money")
+	private Float discountMoney;
+
 	/**
 	 * 商品标签
+	 * 
 	 * @return
 	 */
-	@ManyToMany(fetch=FetchType.LAZY)
-	@JoinTable(name="t_product_label",joinColumns={@JoinColumn(name="product_id")},inverseJoinColumns={@JoinColumn(name="product_label_id")})
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "t_product_label", joinColumns = { @JoinColumn(name = "product_id") }, inverseJoinColumns = { @JoinColumn(name = "product_label_id") })
 	private Set<ProductLabel> labels = new HashSet<ProductLabel>();
-	
+
+	/**
+	 * 商品订单
+	 */
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "product")
+	@OrderBy("createDate desc")
+	private List<ServerOrderDetail> orderProduct = new ArrayList<ServerOrderDetail>();
+
 	private Boolean visible = true;
-	
+
+	public List<ServerOrderDetail> getOrderProduct() {
+		return orderProduct;
+	}
+
+	public void setOrderProduct(List<ServerOrderDetail> orderProduct) {
+		this.orderProduct = orderProduct;
+	}
+
+	public Integer getProuductUniqueType() {
+		return prouductUniqueType;
+	}
+
+	public void setProuductUniqueType(Integer prouductUniqueType) {
+		this.prouductUniqueType = prouductUniqueType;
+	}
+
 	public Boolean getVisible() {
 		return visible;
 	}
@@ -840,12 +901,13 @@ public class Product extends BaseEntity {
 	public void setSpecifications(Set<Specification> specifications) {
 		this.specifications = specifications;
 	}
-	
+
 	public Set<SpecificationValue> getSpecificationValues() {
 		return specificationValues;
 	}
 
-	public void setSpecificationValues(Set<SpecificationValue> specificationValues) {
+	public void setSpecificationValues(
+			Set<SpecificationValue> specificationValues) {
 		this.specificationValues = specificationValues;
 	}
 
@@ -856,7 +918,7 @@ public class Product extends BaseEntity {
 	public void setParameterValue(Map<Parameter, String> parameterValue) {
 		this.parameterValue = parameterValue;
 	}
-	
+
 	public Integer getUseCoupon() {
 		return useCoupon;
 	}
@@ -864,7 +926,6 @@ public class Product extends BaseEntity {
 	public void setUseCoupon(Integer useCoupon) {
 		this.useCoupon = useCoupon;
 	}
-
 
 	public Set<Car> getCarSet() {
 		return carSet;
@@ -882,6 +943,38 @@ public class Product extends BaseEntity {
 		this.goods_num = goods_num;
 	}
 
+	public Integer getProductCount() {
+		return productCount;
+	}
+
+	public void setProductCount(Integer productCount) {
+		this.productCount = productCount;
+	}
+
+	public Integer getBuyProductCount() {
+		return buyProductCount;
+	}
+
+	public void setBuyProductCount(Integer buyProductCount) {
+		this.buyProductCount = buyProductCount;
+	}
+
+	public Float getDiscount() {
+		return discount;
+	}
+
+	public void setDiscount(Float discount) {
+		this.discount = discount;
+	}
+
+	public Float getDiscountMoney() {
+		return discountMoney;
+	}
+
+	public void setDiscountMoney(Float discountMoney) {
+		this.discountMoney = discountMoney;
+	}
+
 	/**
 	 * 获取商品属性值
 	 * 
@@ -893,7 +986,8 @@ public class Product extends BaseEntity {
 	public String getAttributeValue(Attribute attribute) {
 		if (attribute != null && attribute.getPropertyIndex() != null) {
 			try {
-				String propertyName = ATTRIBUTE_VALUE_PROPERTY_NAME_PREFIX + attribute.getPropertyIndex();
+				String propertyName = ATTRIBUTE_VALUE_PROPERTY_NAME_PREFIX
+						+ attribute.getPropertyIndex();
 				return (String) PropertyUtils.getProperty(this, propertyName);
 			} catch (IllegalAccessException e) {
 				e.printStackTrace();
@@ -920,9 +1014,12 @@ public class Product extends BaseEntity {
 			if (StringUtils.isEmpty(value)) {
 				value = null;
 			}
-			if (value == null || (attribute.getOptions() != null && attribute.getOptions().contains(value))) {
+			if (value == null
+					|| (attribute.getOptions() != null && attribute
+							.getOptions().contains(value))) {
 				try {
-					String propertyName = ATTRIBUTE_VALUE_PROPERTY_NAME_PREFIX + attribute.getPropertyIndex();
+					String propertyName = ATTRIBUTE_VALUE_PROPERTY_NAME_PREFIX
+							+ attribute.getPropertyIndex();
 					PropertyUtils.setProperty(this, propertyName, value);
 				} catch (IllegalAccessException e) {
 					e.printStackTrace();
@@ -934,5 +1031,5 @@ public class Product extends BaseEntity {
 			}
 		}
 	}
-	
+
 }

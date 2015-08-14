@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.persistence.Query;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,6 +19,7 @@ import com.hydom.account.ebean.Technician;
 import com.hydom.core.order.ebean.TechnicianBindRecord;
 import com.hydom.core.order.service.TechnicianBindRecordService;
 import com.hydom.core.server.ebean.CarTeam;
+import com.hydom.util.DateTimeHelper;
 import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.DAOSupport;
 
@@ -33,38 +35,36 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 	@Resource
 	private TechnicianBindRecordService technicianBindRecordService;
 
-	/***
-	 * 为指定的技师分配一个订单，分配原则如下：<br>
-	 * <1> 订单为正常的洗车订单(非取消中的订单)且未分配技师<br>
-	 * <2> 根据订单生成时间序分配<br>
-	 * <3> 订单距离技师在5km范围内<br>
-	 * 其他的功能：<br>
-	 * <1>更新技师经纬度<br>
-	 * 调用时注意： <1>必须判断用户当前状态为上班状态才进行调用，否则返回空
-	 * 
-	 * @param techid
-	 * @param lat
-	 * @param lng
-	 * @return
-	 */
+	@Override
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Order matchOrder(String techid, double lat, double lng) {
 		try {
 			Technician technician = technicianService.find(techid);
 			technician.setLatitude(lat);
 			technician.setLongitude(lng);
-			technicianService.update(technician);
 			if (technician.isJobstatus()) {// 工作状态
-				Date todayStart = new Date(); // XXXXXXXXXXXXXXXXXXXXXXXXX
-				Date todayEnd = new Date();// XX
+				Date todayEnd = DateTimeHelper.addDays(new Date(), 1);
+				Date todayStart = DateTimeHelper.addDays(todayEnd, -1);
+
 				Object[] objs = (Object[]) em
 						.createNativeQuery(
-								"SELECT t.id,dbo.fnGetDistance(?1,?2,t.lat,t.lng) AS distance FROM t_order t WHERE id NOT IN (SELECT order_id FROM t_technician_bindrecord where technician_id=?3 and createDate BETWEEN ?4 AND ?5) and distance<?6 and t.type=?7  ORDER BY distance")
+								"SELECT t.id,dbo.fnGetDistance(?1,?2,lat,lng) AS distance FROM t_order t WHERE id NOT IN (SELECT order_id FROM t_technician_bindrecord where technician_id=?3 and createDate>?4 and createDate<?5) and distance<?6 and t.type=?7  ORDER BY distance")
 						.setParameter(1, lat).setParameter(2, lng)
-						.setParameter(3, techid).setParameter(4, todayStart)
-						.setParameter(5, todayEnd).setParameter(6, 5)
+						.setParameter(3, techid).setParameter(4, todayEnd)
+						.setParameter(5, todayStart).setParameter(6, 5.0d)
 						.setParameter(7, 1).getSingleResult();
 				Order order = this.find(objs[0].toString()); // 确定分配的订单
+				order.setTechMember(technician); // 绑定新的技师
+				TechnicianBindRecord tBindRecord = new TechnicianBindRecord();// 绑定记录
+				tBindRecord.setTechnician(technician);
+				tBindRecord.setOrder(order);
+				technicianBindRecordService.save(tBindRecord); // 保存绑定记录
+				order.setTechMember(technician);
+				order.setTechnicianBindRecord(tBindRecord);
+				order.setDistance(Double.parseDouble(objs[1].toString()));
+				this.update(order);// 绑定技师及设置对应的距离
+				technician.setOrder(order);
+				technicianService.update(technician);
 				return order;
 			} else {
 				return null;
@@ -72,7 +72,6 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 		} catch (Exception e) {
 			return null;
 		}
-
 	}
 
 	@Override
@@ -91,17 +90,20 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 			// AND t.stats=0 AND t.jobstatus=0 ORDER BY distance
 			Object[] objs = (Object[]) em
 					.createNativeQuery(
-							"SELECT t.id,dbo.fnGetDistance(?1,?2,t.latitude,t.longitude) AS distance FROM t_technician t WHERE id NOT IN (SELECT technician_id FROM t_technician_bindrecord where order_id=?3) AND t.visible=?4 AND t.stats=?5 AND t.jobstatus=?6 ORDER BY distance")
+							"SELECT t.id,dbo.fnGetDistance(?1,?2,latitude,longitude) AS distance FROM t_technician t WHERE id NOT IN (SELECT technician_id FROM t_technician_bindrecord where order_id=?3) AND t.visible=?4 AND t.stats=?5 AND t.jobstatus=?6 AND t.order_id is NULL ORDER BY distance")
 					.setParameter(1, order.getLat())
 					.setParameter(2, order.getLng()).setParameter(3, oid)
 					.setParameter(4, true).setParameter(5, 0)
 					.setParameter(6, true).setMaxResults(1).getSingleResult();
 			Technician technician = technicianService.find(objs[0].toString()); // 确定要绑定的技师
+			technician.setOrder(order);
+			technicianService.update(technician);
 			TechnicianBindRecord tBindRecord = new TechnicianBindRecord();// 绑定记录
 			tBindRecord.setTechnician(technician);
 			tBindRecord.setOrder(order);
 			technicianBindRecordService.save(tBindRecord); // 保存绑定记录
 			order.setTechMember(technician);
+			order.setTechnicianBindRecord(tBindRecord);
 			order.setDistance(Double.parseDouble(objs[1].toString()));
 			this.update(order);// 绑定技师及设置对应的距离
 			return true;
@@ -176,25 +178,6 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 		// 判断这个时间范围内 能够服务的车辆
 
 		return getTeamCount(orders, serviceMap, carTeamList.size());
-	}
-
-	public static void main(String[] args) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(new Date());
-		cal.set(Calendar.HOUR_OF_DAY, 0);// 当前0点
-		cal.set(Calendar.MINUTE, 0);// 0分
-		cal.set(Calendar.SECOND, 0);// 0秒
-		Date startDate = cal.getTime();
-
-		cal.add(Calendar.DAY_OF_MONTH, 1);
-		Date endDate = cal.getTime();
-
-		System.out.println(startDate + "    " + endDate);
-
-		List<DateMapBean> beans = getServiceDateMap(new Date(), 60);
-		for (DateMapBean dmb : beans) {
-			System.out.println(dmb.getMapDate());
-		}
 	}
 
 	/**
@@ -302,6 +285,15 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 
 	@Override
 	public List<Order> getBindingOrder(Order order) {
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		/*
 		 * Area area = order.getArea();
 		 * 
@@ -328,6 +320,21 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 		 */
 
 		return null;
+	}
+
+	@Override
+	public Order getOrderByOrderNum(String orderNum) {
+		String sql = "select o from Order o where o.num = :num and o.visible = :visible";
+		Query query = em.createQuery(sql);
+		query.setParameter("num", orderNum);
+		query.setParameter("visible", true);
+		Order order = null;
+		try{
+			order = (Order) query.getSingleResult();
+		}catch(Exception e){
+			
+		}
+		return order;
 	}
 
 }

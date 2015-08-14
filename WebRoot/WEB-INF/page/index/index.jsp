@@ -102,6 +102,42 @@
 .input_search_result ul li:HOVER {
 	background-color: beige;
 }
+
+.top_right li.second a {
+	color: #6b6b6b;
+}
+.top_right li b.b2 {
+	display: block;
+	width: 35px;
+	height: 25px;
+	position: absolute;
+	top: 0px;
+	background: url(<%=basePath %>resource/page/images/2-2.png) 0 0 no-repeat;
+}
+
+.top_right li.third a {
+	color: #6b6b6b;
+}
+.top_right li b.b3 {
+	display: block;
+	width: 35px;
+	height: 25px;
+	position: absolute;
+	top: 0px;
+	background: url(<%=basePath %>resource/page/images/3-3.png) 0 0 no-repeat;
+}
+
+.top_right li.last a {
+	color: #6b6b6b;
+}
+.top_right li b.b4 {
+	display: block;
+	width: 35px;
+	height: 25px;
+	position: absolute;
+	top: 0px;
+	background: url(<%=basePath %>resource/page/images/4-4.png) 0 0 no-repeat;
+}
 </style>
 
 </head>
@@ -131,12 +167,20 @@
 	<div class="mid box1">
 		<div class="span0">
 			<ul>
-				<li class="visit_left"><a href="#"><img
+				<li class="visit_left"><a href="javascript:void(0);" onclick="gotoCleanCar();"><img
 						src="<%=basePath%>resource/page/images/visit_left.png" alt="" /></a></li>
-				<li class="visit_right"><a href="#"><img
+				<li class="visit_right"><a href="javascript:void(0);" onclick="gotoServer();"><img
 						src="<%=basePath%>resource/page/images/visit_right.png" alt="" /></a></li>
 			</ul>
 		</div>
+		<script type="text/javascript">
+			function gotoCleanCar(){
+				window.location.href="<%=basePath%>web/cleanCarService";
+			}
+			function gotoServer(){
+				window.location.href="<%=basePath%>web/chooseService";
+			}
+		</script>
 		<div class="span1">
 			<div class="sel_title">
 				<h2>请选择您要保养的车型</h2>
@@ -235,7 +279,7 @@
 				}
 			}
 			function carSubmit(){
-				var h = "${pageContext.request.contextPath}/web/chooseService?carId="+$("#carId").val();
+				var h = "${pageContext.request.contextPath}/web/gotoService?carId="+$("#carId").val();
 				location.href = h;
 			}
 		</script>

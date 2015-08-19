@@ -32,7 +32,7 @@ public class PermissionTag extends TagSupport {
 			}
 			return result ? EVAL_BODY_INCLUDE : SKIP_BODY;
 		} catch (Exception e) {
-			return EVAL_BODY_INCLUDE; // 测试返回
+			return SKIP_BODY; //
 		}
 	}
 

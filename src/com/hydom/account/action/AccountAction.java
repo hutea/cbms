@@ -7,9 +7,12 @@ import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +26,7 @@ import com.hydom.account.service.PrivilegeGroupService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.DateTimeHelper;
 import com.hydom.util.IDGenerator;
+import com.hydom.util.bean.AdminBean;
 import com.hydom.util.dao.PageView;
 
 @RequestMapping("/manage/account")
@@ -152,5 +156,29 @@ public class AccountAction extends BaseAction {
 			return "0";
 		}
 
+	}
+	
+	@RequestMapping("/changePasswordView")
+	public String changePasswordView(HttpServletResponse response,ModelMap model) {
+		model.addAttribute("memberBean", getAdminBean(request));
+		return "/common/changePsd";
+	}
+	
+	@RequestMapping("/changePassword")
+	public String changePassword(String newPass,String oldPass,HttpServletResponse response) {
+		AdminBean bean = getAdminBean(request);
+		if(bean == null){
+			return ajaxError("登录已失效,请重新登录", response);
+		}
+		Account account = accountService.find(bean.getMember().getId());
+		if(!account.getPassword().equals(oldPass)){
+			return ajaxError("旧密码输入错误", response);
+		}
+		if(StringUtils.isEmpty(newPass)){
+			return ajaxError("请输入新密码", response);
+		}
+		account.setPassword(newPass);
+		accountService.update(account);
+		return ajaxSuccess("修改成功", response);
 	}
 }

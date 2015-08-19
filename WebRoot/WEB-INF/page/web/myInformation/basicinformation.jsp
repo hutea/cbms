@@ -9,10 +9,10 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=8" />
-	<title>一动车保首页</title>
-	<link href="css/style.css" type="text/css" rel="stylesheet" />	
-	<script type="text/javascript" src="js/jquery.js"></script>
-	<script type="text/javascript" src="js/function.js"></script>
+	<title>基本信息</title>
+	<link href="${pageContext.request.contextPath}/resource/chain/css/style.css" type="text/css" rel="stylesheet" />
+	<script type="text/javascript" src="${pageContext.request.contextPath}/resource/page/js/jquery.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath}/resource/page/js/function.js"></script>
 	<style type="text/css">
 		/******form*******/
 		.divselectcon {clear: both; padding: 10px 0 20px; position: relative; }
@@ -39,13 +39,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder">
-					<a href="#">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -53,7 +53,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center active">
@@ -61,16 +61,16 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo on">
-					<a href="#">基本信息</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
-				<li class="menu-item changePass">
+				<!-- <li class="menu-item changePass">
 					<a href="#">修改密码</a>
-				</li>
+				</li> -->
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
@@ -79,19 +79,16 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				<div class="basicDetails">
 					<div class="basicDetailsTop">
 						<div class="left">
-							<a href="#"><img src="${pageContext.request.contextPath}/resource/page/images/steward_4.png" /></a><span class="span1">|</span><span>个人基本信息</span>
+							<img src="${pageContext.request.contextPath}/resource/page/images/steward_4.png" /><span class="span1">|</span><span>个人基本信息</span>
 						</div>
 					</div>
 					<div class="basicDetailsContent">
 						<div class="basicInfoAccount">
-							<div class="basicInfoPic"><a href="#"><img src="${pageContext.request.contextPath}/resource/page/images/account2.png" /></a></div>
+							<div class="basicInfoPic"><img src="<%=basePath%>${member.photo }" /></div>
 							<div class="basicInfoPerson">
-								<p>姓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名：<b>${member.nickname }</b></p>
-								<p>手机号码：<b>${member.phone }</b></p>
-								<p>性&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;别：<b>
-								<c:if test="${member.gender==0 }">女</c:if>
-								<c:if test="${member.gender==1 }">男</c:if>
-								</b></p>
+								<p>名&nbsp;&nbsp;称：<b>${member.nickname }</b></p>
+								<p>手机号码：<b>${member.mobile }</b></p>
+								<%-- <p>性&nbsp;&nbsp;别：<b><c:if test="${member.gender==0 }">男</c:if><c:if test="${member.gender==1 }">女</c:if></b></p> --%>
 							</div>
 						</div>
 					</div>
@@ -123,7 +120,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		});
 	}	
 	tabs(".menu-list","on","active","#steward1-detail");
-	})
+	});
 
 
 	$(function(){
@@ -144,7 +141,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			});
 		}
 		tabs(".totalTitle","liSelected",".orderListsContent");
-	})
+	});
 	
 			
 	$(document).ready(function(){
@@ -212,7 +209,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	});	
 	</script>
 </div>
-</div>
+
 <!--中部结束-->
 <!--底部开始-->
 <jsp:include page="../footer.jsp"></jsp:include>

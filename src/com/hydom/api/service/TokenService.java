@@ -14,4 +14,12 @@ public interface TokenService extends DAO<Token> {
 	 */
 	public Token findToken(String uid, String authId);
 
+	/**
+	 * 删除指定用户的所有令牌
+	 * 
+	 * @param uid
+	 * @return 删除信息数目
+	 */
+	public int deletAllTokenByUID(String uid);
+
 }

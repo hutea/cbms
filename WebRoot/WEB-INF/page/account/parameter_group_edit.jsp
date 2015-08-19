@@ -48,15 +48,6 @@
 	src="${pageContext.request.contextPath}/resource/chain/js/select2.min.js"></script>
 <script type="text/javascript" src="${pageContext.request.contextPath}/resource/chain/js/laydate/laydate.js"></script>
 
-	
-<!-- 验证框架 -->
-<script type="text/javascript"
-	src="${pageContext.request.contextPath}/resource/js/jquery.validate.min.js"></script>
-<script type="text/javascript"
-	src="${pageContext.request.contextPath}/resource/js/jquery.maskedinput-1.0.js"></script>
-<script type="text/javascript"
-	src="${pageContext.request.contextPath}/resource/js/validate/account.js"></script>
-
 <!-- 公共JS -->
 <script type="text/javascript"
 	src="${pageContext.request.contextPath}/resource/js/myform.js"></script>
@@ -65,25 +56,6 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/html5shiv.js"></script>
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
-	
-<script type="text/javascript">
-	function checkUsername() {
-		var username = $("#username").val();
-		$.post("${pageContext.request.contextPath}/manage/serviceType/checkUsername.action",
-		{
-			username : username
-		},
-		function(data) {
-			if (data == 0 && username != "" && username != null) {//表示 帐户存在
-				$("#username_error").html("用户名已经存在");
-				$("#repeat").val("");
-			} else {
-				$("#username_error").html("");
-				$("#repeat").val("success");
-			}
-		});
-	}
-</script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -91,28 +63,23 @@
 	border-top: 0px dotted #d3d7db;
 }
 
-.img_div{
-	display: inline-block;
-	height: 60px;
-	width: 60px;
-}
-.img_div img{
-	display: inline-block;
-	height: 60px;
-	width: 60px;
-}
 .rdio {
 	margin-top: 10px;
 	width: 50px;
 	display: inline-block;
 }
+
+#addAttributeValues {
+	position: absolute;
+	right: 15px;
+	top: 15px;
+}
+.delSpan{
+  margin-top: 10px;
+  display: inline-block;
+}
 #categoryDiv select{
 	margin-top: 10px;
-	margin-right: 10px;
-}
-#brandDiv label{
-	  margin-top: 5px;
-	  margin-right: 10px;
 }
 </STYLE>
 </head>
@@ -131,7 +98,7 @@
 						<div class="media-body">
 							<ul class="breadcrumb">
 								<li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-								<li><a href="">商品分类添加</a></li>
+								<li><a href="">商品参数添加</a></li>
 							</ul>
 						</div>
 					</div>
@@ -144,53 +111,66 @@
 						<div class="panel-heading">
 							<h4 class="panel-title">基本信息</h4>
 						</div>
-						<form class="form-horizontal form-bordered" id="inputForm" action="<%=basePath%>manage/productCategory/save" method="POST">
-							<input type="hidden" value="${entity.id }" name="id"/>
+						<form class="form-horizontal form-bordered" id="inputForm" action="<%=basePath%>manage/parameterGroup/save" method="POST">
+							<input name="id" type="hidden" value="${entity.id }"/>
 							<div class="panel-body nopadding">
+								<div class="form-group">
+									<label class="col-sm-4 control-label">绑定分类</label>
+									<div class="col-sm-8" id="categoryDiv">
+										<label class="control-label">${entity.productCategory.name }</label>
+									</div>
+								</div>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">名称</label>
 									<div class="col-sm-8">
-										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
+										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }" onchange="checkName();"/>
+										<label id="nameLabel">
+											<span class="success"></span>
+										</label>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="col-sm-4 control-label">上级分类</label>
-									<div class="col-sm-8" id="categoryDiv">
-										<select name="parent.id">
-											<option value="" <c:if test="${empty entity.parent}">selected="selected"</c:if> >顶级分类</option>
-											<c:forEach var="category" items="${categorys }">
-												<c:if test="${entity ne category && !fn:contains(children,category)}">
-													<option value="${category.id }" <c:if test="${entity.parent.id eq category.id}">selected="selected"</c:if>
-														<%-- <c:if test="${empty category.parent}">style="font-weight:bold;"</c:if> --%>
-													>
-														<c:if test="${category.grade gt 0}">
-															<c:forEach begin="1" end="${category.grade }">
-																&nbsp;&nbsp;
-															</c:forEach>
-														</c:if>
-														${category.name}
-													</option>
-												</c:if>
-											</c:forEach>
-										</select>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="col-sm-4 control-label">筛选品牌</label>
-									<div class="col-sm-8" id="brandDiv">
-										<c:forEach var="bean" items="${beans }">
-											<label><input type="checkbox" name="brands" value="${bean.brand.id }"
-												<c:if test="${bean.isSelected}">checked="checked"</c:if>
-											/>${bean.brand.name }</label>
-										</c:forEach>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="col-sm-4 control-label">排序</label>
-									<div class="col-sm-8">
-										<input type="text" class="form-control" name="order" value="${entity.order }" />
-									</div>
-								</div>
+							</div>
+							<div class="panel-heading" style="border-top:1px solid #ddd;">
+								<h4 class="panel-title">可选项</h4>
+								<button type="button" id="addAttributeValues" onclick="addParameterValue();">新增可选项</button>								
+							</div>
+							<div class="panel-body nopadding">
+								<div class="table-responsive">
+							        <table id="listTable" class="table table-info" >
+							        	<c:forEach var="value" items="${entity.parameters }">
+							        		<tr class='parameter_value'>
+								        		<td>
+													<input type='hidden' name='parameter_id' value="${value.id }"/>
+													<input type='text' name='text' class='form-control' maxlength='200' placeholder='参数名称' value="${value.name }"/>
+												</td>
+												<td>
+													<input type='text' name='order' class='form-control' placeholder='排序' value="${value.order }"/>
+												</td>
+												<td>
+													<span class='delSpan'>
+														<a href='javascript:void(0);' onclick='delParameterValue(this);'>[删除]</a>
+													</span>
+												</td>
+											</tr>
+							        	</c:forEach>
+							        	
+										<!-- <tr class="parameter_value">
+											<td>
+												<input type='hidden' name='id'/>
+												<input type="text" name="text" class="form-control" maxlength="200" placeholder="参数名称"/>
+											</td>
+											<td>
+												<input type="text" name="order" class="form-control" placeholder="排序"/>
+											</td>
+											<td>
+												<span class="delSpan">
+													<a href="javascript:void(0);" onclick="addParameterValue(this);">[删除]</a>
+												</span>
+											</td>
+										</tr> -->
+									</table>
+							    </div>
+							    <input type="hidden" name="content" value="" id="tableContent"/>
 							</div>
 							<div class="panel-footer">
 								<div class="row">
@@ -212,14 +192,149 @@
 		</div>
 		<!-- mainwrapper -->
 	</section>
-	<script type="text/javascript">
+		<script type="text/javascript">
 		var base = "<%=basePath%>";
-		$('[data-toggle="tooltip"]').popover();
 		$(document).ready(function(){
 			
 		});
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}
+		}
+		
+		var entityId = "${entity.id}";
+		var entityName = "${entity.name}";
+		var entityProductCategoryId = "${entity.productCategory.id }";
+		
+		function checkName() {
+			setErrorMessage("",2);
+			var username = $("input[name='name']").val();
+			
+			if(username == entityName){
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/parameterGroup/checkName";
+		
+			var data = {
+				productCategoryId:entityProductCategoryId,
+				content:username
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		}
+		
 		function saveForm(){
-			$("#inputForm").submit();
+			
+			var name = $("input[name='name']").val();
+			if(name==""){
+				alert("请输入名称");
+				return;
+			}
+			
+			var trs = $("#listTable").find("tr.parameter_value");
+			
+			if(trs.length <= 0){
+				alert("请添加可选项");
+				return;
+			}
+			
+			var array = new Array();
+			for(var i = 0; i < trs.length; i++){
+				var id = $(trs[i]).find("input[name='parameter_id']").val();
+				var text = $(trs[i]).find("input[name='text']").val();
+				
+				if(text == ""){
+					alert("请将可选项填写完整");
+					return;
+				}
+				
+				var order = $(trs[i]).find("input[name='order']").val();
+				var obj = {
+					id:id,
+					text:text,
+					order:order
+				};
+				array.push(obj);
+			}
+			var value = JSON.stringify(array);
+			$("#tableContent").val(value);
+			//console.log(value);
+			
+			if(name == entityName){
+				$("#inputForm").submit();
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/parameterGroup/checkName";
+			var data = {
+					productCategoryId:entityProductCategoryId,
+				content:name
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$("#inputForm").submit();
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+			
+		}
+		
+		
+		function addParameterValue(){
+			var html = "<tr class='parameter_value'>"+
+							"<td>"+
+								"<input type='hidden' name='parameter_id'/>"+
+								"<input type='text' name='text' class='form-control' maxlength='200' placeholder='参数名称' />"+
+							"</td>"+
+							"<td>"+
+								"<input type='text' name='order' class='form-control' placeholder='排序'/>"+
+							"</td>"+
+							"<td>"+
+								"<span class='delSpan'>"+
+									"<a href='javascript:void(0);' onclick='delParameterValue(this);'>[删除]</a>"+
+								"</span>"+
+							"</td>"+
+						"</tr>";
+			$("#listTable").append(html);
+		}
+		
+		//删除参数
+		function delParameterValue(e){
+			
+			if(!confirm("确定要删除该数据？")){
+				reutrn;
+			}
+			
+			var tr = $(e).closest("tr.parameter_value");
+			
+			var parameterId = tr.find("input[name='parameter_id']").val();
+			
+			var url = "<%=basePath%>manage/parameterGroup/deleteParameter";
+			var data = {
+				ids:parameterId	
+			}
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					alert("删除成功");
+					tr.remove();
+				}
+			},"json");
 		}
 	</script>
 </body>

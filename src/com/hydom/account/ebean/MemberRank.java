@@ -48,7 +48,7 @@ public class MemberRank extends BaseEntity {
 	/**
 	 * 消费优惠
 	 */
-	@Column(nullable=false)
+	@Column(columnDefinition = "decimal(20,2)",nullable=false)
 	private Float scale;
 	
 	@Column(name="orders")

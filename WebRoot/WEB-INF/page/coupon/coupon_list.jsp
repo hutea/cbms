@@ -73,8 +73,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		                   <th>使用起始时间</th>
 		                   <th>使用结束时间</th>
 		                   <th>是否启用</th>
-<!-- 		                   <th>是否允许积分兑换</th> -->
+		                   <th>是否允许积分兑换</th>
 		                   <th>优惠券类型</th>
+		                   <th>使用类型</th>
 		                   <th>操作</th>
 		                </tr>
 			          </thead>
@@ -89,14 +90,19 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				           		 	<c:if test="${true eq entry.isEnabled}">是</c:if>
 				           		 	<c:if test="${false eq entry.isEnabled}">否</c:if>
 				           		 </td>
-<!-- 				           		 <td> -->
-<!-- 				           		 	<c:if test="${true eq entry.isExchange}">是</c:if> -->
-<!-- 				           		 	<c:if test="${false eq entry.isExchange}">否</c:if> -->
-<!-- 				           		 </td> -->
+				           		 <td>
+				           		 	<c:if test="${true eq entry.isExchange}">是</c:if>
+				           		 	<c:if test="${false eq entry.isExchange}">否</c:if>
+				           		 </td>
 				           		 <td>
 				           		 	<c:if test="${1 eq entry.type}">满额打折</c:if>
 				           		 	<c:if test="${2 eq entry.type}">满额优惠</c:if>
 				           		 	<c:if test="${3 eq entry.type}">减免</c:if>
+				           		 </td>
+				           		 <td>
+				           		 	<c:if test="${1 eq entry.useType}">洗车优惠券</c:if>
+				           		 	<c:if test="${2 eq entry.useType}">保养优惠券</c:if>
+				           		 	<c:if test="${3 eq entry.useType}">商品优惠券</c:if>
 				           		 </td>
 				           		 <td><a href="${pageContext.request.contextPath}/manage/coupon/edit?id=${entry.id}">修改</a></td>
 			           	  	</tr>

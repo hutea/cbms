@@ -28,12 +28,15 @@ public class FeeRecord extends BaseEntity {
 	private Integer type;
 
 	/** 充值或消费金额 */
-	@Column(nullable = false)
+	@Column(columnDefinition = "decimal(20,2)",nullable=false)
 	private Float fee;
 
 	/** 支付编号 用来退款等 */
 	@Column(name = "trade_no")
 	private String tradeNo;
+
+	/** 充值编号 */
+	private String rechargeNo;
 
 	/**
 	 * 消费订单
@@ -43,8 +46,8 @@ public class FeeRecord extends BaseEntity {
 	private Order order;
 
 	/**
-	 * 消费方式 比如 支付宝 银联 1=货到付款；<br>
-	 * 2=支付宝 ；3=银联； 4=微信
+	 * 消费方式 比如 支付宝 银联 1=会员卡支付；<br>
+	 * 2=支付宝 ；3=银联； 4=微信 5 现金支付
 	 **/
 	private Integer payWay;
 
@@ -54,17 +57,31 @@ public class FeeRecord extends BaseEntity {
 	private String phone;
 
 	@ManyToOne
-	@JoinColumn(name = "member_id", nullable = false)
+	@JoinColumn(name = "member_id")
 	private Member member;
 
 	private Boolean visible = true;
-
+	
+	/**
+	 * 是否退费 1 已退费  0 未退费
+	 */
+	private Integer isRefund;
+	
+	
 	public Integer getType() {
 		return type;
 	}
 
 	public void setType(Integer type) {
 		this.type = type;
+	}
+
+	public Member getMember() {
+		return member;
+	}
+
+	public void setMember(Member member) {
+		this.member = member;
 	}
 
 	public Float getFee() {
@@ -113,6 +130,22 @@ public class FeeRecord extends BaseEntity {
 
 	public void setVisible(Boolean visible) {
 		this.visible = visible;
+	}
+
+	public String getRechargeNo() {
+		return rechargeNo;
+	}
+
+	public void setRechargeNo(String rechargeNo) {
+		this.rechargeNo = rechargeNo;
+	}
+
+	public Integer getIsRefund() {
+		return isRefund;
+	}
+
+	public void setIsRefund(Integer isRefund) {
+		this.isRefund = isRefund;
 	}
 
 }

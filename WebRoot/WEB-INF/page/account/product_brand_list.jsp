@@ -29,19 +29,6 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="js/html5shiv.js"></script>
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
-		}
-	</script>
 </head>
 
 <body>
@@ -64,7 +51,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			    <div class="contentpanel">
 			      <div class="search-header">
 			        <div class="btn-list">
-			          <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/productBrand" disabled>删除</button>
+			         <%--  <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/productBrand" disabled>删除</button> --%>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
 					  <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/productBrand">添加</button>
 			          <div style="float: right;max-width: 340px;height: 37px;">
@@ -82,9 +69,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			        <table id="listTable" class="table table-info" >
 			        	<thead>
 							<tr>
-								<th class="check">
+								<!-- <th class="check">
 									<input type="checkbox" id="selectAll"/>
-								</th>
+								</th> -->
 								<th>
 									名称
 								</th>
@@ -103,15 +90,18 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 							</tr>
 						</thead>
 						<c:forEach items="${pageView.records}" var="productBrand" >  
-							<tr>
-								<td>
+							<tr class="productBrand_tr">
+								<%-- <td>
 									<input type="checkbox" name="ids" value="${productBrand.id}" />
-								</td>
+								</td> --%>
 								<td>
 									${productBrand.name}
 								</td>
 								<td>
-									<a href="<%=path %>/${productBrand.imgPath}" target="_blank">查看</a>
+									<c:if test="${empty productBrand.imgPath}">暂无</c:if>
+									<c:if test="${!empty productBrand.imgPath}">
+										<a href="<%=path %>/${productBrand.imgPath}" target="_blank">查看</a>
+									</c:if>
 								</td>
 								<td>
 									<a href="${productBrand.fullUrl }" target="_blank">${productBrand.url }</a>
@@ -121,6 +111,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 								</td>
 								<td>
 									<a href="<%=base %>manage/productBrand/edit?id=${productBrand.id}">[编辑]</a>
+									<a href="javascript:void(0);" onclick="del('${productBrand.id}',this)">[删除]</a>
 								</td>
 							</tr>
 						  </c:forEach>
@@ -132,6 +123,23 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		  </div>       
     </div> <!-- mainwrapper -->
     </section>
-   
+   <script type="text/javascript">
+   		function del(obj,e){
+   			if(!confirm("是否删除该品牌?")){
+   				return;
+   			}
+   			var tr = $(e).closest("tr.productBrand_tr");
+   			var url = "<%=path %>/manage/productBrand/delete";
+   			var data = {
+   				id:obj	
+   			}
+   			$.post(url,data,function(result){
+   				if(result.status == "success"){
+   					alert("成功");
+   					tr.remove();
+   				}
+   			},"json");
+   		}
+   </script>
 </body>
 </html>

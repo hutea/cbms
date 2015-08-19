@@ -29,19 +29,6 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="js/html5shiv.js"></script>
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
-		}
-	</script>
 </head>
 
 <body>
@@ -55,7 +42,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		        <div class="media-body">
 		          <ul class="breadcrumb">
 		            <li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-		            <li><a href="">商品分类列表</a></li>
+		            <li><a href="">商品参数列表</a></li>
 		          </ul>
 		        </div>
 		      </div><!-- media -->
@@ -120,11 +107,12 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									</c:if>
 								</td>
 								<td>
-									<a href="<%=base %>manage/parameterGroup/edit?id=${category.id}">[编辑]</a>
+									<a href="<%=base %>manage/parameterGroup/edit?id=${parameterGruop.id}">[编辑]</a>
 								</td>
 							</tr>
 						  </c:forEach>
 					</table>
+					 <%@ include file="/WEB-INF/page/common/fenye.jsp" %>
 			      </div>
 			    </div>
 		   	 </form>

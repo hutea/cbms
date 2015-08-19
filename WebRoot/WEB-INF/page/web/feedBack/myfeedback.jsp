@@ -55,7 +55,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -63,7 +63,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center active">
@@ -71,16 +71,16 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
-				<li class="menu-item changePass">
+				<!-- <li class="menu-item changePass">
 					<a href="#">修改密码</a>
-				</li>
+				</li> -->
 				<li class="menu-item feedBack on">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>

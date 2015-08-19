@@ -65,7 +65,7 @@
 	float: right;
 	width: 169px;
 	height: 43px;
-	background: url(<%=basePath%>resource/page/images/cleanCarGo.png) 0 0 no-repeat;
+	background: url(<%=basePath%>resource/page/images/baoyang.png) 0 0 no-repeat;
 	border: none;
 	position: absolute;
 	top: 9px;

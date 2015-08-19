@@ -24,10 +24,13 @@ public class UserCarServiceBean extends DAOSupport<UserCar> implements
 	}
 
 	@Override
-	public void resetUndefault(String uid) {
+	public void resetDefaultCar(String uid, String ucid) {
 		em.createQuery(
-				"update UserCar o set o.defaultCar=?1  where o.member.id=?2")
-				.setParameter(1, false).setParameter(2, uid).executeUpdate();
+				"update UserCar o set o.defaultCar=?1  where o.member.id=?2 and o.id!=?3")
+				.setParameter(1, false).setParameter(2, uid)
+				.setParameter(3, ucid).executeUpdate();
+		em.createQuery("update UserCar o set o.defaultCar=?1  where o.id=?2")
+				.setParameter(1, true).setParameter(2, ucid).executeUpdate();
 	}
 
 }

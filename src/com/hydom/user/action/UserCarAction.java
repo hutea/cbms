@@ -19,7 +19,7 @@ import com.hydom.core.server.service.CarService;
 import com.hydom.user.ebean.UserCar;
 import com.hydom.user.service.UserCarService;
 import com.hydom.util.BaseAction;
-import com.hydom.util.bean.UserCarBean;
+import com.hydom.util.bean.MemberBean;
 
 /**
  * @Description 车管家控制层
@@ -51,30 +51,45 @@ public class UserCarAction extends BaseAction{
 	
 	/**保存*/
 	@RequestMapping("/save")
-	public @ResponseBody ModelAndView save(UserCar userCar, String carId, String memberId) {
-		if(StringUtils.isEmpty(userCar.getId())){
-			userCar.setCar(carService.find(carId));
-			userCar.setMember(memberService.getScrollData().getResultList().get(0));
-			userCarService.save(userCar);
-		}else{
-			userCar.setCar(carService.find(carId));
-			userCar.setMember(memberService.getScrollData().getResultList().get(0));
-			userCarService.update(userCar);
+	public @ResponseBody ModelAndView save(UserCar userCar, String carId) {
+		MemberBean bean = getMemberBean(request);
+		if(bean!=null && bean.getMember().getId()!=null){
+			if(StringUtils.isEmpty(userCar.getId())){
+				userCar.setCar(carService.find(carId));
+				userCar.setMember(bean.getMember());
+				
+				String jpql = "o.member.id=?1";
+				Object[] params = new Object[]{bean.getMember().getId()};
+				if(0==userCarService.getScrollData(-1, -1, jpql, params).getResultList().size()){
+					userCar.setDefaultCar(true);
+				}
+				
+				userCarService.save(userCar);
+			}else{
+				userCar.setCar(carService.find(carId));
+				userCar.setMember(bean.getMember());
+				userCarService.update(userCar);
+			}
+			ModelAndView mav = new ModelAndView("redirect:list");
+			return  mav;
 		}
-		ModelAndView mav = new ModelAndView("redirect:list?memberId="+memberId);
-		return  mav;
+		return null;
 	}
 	
 	/**显示*/
 	@RequestMapping("/list")
-	public @ResponseBody ModelAndView list(String memberId) {
-		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
-		String jpql = "o.member.id=?1";
-		Object[] params = new Object[]{memberId};
-		ModelAndView mav = new ModelAndView("web/center/carSteward_list");
-		mav.addObject("userCars", userCarService.getScrollData(-1, -1, jpql, params, orderby).getResultList());
-		return mav;
+	public @ResponseBody ModelAndView list() {
+		MemberBean bean = getMemberBean(request);
+		if(bean!=null && bean.getMember().getId()!=null){
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("createDate", "desc");
+			String jpql = "o.member.id=?1";
+			Object[] params = new Object[]{bean.getMember().getId()};
+			ModelAndView mav = new ModelAndView("web/center/carSteward_list");
+			mav.addObject("userCars", userCarService.getScrollData(-1, -1, jpql, params, orderby).getResultList());
+			return mav;
+		}
+		return null;
 	}
 	
 	/**修改*/
@@ -89,19 +104,12 @@ public class UserCarAction extends BaseAction{
 	@RequestMapping("/setDefaultCar")
 	public @ResponseBody String setDefaultCar(String userCarId) {
 		try {
-			List<UserCar> userCars = userCarService.getScrollData().getResultList();
-			for(int i=0;i<userCars.size();i++){
-				if(userCars.get(i).getId().equals(userCarId)){
-					userCars.get(i).setDefaultCar(true);
-					userCarService.update(userCars.get(i));
-				}else{
-					if(!userCars.get(i).getDefaultCar().equals(false)){
-						userCars.get(i).setDefaultCar(false);
-						userCarService.update(userCars.get(i));
-					}
-				}
+			MemberBean bean = getMemberBean(request);
+			if(bean!=null && bean.getMember().getId()!=null){
+				userCarService.resetDefaultCar(bean.getMember().getId(), userCarId);
+				return ajaxSuccess("设置成功！", response);
 			}
-			return ajaxSuccess("设置成功！", response);
+			return ajaxError("删除失败！", response);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return ajaxError("设置失败！", response);
@@ -110,22 +118,24 @@ public class UserCarAction extends BaseAction{
 	
 	/**删除*/
 	@RequestMapping("/del")
-	public @ResponseBody String del(String userCarId, String memberId) {
+	public @ResponseBody String del(String userCarId) {
 		try {
+			MemberBean bean = getMemberBean(request);
+			if(bean==null){
+				return ajaxError("删除失败！", response);
+			}
+			String memberId = bean.getMember().getId();
 			UserCar uc = userCarService.find(userCarId);
-			if(uc.getDefaultCar()==true){
+			if(uc.getDefaultCar()!=true){
+				if(!uc.getMember().getId().equals(memberId)){
+					return ajaxError("账户信息异常！", response);
+				}
 				if(userCarId!=null){
 					userCarService.delete(userCarId);
+					return ajaxSuccess("删除成功！", response);
 				}
-				LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-				orderby.put("createDate", "desc");
-				String jpql = "o.member.id=?1";
-				Object[] params = new Object[]{memberId};
-				uc = userCarService.getScrollData(-1, -1, jpql, params, orderby).getResultList().get(0);
-				uc.setDefaultCar(true);
-				userCarService.update(uc);
 			}
-			return ajaxSuccess("删除成功！", response);
+			return ajaxError("不能删除默认车型！", response);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return ajaxError("删除失败！", response);

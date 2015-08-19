@@ -18,6 +18,7 @@ import com.hydom.core.server.ebean.Car;
 import com.hydom.core.server.ebean.CarBrand;
 import com.hydom.core.server.ebean.CarType;
 import com.hydom.util.dao.DAOSupport;
+import com.hydom.util.dao.PageView;
 
 /**
  * @Description 车系业务层实现
@@ -56,7 +57,6 @@ public class CarTypeServiceBean extends DAOSupport<CarType> implements
 				.getResultList();
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public String getChooseCarType(Product product) {
 	/*	String hql = "select o from CarType o join o.carList c where c in(:carSet)";
@@ -79,15 +79,46 @@ public class CarTypeServiceBean extends DAOSupport<CarType> implements
 			obj.put("parentId", cb.getCarBrand().getId());
 			array.add(obj);
 		}
-		
-		/*String brandIds = "";
-		for(CarType cb : carBrands){
-			if(StringUtils.isNotEmpty(brandIds)){
-				brandIds+=",";
-			}
-			brandIds += cb.getId();
-		}*/
+	
 		return array.toString();
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public PageView<CarType> getPage(PageView<CarType> pageView,String queryContent) {
+		Integer firstResult = pageView.getFirstResult();
+		Integer maxResult = pageView.getMaxresult();
+	
+		String baseSql = "from CarType o "
+			/*	+ "left join o.parent p "*/
+				+ "left join o.carBrand b ";
+		
+		baseSql += " where o.visible = true ";
+		if(StringUtils.isNotEmpty(queryContent)){//or o.parent.name like ?2 or o.parent is null ,"%"+queryContent+"%"  and (p.name like :queryContent or p.id is null)
+			baseSql += " and (o.name like :queryContent or b.name like :queryContent or o.jp like :queryContent or o.qp like :queryContent)";
+		}
+		String sql = "select o " + baseSql + " order by o.createDate desc";
+		Query query = em.createQuery(sql);
+		if(StringUtils.isNotEmpty(queryContent)){
+			query.setParameter("queryContent", queryContent);
+		}
+	
+		query.setFirstResult(firstResult);
+		query.setMaxResults(maxResult);
+		
+		List<CarType> list = query.getResultList();
+		pageView.setRecords(list);
+		
+		String countSql = "select count(o.id) " + baseSql;
+		
+		Query countQuery = em.createQuery(countSql);
+		
+		if(StringUtils.isNotEmpty(queryContent)){
+			countQuery.setParameter("queryContent", queryContent);
+		}
+	
+		pageView.setTotalrecord((Long) countQuery.getSingleResult());
+		
+		return pageView;
+	}
 }

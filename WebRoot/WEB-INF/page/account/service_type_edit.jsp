@@ -196,7 +196,7 @@ span.from-span{
 								<div class="form-group">
 									<label class="col-sm-4 control-label">排序</label>
 									<div class="col-sm-8">
-										<input type="text" name="order" class="form-control" value="${entity.order }"/>
+										<input type="text" name="order" class="form-control" value="${entity.order}"   ${entity.type==1?"":"readonly='readonly'"} />
 									</div>
 								</div>
 							</div>

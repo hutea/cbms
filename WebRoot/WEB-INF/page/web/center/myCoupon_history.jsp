@@ -49,13 +49,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder">
-					<a href="#">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon on">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -63,7 +63,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -71,30 +71,25 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
-				</li>
-				<li class="menu-item changePass">
-					<a href="#">修改密码</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
 		<div class="steward1-detail" id="steward1-detail">
-			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; ">000000000000000000000000000</div>
-			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail">111111111111111111111111</div>
+			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; "></div>
+			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail"></div>
 			<div id="myCouponContent" class="myCouponContent myOrderDetail" style="border: none; ">
 				<div class="orderDetails" style="border: none; ">
 					<div class="orderDetailsTop">
-						<form action="<%=basePath%>user/myCoupon/list" id="backListFrom" method="post">
-							<input type="hidden" name="memberId" value="${sessionScope.member_session.id }">
+						<form action="<%=basePath%>user/myCoupon/list" id="backListFrom" method="get">
 						</form>
 						<form action="<%=basePath%>user/myCoupon/history" id="toPageFrom" method="post">
-							<input type="hidden" name="memberId" value="${sessionScope.member_session.id }">
 							<input type="hidden" name="page" value="${page }" id="page">
 						</form>
 						<div class="right"><a href="javascript:backList();">返回我的优惠券&gt;&gt;</a></div>
@@ -137,7 +132,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
 					</c:if>
 					<li class="lihover"><a href="javascript:topage(1)">1</a></li>
-					<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex}" var="per">
+					<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex+1}" var="per">
 						<li class="lihover"><a href="javascript:topage(${per})">${per}</a></li>
 					</c:forEach>
 					<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
@@ -149,17 +144,12 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						
 				</c:if>
 				<c:if test="${pageView.totalrecord <= 0 }">
-					<div class="" style="text-align: center;color: #CC0001;">
-						<p>对不起，没有相关记录!</p>
+					<div style="color: #CC0001;">
+						<span>对不起，没有相关记录!</span>
 					</div>
 				</c:if>
 				</ul>
 			</div>
-			<div id="myCarModelContent" class="myCarModelContent myOrderDetail">333333333333333333333333333</div>
-			<div id="accountBalContent" class="accountBalContent myOrderDetail">444444444444444444444444444-1-1-1-1--1-1-1-1-1</div>
-			<div id="basicInfoContent" class="basicInfoContent myOrderDetail">55555555555555555555555555555555555555555555555444444444444</div>
-			<div id="changePassContent" class="changePassContent myOrderDetail">66666666666666666666666666666666666666666666665555555555555555555555555555555555555555555555</div>
-			<div id="feedBackContent" class="feedBackContent myOrderDetail">777777777777777777777777777777777777777777777-2-2-2-2-2-2-2--2-2-2-2</div>
 		</div>
 	</div>
 	

@@ -22,10 +22,10 @@ public class IndexAdvert extends BaseEntity {
 	private String title;
 
 	/** 广告内容 */
+	@Lob
 	private String content;
 
 	/** 广告展示图 */
-	@Lob
 	private String imgPath;
 
 	/** 逻辑删除标志 **/

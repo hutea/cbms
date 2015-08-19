@@ -64,7 +64,7 @@ public class CarAction extends BaseAction{
 	@ResponseBody
 	public String getCarType(String carBrandId) {
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		String jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
 		List<Object> params = new ArrayList<Object>();
 		params.add(carBrandId);
@@ -135,7 +135,7 @@ public class CarAction extends BaseAction{
 		model.addAttribute("car", car);
 		//顶级分类
 		orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
 		List<Object> params = new ArrayList<Object>();
 		params.add(car.getCarBrand().getId());
@@ -152,7 +152,7 @@ public class CarAction extends BaseAction{
 	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
 		PageView<Car> pageView = new PageView<Car>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		String jpql = "o.visible = 1";
 		Object[] params = new Object[]{};
 		if(queryContent!=null){

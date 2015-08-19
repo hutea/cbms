@@ -9,7 +9,9 @@ import com.hydom.util.dao.PageView;
 public interface ProductService extends DAO<Product> {
 
 	/**
-	 * 根据服务类型ID和车型ID获取推荐的一件商品
+	 * 根据服务类型ID和车型ID获取推荐的一件商品        
+	 *  推荐商品与不是推荐商品一起获取  如果不存在推荐商品 则返回第一条 
+	 *  存在推荐商品 将按照字段remond排序  取第一条
 	 * @param stid
 	 * @param cid
 	 * @return

@@ -1,5 +1,6 @@
 package com.hydom.core.server.action;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import javax.annotation.Resource;
@@ -27,7 +28,7 @@ import com.hydom.util.dao.PageView;
 
 @RequestMapping("/manage/coupon")
 @Controller
-public class CouponAction extends BaseAction{
+public class CouponAction extends BaseAction {
 
 	@Resource
 	private CouponService couponService;
@@ -35,24 +36,28 @@ public class CouponAction extends BaseAction{
 	private HttpServletRequest request;
 	@Autowired
 	private HttpServletResponse response;
-	
+
 	private int maxresult = 10;
-	
+
 	/**
 	 * 列表
 	 */
 	@RequestMapping("/list")
-	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
+	public ModelAndView list(
+			@RequestParam(required = false, defaultValue = "1") int page,
+			String queryContent) {
 		PageView<Coupon> pageView = new PageView<Coupon>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		StringBuffer jpql = new StringBuffer("o.visible = 1");
-		Object[] params = new Object[]{};
-		if(queryContent!=null){
+		Object[] params = new Object[] {};
+		if (queryContent != null) {
 			jpql.append(" and o.name like ?1");
-			params=new Object[]{"%"+queryContent+"%"};
+			params = new Object[] { "%" + queryContent + "%" };
 		}
-		pageView.setQueryResult(couponService.getScrollData(pageView.getFirstResult(), maxresult, jpql+"", params, orderby));
+		pageView.setQueryResult(couponService.getScrollData(
+				pageView.getFirstResult(), maxresult, jpql + "", params,
+				orderby));
 		request.setAttribute("pageView", pageView);
 		ModelAndView mav = new ModelAndView("/coupon/coupon_list");
 		mav.addObject("paveView", pageView);
@@ -60,7 +65,7 @@ public class CouponAction extends BaseAction{
 		mav.addObject("m", 9);
 		return mav;
 	}
-	
+
 	/**
 	 * 添加
 	 */
@@ -70,21 +75,24 @@ public class CouponAction extends BaseAction{
 		mav.addObject("m", 9);
 		return mav;
 	}
-	
+
 	/**
 	 * 保存
 	 */
 	@RequestMapping("/save")
 	public ModelAndView save(@ModelAttribute Coupon coupon) {
-		if(coupon.getRate()!=null){
-			coupon.setRate(coupon.getRate()/10);
+		if (coupon.getRate() != null) {
+			coupon.setRate(coupon.getRate() / 10);
+		}
+		if (coupon.getBeginDate() == null) {
+			coupon.setBeginDate(new Date());
 		}
 		couponService.save(coupon);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		mav.addObject("m", 9);
 		return mav;
 	}
-	
+
 	/**
 	 * 编辑
 	 */
@@ -96,7 +104,7 @@ public class CouponAction extends BaseAction{
 		mav.addObject("m", 9);
 		return mav;
 	}
-	
+
 	/**
 	 * 更新
 	 */
@@ -104,18 +112,21 @@ public class CouponAction extends BaseAction{
 	public ModelAndView edit(@ModelAttribute Coupon coupon) {
 		Coupon entity = couponService.find(coupon.getId());
 		coupon.setCreateDate(entity.getCreateDate());
+		if (coupon.getBeginDate() == null) {
+			coupon.setBeginDate(new Date());
+		}
 		couponService.update(coupon);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		return mav;
 	}
-	
+
 	/**
 	 * 删除
 	 */
 	@RequestMapping("/delete")
 	public @ResponseBody
 	String delete(@RequestParam String[] ids) {
-		for(String id : ids){
+		for (String id : ids) {
 			Coupon entity = couponService.find(id);
 			entity.setVisible(false);
 			couponService.update(entity);

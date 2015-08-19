@@ -5,6 +5,7 @@ import java.util.List;
 import com.hydom.account.ebean.Product;
 import com.hydom.core.server.ebean.CarType;
 import com.hydom.util.dao.DAO;
+import com.hydom.util.dao.PageView;
 
 /**
  * @Description:车系业务层接口
@@ -39,4 +40,6 @@ public interface CarTypeService extends DAO<CarType> {
 	 * @return
 	 */
 	public String getChooseCarType(Product product);
+	
+	PageView<CarType> getPage(PageView<CarType> pageView, String queryContent);
 }

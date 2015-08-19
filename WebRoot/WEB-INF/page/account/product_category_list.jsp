@@ -87,6 +87,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									名称
 								</th>
 								<th>
+									绑定服务
+								</th>
+								<th>
 									排序
 								</th>
 								<th>
@@ -100,6 +103,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<span style="margin-left: ${category.grade * 20}px;<c:if test="${category.grade eq 0}"> color: #000000;</c:if>">
 										${category.name}
 									</span>
+								</td>
+								<td>
+									${category.serviceType.name }
 								</td>
 								<td>
 									${category.order }

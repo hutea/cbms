@@ -100,15 +100,41 @@ public class ProductBrandAction extends BaseAction{
 		return  "redirect:list";
 	}
 	
+	/**
+	 * 删除
+	 * @param id
+	 * @return
+	 */
 	@RequestMapping("/delete")
 	@ResponseBody
-	public String delete(String[] ids){
-		for(String id : ids){
+	public String delete(String id){
+		try{
 			ProductBrand productBrand = productBrandService.find(id);
+			if(productBrand.getProductSet().size() > 0){
+				return ajaxError("该品牌下存在商品，无法删除", response);
+			}
 			productBrand.setVisible(false);
 			productBrandService.update(productBrand);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		return ajaxSuccess("成功", response);
+		return ajaxError("删除失败", response);
+	}
+	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String name){
+		try{
+			ProductBrand productBrand = productBrandService.findbyName(name);
+			if(productBrand != null){
+				return ajaxError("该名称已存在",response);
+			}
+			return ajaxSuccess("", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("删除失败", response);
 	}
 	
 }

@@ -25,6 +25,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Comment;
 import com.hydom.account.ebean.CommentImg;
+import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.ServerOrder;
 import com.hydom.account.ebean.ServerOrderDetail;
@@ -65,6 +66,10 @@ public ModelAndView save(@ModelAttribute Comment comment,
 		@RequestParam String[] imgPath,
 		@RequestParam String serverOrderDetailId,
 		@RequestParam(required = false, defaultValue = "1") int page) {
+	MemberBean bean = getMemberBean(request);
+	Member member = bean.getMember();
+	String memberId = member.getId();
+	comment.setMember(member);
 	commentService.save(comment);
 	//保存评论图片
 	for (String imgpath : imgPath) {
@@ -76,7 +81,8 @@ public ModelAndView save(@ModelAttribute Comment comment,
 	ServerOrderDetail s = serverOrderDetailService.find(serverOrderDetailId);
 	s.setComment(comment);
 	serverOrderDetailService.update(s);
-	String memberId = comment.getMember().getId();
+	
+	/*String memberId = comment.getMember().getId();*/
 	PageView<Order> pageView = new PageView<Order>(maxresult, page);
 	LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 	orderby.put("id", "desc");
@@ -95,11 +101,16 @@ public ModelAndView save(@ModelAttribute Comment comment,
 public ModelAndView save1(@ModelAttribute Comment comment,
 		@RequestParam String serverOrderId,
 		@RequestParam(required = false, defaultValue = "1") int page) {
+	MemberBean bean = getMemberBean(request);
+	Member member = bean.getMember();
+	String memberId = member.getId();
+	comment.setMember(member);
 	commentService.save(comment);
 	ServerOrder s =serverOrderService.find(serverOrderId);
 	s.setComment(comment);
 	serverOrderService.update(s);
-	String memberId = comment.getMember().getId();
+	
+	/*String memberId = comment.getMember().getId();*/
 	PageView<Order> pageView = new PageView<Order>(maxresult, page);
 	LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 	orderby.put("id", "desc");

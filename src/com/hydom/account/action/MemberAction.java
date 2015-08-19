@@ -24,10 +24,12 @@ import com.hydom.account.ebean.MemberRank;
 import com.hydom.account.service.AreaService;
 import com.hydom.account.service.MemberRankService;
 import com.hydom.account.service.MemberService;
+import com.hydom.api.service.TokenService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.CommonUtil;
 import com.hydom.util.bean.MemberBean;
 import com.hydom.util.dao.PageView;
+import com.hydom.util.dao.QueryResult;
 
 @RequestMapping("/manage/member")
 @Controller
@@ -42,6 +44,9 @@ public class MemberAction extends BaseAction{
 	private MemberService memberService;
 	@Resource
 	private AreaService areaService;
+	@Resource
+	private TokenService tokenService;
+	
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -170,6 +175,10 @@ public class MemberAction extends BaseAction{
 			member.setMoney(adMoney);
 			memberService.update(member);
 			
+			if(member.getStatus() == 0){
+				tokenService.deletAllTokenByUID(member.getId());
+			}
+			
 			return ajaxSuccess("成功", response);
 		}catch(Exception e){
 			e.printStackTrace();
@@ -182,6 +191,7 @@ public class MemberAction extends BaseAction{
 	public String delete(String[] ids){
 		for(String id : ids){
 			Member member = memberService.find(id);
+			member.setMobile(member.getMobile() + "-" + CommonUtil.getOrderNum());
 			member.setVisible(false);
 			memberService.update(member);
 		}
@@ -199,4 +209,14 @@ public class MemberAction extends BaseAction{
 		return ajaxSuccess("", response);
 	}
 	
+	@RequestMapping("/deleteView")
+	@ResponseBody
+	public String deleteView(){
+		List<Member> memberList = memberService.getListByHql("select o from Member o where o.visible = false");
+		for(Member member : memberList){
+			member.setMobile(member.getMobile() + "-" + CommonUtil.getOrderNum());
+			memberService.update(member);
+		}
+		return ajaxSuccess("成功", response);
+	}
 }

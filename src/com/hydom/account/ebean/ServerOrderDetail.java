@@ -6,6 +6,7 @@
 package com.hydom.account.ebean;
 
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -47,6 +48,7 @@ public class ServerOrderDetail extends BaseEntity {
 	/**
 	 * 商品单价
 	 */
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float price;
 	
 	/**

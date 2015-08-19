@@ -55,10 +55,11 @@
 		$("#productListUL").load(url,data,function(){});
 	}
 	
-	function gotoProductDetail(value){
+	function gotoProductDetail(value,type){
 		var url = "<%=basePath%>web/serviceProduct/productDetail";
 		var data = {
-				productId:value	
+				productId:value,
+				type:type
 		};
 		$("#productDetail").load(url,data,function(){});
 	}

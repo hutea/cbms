@@ -56,13 +56,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder">
-					<a href="javascript:;">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="javascript:;">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon on">
-					<a href="javascript:;">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -70,7 +70,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="javascript:;">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -78,22 +78,19 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="javascript:;">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="javascript:;">基本信息</a>
-				</li>
-				<li class="menu-item changePass">
-					<a href="javascript:;">修改密码</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
 				<li class="menu-item feedBack">
-					<a href="javascript:;">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
 		<div class="steward1-detail" id="steward1-detail">
-			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; ">00000000000000000000000000000000</div>
-			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail" style="border: none; ">1111111111111111111111111111</div>
+			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; "></div>
+			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail" style="border: none; "></div>
 			<div id="myCouponContent" class="myCouponContent myOrderDetail">
 				<div class="orderDetails">
 					<div class="orderDetailsTop">
@@ -114,11 +111,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 					</div>
 				</div>
 			</div>
-			<div id="myCarModelContent" class="myCarModelContent myOrderDetail">333333333333333333333333333</div>
-			<div id="accountBalContent" class="accountBalContent myOrderDetail">444444444444444444444444444-1-1-1-1--1-1-1-1-1</div>
-			<div id="basicInfoContent" class="basicInfoContent myOrderDetail">55555555555555555555555555555555555555555555555444444444444</div>
-			<div id="changePassContent" class="changePassContent myOrderDetail">66666666666666666666666666666666666666666666665555555555555555555555555555555555555555555555</div>
-			<div id="feedBackContent" class="feedBackContent myOrderDetail">777777777777777777777777777777777777777777777-2-2-2-2-2-2-2--2-2-2-2</div>
+			
 		</div>
 	</div>
 	

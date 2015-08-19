@@ -22,4 +22,10 @@ public class TokenServiceBean extends DAOSupport<Token> implements TokenService 
 		}
 	}
 
+	@Override
+	public int deletAllTokenByUID(String uid) {
+		return em.createQuery("delete from Token o where o.uid=?1")
+				.setParameter(1, uid).executeUpdate();
+	}
+
 }

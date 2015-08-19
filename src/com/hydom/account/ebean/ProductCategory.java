@@ -24,6 +24,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -85,6 +86,7 @@ public class ProductCategory extends BaseEntity {
 
 	/** 下级分类 */
 	@OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+	@Where(clause="visible = 1")
 	@OrderBy("order asc")
 	private Set<ProductCategory> children = new HashSet<ProductCategory>();
 	
@@ -113,7 +115,9 @@ public class ProductCategory extends BaseEntity {
 	 * 该分类下的 规格 
 	 */
 	@OneToMany(fetch=FetchType.LAZY,mappedBy="productCategory")
+	@Where(clause="visible = 1")
 	private Set<Specification> specificationSet = new HashSet<Specification>();
+	
 	
 	private Boolean visible = true;
 	

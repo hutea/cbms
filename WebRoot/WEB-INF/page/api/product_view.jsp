@@ -1,4 +1,5 @@
 <%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@ include file="/WEB-INF/page/common/taglib.jsp" %>
 <%
 	String path = request.getContextPath();
 	String basePath = request.getScheme() + "://"
@@ -17,6 +18,8 @@
 	</head>
 
 	<body>
-		${product.introduction}			
+		<div class="container" style="padding: 5px 10px;">
+		${product.introduction}		
+		</div>	
 	</body>
 </html>

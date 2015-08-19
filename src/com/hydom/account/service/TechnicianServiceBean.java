@@ -1,10 +1,14 @@
 package com.hydom.account.service;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.persistence.NoResultException;
 
 import org.springframework.stereotype.Service;
 
 import com.hydom.account.ebean.Technician;
+import com.hydom.util.CommonAttributes;
 import com.hydom.util.dao.DAOSupport;
 
 @Service
@@ -79,15 +83,35 @@ public class TechnicianServiceBean extends DAOSupport<Technician> implements
 
 	@Override
 	public boolean isFree() {
-		long count = (Long) em
-				.createQuery(
-						"select count(o.id) from Technician o where o.visible=?1 and o.jobstatus=?2 and o.stats=?3 and o.order is null")
-				.setParameter(1, true).setParameter(2, true).setParameter(3, 0)
-				.getSingleResult();
-		if (count >= 0) {
-			return true;
-		}
-		return false;
-	}
+		try {
+			long count = (Long) em
+					.createQuery(
+							"select count(o.id) from Technician o where o.visible=?1 and o.jobstatus=?2 and o.stats=?3 and o.order is null")
+					.setParameter(1, true).setParameter(2, true)
+					.setParameter(3, 0).getSingleResult();
+			SimpleDateFormat dateSdf = new SimpleDateFormat("yyyy-MM-dd");
+			Date now = new Date();
+			String nowDateSTR = dateSdf.format(now);
+			SimpleDateFormat timeSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
+			Date serverStartTime = timeSdf.parse(nowDateSTR
+					+ " "
+					+ CommonAttributes.getInstance().getSystemBean()
+							.getStartDate());
+			Date serverEndTime = timeSdf.parse(nowDateSTR
+					+ " "
+					+ CommonAttributes.getInstance().getSystemBean()
+							.getEndDate());
+			System.out.println(serverStartTime);
+			System.out.println(serverEndTime);
+			if (count >= 0 && serverStartTime.getTime() < now.getTime()
+					&& serverEndTime.getTime() > now.getTime()) { // 技师人数大于零；并且当前时间在后台设定的工作时间范围内
+				return true;
+			}
+			return false;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
 }

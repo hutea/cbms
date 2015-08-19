@@ -14,7 +14,8 @@ public class NewsRecordServiceBean extends DAOSupport<NewsRecord> implements
 			return (NewsRecord) em
 					.createQuery(
 							"select o from NewsRecord o where o.member.id=?1 and o.news.id=?2")
-					.setParameter(1, uid).setParameter(2, nwid);
+					.setParameter(1, uid).setParameter(2, nwid)
+					.setMaxResults(1).getSingleResult();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

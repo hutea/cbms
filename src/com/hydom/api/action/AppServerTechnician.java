@@ -25,14 +25,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.Technician;
+import com.hydom.account.ebean.WorkLog;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.TechnicianService;
+import com.hydom.account.service.WorkLogService;
 import com.hydom.core.order.ebean.ServiceImage;
 import com.hydom.core.order.ebean.TechnicianBindRecord;
 import com.hydom.core.order.service.ServiceImageService;
 import com.hydom.core.order.service.TechnicianBindRecordService;
-import com.hydom.core.server.ebean.CarBrand;
-import com.hydom.core.server.ebean.CarType;
 import com.hydom.util.UploadImageUtil;
 import com.hydom.util.dao.QueryResult;
 
@@ -54,6 +54,8 @@ public class AppServerTechnician {
 	private TechnicianBindRecordService technicianBindRecordService;
 	@Resource
 	private ServiceImageService serviceImageService;
+	@Resource
+	private WorkLogService workLogService;
 	@Autowired
 	private HttpServletRequest request;
 
@@ -198,11 +200,24 @@ public class AppServerTechnician {
 					+ " 技师经度=" + lng + "技师纬度=" + lat);
 			Technician tech = technicianService.find(techId);
 			JSONObject obj = new JSONObject();
+			
+			//暂时存储当前上下班状态
+			boolean js = tech.isJobstatus();
+			
 			// 更改上班状态
 			tech.setJobstatus(jobStatus);
 			tech.setLongitude(lng);
 			tech.setLatitude(lat);
 			technicianService.update(tech);
+			
+			//记录上下班日志
+			if(js!=jobStatus){
+				WorkLog workLog = new WorkLog();
+				workLog.setTechnician(technicianService.find(techId));
+				workLog.setJobstatus(jobStatus);
+				workLogService.save(workLog);
+			}
+			
 			Order order = tech.getOrder();
 			if (jobStatus && order == null) {
 				order = orderService.matchOrder(techId, lat, lng);
@@ -360,19 +375,20 @@ public class AppServerTechnician {
 			s = s * EARTH_RADIUS;
 			s = Math.round(s * 10000) / 10000;
 
-			order.getTechnicianBindRecord().setRefuseDistance(s);
+			order.getTechnicianBindRecord().setRefuseDistance(s/1000);
 			order.getTechnicianBindRecord().setRefuseDate(new Date());
 			order.getTechnicianBindRecord().setRefuseCause(refuseCause);
 			order.getTechnicianBindRecord().setState(3);
 			orderService.update(order);
-			tech.setOrder(null);// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			technicianService.update(tech);
 
 			// 查找未绑定技师的订单
 			order = orderService.matchOrder(techId, tlat, tlng);
-			// order =
 			// orderService.find("29381b50-14e8-4448-8acb-71389656dd8f");///////////////////////////////////////////////////////////////////////////////////////////
 			if (order != null) {
+				tech.setOrder(order);
+				tech.setStats(0);
+				technicianService.update(tech);
+				
 				obj.put("result", "001");
 				obj.put("hasOrder", true);
 				obj.put("orderId", order.getId());// 订单id
@@ -389,7 +405,7 @@ public class AppServerTechnician {
 				return obj.toString();
 			} else {
 				// 设技师状态为空闲
-				tech = technicianService.find(techId);
+				tech.setOrder(null);
 				tech.setStats(0);
 				technicianService.update(tech);
 				obj.put("result", "001");
@@ -425,7 +441,7 @@ public class AppServerTechnician {
 	String imageUpload(String techId, @RequestParam MultipartFile imageFile) {
 		try {
 			log.info("App【上传图片】：" + "技师id=" + techId);
-			Map<String, String> map = UploadImageUtil.uploadFile(imageFile,
+			Map<String, String> map = UploadImageUtil.uploadFileApp(imageFile,
 					request);
 			String url = map.get("source");
 			JSONObject obj = new JSONObject();
@@ -513,13 +529,11 @@ public class AppServerTechnician {
 			order.setStatus(0);
 			orderService.update(order);
 
-			// 设技师目前服务的订单为空
+			// 设技师目前服务的订单
 			tech.setOrder(null);// //////////////////////////////////////////////////////////////////////////////////////
-			technicianService.update(tech);
-
+			
 			// 查找未绑定技师的订单
 			order = orderService.matchOrder(techId, tlat, tlng);
-			// order =
 			// orderService.find("29381b50-14e8-4448-8acb-71389656dd8f");//////////////////////////////////////////////////////////////////////
 			if (order != null) {
 				obj.put("result", "001");
@@ -535,6 +549,12 @@ public class AppServerTechnician {
 				obj.put("mlng", order.getLng());// 用户经度
 				obj.put("mlat", order.getLat());// 用户纬度
 				obj.put("distance", order.getDistance());// 距离
+
+				// 设技师目前服务的订单
+				tech.setStats(1);
+				tech.setOrder(order);// //////////////////////////////////////////////////////////////////////////////////////
+				technicianService.update(tech);
+				
 				return obj.toString();
 			} else {
 				// 设技师状态为空闲
@@ -646,28 +666,28 @@ public class AppServerTechnician {
 			orderby.put("modifyDate", "desc");
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
 			Integer nowDate = Integer.parseInt(sdf.format(new Date()));
-			String jpql = "o.technician = ?1 and o.state IN (2,3) and YEAR(o.order.startDate) IN ("
+			String jpql = "o.technician = ?1 and o.state IN (2,3) and YEAR(o.order.modifyDate) IN ("
 					+ (nowDate - 1) + "," + nowDate + ")";
 			Object[] params = new Object[] { technicianService.find(techId) };
 			if (year != null && orderState == null) {
-				jpql = "o.technician = ?1 and YEAR(o.order.startDate) = ?2 and o.state IN (2,3)";
+				jpql = "o.technician = ?1 and YEAR(o.order.modifyDate) = ?2 and o.state IN (2,3)";
 				params = new Object[] { technicianService.find(techId), year };
 				if (month != null) {
-					jpql = "o.technician = ?1 and YEAR(o.order.startDate) = ?2 and MONTH(o.order.startDate) = ?3 and o.state IN (2,3)";
+					jpql = "o.technician = ?1 and YEAR(o.order.modifyDate) = ?2 and MONTH(o.order.modifyDate) = ?3 and o.state IN (2,3)";
 					params = new Object[] { technicianService.find(techId),
 							year, month };
 				}
 			} else if (orderState != null && year == null) {
-				jpql = "o.technician = ?1 and o.state = ?2 and YEAR(o.order.startDate) IN ("
+				jpql = "o.technician = ?1 and o.state = ?2 and YEAR(o.order.modifyDate) IN ("
 						+ (nowDate - 1) + "," + nowDate + ")";
 				params = new Object[] { technicianService.find(techId),
 						orderState };
 			} else if (year != null && orderState != null) {
-				jpql = "o.technician = ?1 and YEAR(o.order.startDate) = ?2 and o.state = ?3";
+				jpql = "o.technician = ?1 and YEAR(o.order.modifyDate) = ?2 and o.state = ?3";
 				params = new Object[] { technicianService.find(techId), year,
 						orderState };
 				if (month != null) {
-					jpql = "o.technician = ?1 and YEAR(o.order.startDate) = ?2 and MONTH(o.order.startDate) = ?3 and o.state = ?4";
+					jpql = "o.technician = ?1 and YEAR(o.order.modifyDate) = ?2 and MONTH(o.order.modifyDate) = ?3 and o.state = ?4";
 					params = new Object[] { technicianService.find(techId),
 							year, month, orderState };
 				}
@@ -692,6 +712,7 @@ public class AppServerTechnician {
 					obj.put("startDate", "");
 				}
 
+				obj.put("orderState", tbr.getState());//接受=2，拒绝=3
 				array.add(obj);
 				obj.clear();
 			}

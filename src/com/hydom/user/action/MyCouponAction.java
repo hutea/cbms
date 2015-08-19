@@ -21,6 +21,7 @@ import com.hydom.account.service.MemberService;
 import com.hydom.core.server.ebean.Coupon;
 import com.hydom.core.server.service.CouponService;
 import com.hydom.util.BaseAction;
+import com.hydom.util.bean.MemberBean;
 import com.hydom.util.dao.PageView;
 
 /**
@@ -44,16 +45,18 @@ public class MyCouponAction extends BaseAction{
 	@Autowired
 	private HttpServletResponse response;
 	
-	private int maxresult = 5;
+	private int maxresult = 10;
 	/**优惠券列表*/
 	@RequestMapping("/list")
-	public @ResponseBody ModelAndView list(String memberId) {
+	public @ResponseBody ModelAndView list() {
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("type", "desc");
-		String jpql = "o.visible=?1";
-		Object[] params = new Object[]{true};
+		String jpql = "o.visible=?1 and o.isExchange=?2";
+		Object[] params = new Object[]{true,true};
 		
 		ModelAndView mav = new ModelAndView("web/center/myCoupon");
+		MemberBean bean = getMemberBean(request);
+		String memberId = bean.getMember().getId();
 		if(memberId!=null){
 			mav.addObject("amount", memberService.find(memberId).getAmount());
 		}else{
@@ -65,21 +68,32 @@ public class MyCouponAction extends BaseAction{
 	
 	/**兑换优惠券*/
 	@RequestMapping("/convert")
-	public @ResponseBody String convert(String id, String memberId) {
-		Member member = memberService.find(memberId);
-		Coupon coupon = couponService.find(id);
-		if(coupon.getIsExchange()){
-			if(coupon.getPoint()<=member.getAmount()){
-				MemberCoupon memberCoupon = new MemberCoupon();
-				memberCoupon.setReceiveDate(new Date());
-				memberCoupon.setMember(member);
-				memberCoupon.setCoupon(coupon);
-				memberCouponService.save(memberCoupon);
-				member.setAmount(member.getAmount()-coupon.getPoint());
-				memberService.update(member);
-				return ajaxSuccess("领取成功！", response);
-			}else{
-				return ajaxError("积分不足！", response);
+	public @ResponseBody String convert(String id) {
+		MemberBean bean = getMemberBean(request);
+		if(bean.getMember().getId()!=null){
+			String memberId = bean.getMember().getId();
+			Member member = memberService.find(memberId);
+			Coupon coupon = couponService.find(id);
+			if(coupon.getIsExchange()){
+				Float point = (float) 0;
+				if(coupon.getPoint()!=null){
+					point = Float.parseFloat(coupon.getPoint()+"");
+				}
+				Float amount = member.getAmount();
+				if(amount==null) amount = (float) 0;
+				if(point <= amount){
+					MemberCoupon memberCoupon = new MemberCoupon();
+					memberCoupon.setReceiveDate(new Date());
+					memberCoupon.setMember(member);
+					memberCoupon.setCoupon(coupon);
+					memberCoupon.setUseType(coupon.getUseType());
+					memberCouponService.save(memberCoupon);
+					member.setAmount(amount-point);
+					memberService.update(member);
+					return ajaxSuccess("领取成功！", response);
+				}else{
+					return ajaxError("积分不足！", response);
+				}
 			}
 		}
 		return ajaxError("领取失败！", response);
@@ -87,22 +101,28 @@ public class MyCouponAction extends BaseAction{
 	
 	/**优惠券历史记录*/
 	@RequestMapping("/history")
-	public @ResponseBody ModelAndView history(String memberId,@RequestParam(defaultValue="1") Integer page) {
+	public @ResponseBody ModelAndView history(@RequestParam(defaultValue="1") Integer page) {
 		
-		PageView<MemberCoupon> pageView = new PageView<MemberCoupon>(maxresult, page);
-		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
-		String jpql = "o.member.id = ?1";
-		Object[] params = new Object[]{memberId};
-		pageView.setHql(jpql);
-		pageView.setParams(params);
-		pageView.setOrderby(orderby);
-		pageView = memberCouponService.getPage(pageView);
-		//pageView.setQueryesRult(memberCouponService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
-		//request.setAttribute("pageView", pageView);
-		
-		ModelAndView mav = new ModelAndView("web/center/myCoupon_history");
-		mav.addObject("pageView", pageView);
-		return mav;
+		MemberBean bean = getMemberBean(request);
+		if(bean.getMember().getId()!=null){
+			String memberId = bean.getMember().getId();
+			
+			PageView<MemberCoupon> pageView = new PageView<MemberCoupon>(maxresult, page);
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("receiveDate", "desc");
+			String jpql = "o.member.id = ?1";
+			Object[] params = new Object[]{memberId};
+//			pageView.setHql(jpql);
+//			pageView.setParams(params);
+//			pageView.setOrderby(orderby);
+//			pageView = memberCouponService.getPage(pageView);
+			
+			pageView.setQueryResult(memberCouponService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
+			
+			ModelAndView mav = new ModelAndView("web/center/myCoupon_history");
+			mav.addObject("pageView", pageView);
+			return mav;
+		}
+		return null;
 	}
 }

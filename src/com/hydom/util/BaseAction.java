@@ -87,9 +87,15 @@ public class BaseAction {
 	 */
 	@ExceptionHandler(Exception.class)
 	public void runtimeExceptionHandler(HttpServletResponse response,HttpServletRequest request,Exception ex) throws ServletException, IOException {
+		
+		String path = request.getRequestURI();
+		System.out.println(path);
 		ex.printStackTrace();
-		request.setAttribute("message", "服务器异常！");
-		request.getRequestDispatcher("/WEB-INF/template/admin/common/error.jsp").forward(request, response);
+		if(path.contains("/cbms/manage")){
+			request.setAttribute("message", "服务器异常！");
+			request.getRequestDispatcher("/WEB-INF/page/common/notfound.jsp").forward(request, response);
+		}
+		
 	}
 	
 	/**

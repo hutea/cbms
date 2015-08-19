@@ -118,7 +118,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<input type="checkbox" name="ids" value="${order.id}" />
 								</td>
 								<td>
-									${order.num }
+									<a href="<%=base %>/manage/order/detail?id=${order.id}" title="详情">${order.num }</a>
 								</td>
 								<td>
 									${order.contact }
@@ -135,7 +135,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 										保养订单
 									</c:if>
 									<c:if test="${order.type eq 3}">
-										纯商品订单
+										商品订单
 									</c:if>
 								</td>
 								<td>

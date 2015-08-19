@@ -1,6 +1,7 @@
 package com.hydom.account.action;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -61,7 +62,7 @@ public class ParameterGroupAction extends BaseAction{
 		List<Object> params = new ArrayList<Object>();
 		String queryContent = request.getParameter("queryContent");
 		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append("o.name like ?"+(params.size()+1));
+			jpql.append(" o.name like ?"+(params.size()+1));
 			params.add("%"+queryContent+"%");
 		}
 		model.addAttribute("queryContent", queryContent);
@@ -89,12 +90,15 @@ public class ParameterGroupAction extends BaseAction{
 	@RequestMapping("/edit")
 	public String edit(ModelMap model,String id){
 		
-		Attribute entity = attributeService.find(id);
-		model.addAttribute("entity", entity);
+		
+		ParameterGroup parameterGroup = parameterGroupService.find(id);
+		
+	//	Attribute entity = attributeService.find(id);
+		model.addAttribute("entity", parameterGroup);
 		
 		model.addAttribute("m", mark);
 		
-		return  basePath+"/attribute_edit";
+		return  basePath+"/parameter_group_edit";
 	}
 	
 	@RequestMapping("/save")
@@ -103,9 +107,15 @@ public class ParameterGroupAction extends BaseAction{
 		/*if(StringUtils.isNotEmpty(entity.getId())){
 			ParameterGroup pg = parameterGroupService.find(entity.getId());
 		}*/
-		parameterGroupService.save(entity);
-	
 		if(StringUtils.isNotEmpty(content)){
+			if(StringUtils.isNotEmpty(entity.getId())){
+				ParameterGroup parameterGroup = parameterGroupService.find(entity.getId());
+				parameterGroup.setName(entity.getName());
+				parameterGroup.setModifyDate(new Date());
+				parameterGroupService.update(parameterGroup);
+			}else{
+				parameterGroupService.save(entity);
+			}
 			JSONArray jsonArray = JSONArray.fromObject(content);
 			for(int i = 0; i < jsonArray.size(); i++){
 				Parameter parameter = new Parameter();
@@ -130,18 +140,73 @@ public class ParameterGroupAction extends BaseAction{
 					parameterService.save(parameter);
 				}
 			}
+		}else{
+			
 		}
 		
 		return  "redirect:list";
 	}
-	
+	/**
+	 * 删除删除组
+	 * @param ids
+	 * @return
+	 */
 	@RequestMapping("/delete")
 	@ResponseBody
 	public String delete(String[] ids){
-		for(String id : ids){
-			Attribute entity = attributeService.find(id);
-			attributeService.remove(entity);
+		try{
+			for(String id : ids){
+				ParameterGroup parameterGroup = parameterGroupService.find(id);
+				List<Parameter> list = parameterGroup.getParameters();
+				for(Parameter p : list){
+					parameterService.remove(p);
+				}
+				parameterGroupService.remove(parameterGroup);
+			}
+			
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		return ajaxSuccess("成功", response);
+		return ajaxError("", response);
+		
+	}
+	/**
+	 * 删除参数
+	 * @param ids
+	 * @return
+	 */
+	@RequestMapping("/deleteParameter")
+	@ResponseBody
+	public String deleteParameter(String ids){
+		try{
+			Parameter parameter = parameterService.find(ids);
+			parameterService.remove(parameter);
+			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("", response);
+	}
+	
+	/**
+	 * 判断该分类下是否有重名信息
+	 * @param content
+	 * @param productCategoryId
+	 * @return
+	 */
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String content,String productCategoryId){
+		try{
+			ParameterGroup parameterGroup = parameterGroupService.findByNameAndCategory(content,productCategoryId);
+			if(parameterGroup!=null){
+				return ajaxError("该名称已存在", response);
+			}
+			return ajaxSuccess("", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("查询出错", response);
 	}
 }

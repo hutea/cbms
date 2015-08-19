@@ -32,6 +32,10 @@ public class MemberCoupon extends BaseEntity {
 	 */
 	private static final long serialVersionUID = 3915996210726461009L;
 
+	/** 优惠券使用类型：1=洗车优惠券、2=保养优惠券、3=商品优惠券 */
+	@Column(nullable = false)
+	private Integer useType;
+
 	/** 名称 */
 	@Column(name = "name")
 	private String name;
@@ -48,20 +52,20 @@ public class MemberCoupon extends BaseEntity {
 	@Column(name = "introduction")
 	private String introduction;
 
-	/**优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
+	/** 优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
 	private Integer type = 1;
 
 	/** 折扣额 */
-	@Column(name = "discount")
+	@Column(name = "discount", columnDefinition = "decimal(20,2)")
 	private Double discount;
 
-	/** 折扣率 */
-	@Column(name = "rate")
-	private Double rate;
-
 	/** 最小商品价格 */
-	@Column(name = "min_price")
+	@Column(name = "min_price", columnDefinition = "decimal(20,2)")
 	private Double minPrice;
+
+	/** 折扣率 */
+	@Column(name = "rate", columnDefinition = "decimal(20,2)")
+	private Double rate;
 
 	/** 图片 */
 	@Column(name = "imgPath")
@@ -94,6 +98,14 @@ public class MemberCoupon extends BaseEntity {
 	private Coupon coupon;
 
 	private Boolean visible = true;
+
+	public Integer getUseType() {
+		return useType;
+	}
+
+	public void setUseType(Integer useType) {
+		this.useType = useType;
+	}
 
 	public Boolean getVisible() {
 		return visible;

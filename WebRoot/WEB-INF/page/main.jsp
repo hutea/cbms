@@ -35,19 +35,6 @@ if(adminBean!=null){
 	<script src="js/html5shiv.js"></script>
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
-		}
-	</script>
 </head>
 
 <body>

@@ -91,16 +91,23 @@ public class AttributeAction extends BaseAction{
 	}
 	
 	@RequestMapping("/save")
-	public String save(ModelMap model,Attribute entity,String[] attributeValues){
+	public String save(ModelMap model,Attribute entity,@RequestParam(required=false) String[] attributeValues){
+		
 		List<String> options = new ArrayList<String>();
-		for(String attributeValue : attributeValues){
-			if(StringUtils.isNotEmpty(attributeValue)){
-				options.add(attributeValue);
+		if(attributeValues!=null && attributeValues.length > 0){
+			for(String attributeValue : attributeValues){
+				if(StringUtils.isNotEmpty(attributeValue)){
+					options.add(attributeValue);
+				}
 			}
 		}
+		
 		if(StringUtils.isNotEmpty(entity.getId())){
-			entity.setOptions(options);
-			attributeService.update(entity);
+			Attribute attribute = attributeService.find(entity.getId());
+			attribute.setName(entity.getName());
+			attribute.setOrder(entity.getOrder());
+			attribute.setOptions(options);
+			attributeService.update(attribute);
 		}else{
 			entity.setPropertyIndex(null);
 			entity.setOptions(options);

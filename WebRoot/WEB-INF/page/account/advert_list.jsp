@@ -10,7 +10,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 	<meta name="description" content="">
-	<title>车系管理</title>
+	<title>广告管理</title>
 	<link href="${pageContext.request.contextPath}/resource/chain/css/style.default.css" rel="stylesheet">
 	<link href="${pageContext.request.contextPath}/resource/css/manage.common.css" rel="stylesheet">
 	
@@ -79,7 +79,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			           	  	<tr id="tr_${entry.id}" class="cartypetr">
 			           	  		 <%-- <td><input type="checkbox" name="ids" value="${entry.id}" class="<c:if test="${entry.carList.size()>0}">hasCar</c:if>"/></td> --%>
 				           		 <td>${entry.title}</td>
-				           		 <td>${entry.content}</td>
+				           		 <td><div style="width:560px; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${entry.content}</div></td>
 				           		 <td><a href="${pageContext.request.contextPath}/manage/advert/edit?id=${entry.id}">修改</a>
 				           		 	<a href="javascript:delEntity('${entry.id }')">删除</a>
 				           		 </td>
@@ -96,7 +96,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
     </section>
 	<script type="text/javascript">
 		function delEntity(obj){
-			if(!confirm("是否删除该车系？")){
+			if(!confirm("是否删除该广告？")){
 				return;
 			}
 			var url = "<%=base%>/manage/advert/delete";
@@ -106,9 +106,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			$.post(url,data,function(result){
 				if(result.status == "success"){
 					$(this).closest("tr").remove();
-					if($("tr.cartypetr").length <= 0){
-						location.reload(true);
-					}
+// 					if($("tr.cartypetr").length <= 0){
+						location.reload();
+// 					}
 				}else{
 					alert(result.message);
 				}

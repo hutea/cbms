@@ -57,26 +57,23 @@
 <script type="text/javascript">
 	
 	function check(v){
-		if($(v).is(':visible')){
-			if($(v).val() == ''){
-				$("#"+$(v).attr("name")+"_error").html($(v).attr("CHname")+"不能为空");
-				$(v).next().val("");
-		    } else {
-				$("#"+$(v).attr("name")+"_error").html("");
-				$(v).next().val("success");
-			}
+		if($(v).val() == ''){
+			$("#"+$(v).attr("name")+"_error").html($(v).attr("CHname")+"不能为空");
+			$(v).next().val("fail");
+	    } else {
+			$("#"+$(v).attr("name")+"_error").html("");
+			$(v).next().val("success");
 		}
 	}
 	
 	$(document).ready(function(){
 		$("#reset").bind("click",function() {
-			$("#repeat").val("");
 			$("#inputForm")[0].reset();
 			couponType();
-// 			isExchange();
+			isExchange();
 		});
 		couponType();
-// 		isExchange();
+		isExchange();
 		var s = $("#endDate").val();
 		s = s.substring(0,s.length-2);
 		$("#endDate").val(s);
@@ -95,16 +92,25 @@
 	function saveType(){
 		$(function(){
 			isVisible($("#name"));
-// 			isVisible($("#point"));
+			isVisible($("#point"));
 			isVisible($("#discount"));
 			isVisible($("#minPrice"));
 			isVisible($("#rate"));
+			check($("#imgPath"));
+			check($("#imgPath2"));
 			var flag = true;
 			$(".repeat").each(function(){
 				if($(this).prev().is(":visible") && $(this).val()!="success") flag = false;
+				if($("input[name=isExchange]:checked").val()==1 && ($(this).prev().attr("id")=="imgPath" || $(this).prev().attr("id")=="imgPath2") && $(this).val()!="success") flag = false;
 			});
+			if(flag && $("input[name=isExchange]:checked").val()==1 && $("#point").val()==0){
+				flag=false;
+				if(confirm("如果允许积分兑换，并且兑换所需积分数设为0，这样可能会导致用户恶意领取囤积此优惠券，是否确定要这样做？")){
+					flag=true;
+				}
+			}
 			if(flag){
-				$(function(){
+				$().ready(function(){
 					couponTypeRemoveAttr();
 					$("#inputForm").submit();
 				});
@@ -139,13 +145,21 @@
 		}
 	}
 	
-// 	function isExchange(){
-// 		if($("input[name=isExchange]:checked").val()==1){
-// 			$("#pointDiv").show();
-// 		}else{
-// 			$("#pointDiv").hide();
-// 		}
-// 	}
+	function rateInputRestrict(e){
+		var v=$(e).val();
+		var r = /^\d(\.\d)?$/;
+		if(!r.test(v)){
+			$(e).val("");
+		}
+	}
+	
+	function isExchange(){
+		if($("input[name=isExchange]:checked").val()==1){
+			$("#pointDiv").show();
+		}else{
+			$("#pointDiv").hide();
+		}
+	}
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -189,7 +203,7 @@
 						<div class="media-body">
 							<ul class="breadcrumb">
 								<li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-								<li><a href="">优惠券添加</a></li>
+								<li><a href="">优惠券修改</a></li>
 							</ul>
 						</div>
 					</div>
@@ -246,14 +260,31 @@
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">优惠券图片</label>
+									<label class="col-sm-4 control-label">优惠券展示图片</label>
 									<div class="col-sm-8">
 										<div class="img_div">
 											<img alt="" src="<%=basePath %>${coupon.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
-											<input type="hidden" name="imgPath" value="${coupon.imgPath }"/>
+											<input type="hidden" name="imgPath" id="imgPath" CHname="展示图片" value="${coupon.imgPath }"/>
+											<input type="hidden" class="repeat"/>
+											<span class="errorStyle" id="imgPath_error"></span>
 										</div>
 										<label>
 											<span id="spanButtonPlaceholder"></span>
+										</label>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">优惠券兑换图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="<%=basePath %>${coupon.imgPath2 }" onerror="<%=basePath %>/resource/image/default.png" id="show_img2"/>
+											<input type="hidden" name="imgPath2" id="imgPath2" CHname="兑换图片" value="${coupon.imgPath2 }"/>
+											<input type="hidden" class="repeat"/>
+											<span class="errorStyle" id="imgPath2_error"></span>
+										</div>
+										<label>
+											<span id="spanButtonPlacehold"></span>
 										</label>
 									</div>
 								</div>
@@ -272,7 +303,7 @@
 									</div>
 								</div>
 								
-								<!-- <div class="form-group">
+								<div class="form-group">
 									<label class="col-sm-4 control-label">是否允许积分兑换</label>
 									<div class="col-sm-8" onchange="isExchange()">
 										<div class="rdio rdio-default" style="width: 140px;">
@@ -294,7 +325,25 @@
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="point_error"></span>
 									</div>
-								</div> -->
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">优惠券使用类型</label>
+									<div class="col-sm-8 rdio3">
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-8" value="1" <c:if test="${coupon.useType eq 1}">checked="checked"</c:if>>
+											<label for="radioZH-8">洗车优惠券</label>
+										</div>
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-9" value="2" <c:if test="${coupon.useType eq 2}">checked="checked"</c:if>>
+											<label for="radioZH-9">保养优惠券</label>
+										</div>
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-10" value="3" <c:if test="${coupon.useType eq 3}">checked="checked"</c:if>>
+											<label for="radioZH-10">商品优惠券</label>
+										</div>
+									</div>
+								</div>
 								
 								<div class="form-group">
 									<label class="col-sm-4 control-label">优惠券类型</label>
@@ -317,8 +366,8 @@
 								<div class="form-group" id="rateDiv">
 									<label class="col-sm-4 control-label">折扣率（折）</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写折扣率" maxlength="1" CHname="折扣率" 
-										onBlur="check(this)" value="${coupon.rate }">
+										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写小于10的折扣率,如：8.5" 
+										CHname="折扣率" onBlur="check(this);rateInputRestrict(this);" value="${coupon.rate }">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="rate_error"></span>
 									</div>
@@ -366,6 +415,8 @@
 	</section>
 	<!-- 上传图片页面 -->
 	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
+	<jsp:include page="./imgUpload2.jsp"></jsp:include>
+	
 	<script type="text/javascript">
 		$('[data-toggle="tooltip"]').popover();
 		

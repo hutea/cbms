@@ -67,13 +67,13 @@
 				<div class="jiao"><b class="jiaoTop"></b></div>
 				<div class="orderInfoConDe">
 					<ul>
-						<li><b>姓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名：</b>${order.contact }</li>
-						<li><b>手&nbsp;机&nbsp;&nbsp;号：</b>${order.phone }</li>
+						<li><b>姓名：</b>${order.contact }</li>
+						<li><b>手机号：</b>${order.phone }</li>
 					</ul>
 					<ul>
 						<li><b>服务车型：</b>${carBrand.name }&nbsp; ${carType.name }&nbsp; ${car.name }</li>
 						<li><b>车身颜色：</b>${order.carColor }</li>
-						<li><b>车&nbsp;牌&nbsp;&nbsp;号：</b>${order.carNum }</li>
+						<li><b>车牌号：</b>${order.carNum }</li>
 					</ul>
 					<ul>
 						<li><b>清洗方式：</b><c:if test="${order.cleanType eq 1}">外观清洗</c:if><c:if test="${order.cleanType eq 2}">内外清洗</c:if></li>
@@ -81,18 +81,18 @@
 					</ul>
 					<ul>
 						<li><b>支付方式：</b>
-							<c:if test="${order.payWay eq 1}">现金支付</c:if>
+							<c:if test="${order.payWay eq 1}">会员卡支付</c:if>
 							<c:if test="${order.payWay eq 2}">支付宝</c:if>
 							<c:if test="${order.payWay eq 3}">银联</c:if>
 							<c:if test="${order.payWay eq 4}">微信</c:if>
 						</li>
 						<li><b>服务费用：</b><i>￥${order.amount_money }</i></li>
-						<li><b>优&nbsp;惠&nbsp;&nbsp;券：</b><i>-￥${order.amount_paid }</i>（<em>
+						<li><b>优惠券：</b><i>-￥${order.amount_paid }</i>（<em>
 							<c:if test="${empty memberCoupon }">
 								无优惠
 							</c:if>
 							<c:if test="${!empty memberCoupon }">
-								${memberCoupon.coupon.name }
+								${memberCoupon }
 							</c:if></em>）</li>
 						<li><b>实付金额：</b><i>￥${order.price }</i></li>
 					</ul>					
@@ -100,9 +100,14 @@
 				<div class="jiao"><b class="jiaoButton"></b></div>
 			</div>
 			<dl class="modify">
+				<c:if test="${order.isPay eq false }">
 					<dd><a href="javascript:void(0);" onclick="modifyOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_5.png" /></a></dd>
 					<dd <c:if test="${freeTech}">style="display:none;"</c:if> class="hasNoTechnician"><a href="javascript:void(0);"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_6.png" /></a></dd>
 					<dd <c:if test="${!freeTech}">style="display:none;"</c:if> class="hasTechnician"><a href="javascript:void(0);" onclick="payOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_6_1.png" /></a></dd>
+				</c:if>
+				<c:if test="${order.isPay eq true }">
+					<dd>该订单支付已完成</dd>
+				</c:if>
 			</dl>
 		</div>			
 	</div>
@@ -111,7 +116,7 @@
 <div class="success" style="display: none;">
 	<div class="mabg6" id="mabg6"></div>
 	<div class="mabg2" id="mabg2"></div>
-	<div class="malist" id="malist" style="margin: -29px 0 0 -83px;">
+	<div class="malist" id="malist" style="margin:-23px 0 0 -82px;">
 		<div class="malistTop">
 			<h2><span id="time">3</span>秒自动跳转首页</h2>
 			<a href="javascript:gotoIndex();" class="malistClose" id="malistClose"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
@@ -126,7 +131,7 @@
 <div class="pay" style="display: none;">
 		<div id="mabg8"></div>
 		<div id="mabg9"></div>
-		<div class="payReminders">
+		<div class="payReminders" style="margin: -21px 0 0 -83px;">
 			<div class="payRemindersTitle">
 				<span>网上支付提示</span>
 				<a href="javascript:closeDiv();" class="closePayRem"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
@@ -143,13 +148,16 @@
 		</div>
 	</div>
 
-
-
 <!--中部结束-->
 <!--底部开始-->
 	<jsp:include page="../web/footer.jsp" />
 <!--底部结束-->
 <script type="text/javascript">
+
+	var sessionId = "${member.id}";
+	var sessionMoney = "${member.money}";
+	var orderPrice = "${order.price }";
+
 	var confirmId = "${confimId}";
 	var payWay = "${order.payWay}";
 	//修改订单
@@ -166,11 +174,15 @@
 	//将当前支付
 	function payOrder(){
 		
-		$(".pay").show();
-		
 		if(payWay == "1"){//现金支付
-			saveOrder();
+			if(sessionId != ""){
+				saveOrder();
+			}else{
+				alert("请先登录,才能使用会员卡支付");
+				return;
+			}			
 		}else if(payWay == "2"){//支付宝支付
+			$(".pay").show();
 			alipay();
 		}
 	}
@@ -186,7 +198,8 @@
 				var orderNum = value.orderNum;
 				var orderPrice = value.orderPrice;
 				var orderName = value.orderName;
-				var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName;
+				var address = "alipay_return";
+				var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address;
 				window.open(openUrl);					
 			}else{
 				alert(result.message);
@@ -205,7 +218,7 @@
 			if(result.status == "success"){
 				$(".success").show();
 				$(".pay").hide();
-				run();
+				setInttervalTime();
 			}else{
 				alert("支付失败");
 				$(".pay").hide();
@@ -223,21 +236,24 @@
 			if(result.status == "success"){
 				$(".success").show();
 				setInttervalTime();
+			}else{
+				alert(result.message);
 			}
 		},"json");
 	}
 	
 	//定时器
 	var intterval;
-	function run(){
+	function setInttervalTime(){
 		intterval = setInterval(function(){
 			var timeOut = $("#time").text();
 			timeOut = timeOut*1 - 1;
 			if(timeOut <= 0){
 				clearInterval(intterval);
 				gotoIndex();
+			}else{
+				$("#time").text(timeOut);
 			}
-			$("#time").text(timeOut);
 		},1000);
 	}
 	
@@ -261,6 +277,11 @@
 		});
 	}
 	
+	function closeDiv(){
+		$(".success").hide();
+		$(".pay").hide();
+		$("#mabg8").hide();
+	}
 </script>
 </body>
 </html>

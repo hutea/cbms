@@ -23,6 +23,7 @@
 			button.prop("disabled",true);
 		}
 	});
+	
 </script>
 <ul class="popup_con_list" style="height: 410px;">
 	<c:forEach var="value" items="${pageView.records }">
@@ -33,7 +34,7 @@
 						style="height: 60px;width: 60px;" /></a>
 				</dd>
 				<dd class="dd_1">
-					<a href="javascript:gotoProductDetail('${value.id }');"><span>${value.name }</span></a>
+					<a href="javascript:gotoProductDetail('${value.id }','${type}');"><span>${value.name }</span></a>
 				</dd>
 				<dd class="dd_2">
 					<span>￥${value.marketPrice }</span>

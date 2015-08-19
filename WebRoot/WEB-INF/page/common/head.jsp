@@ -9,8 +9,6 @@
 			<a href="" class="menu-collapse"> <i class="fa fa-bars"></i> </a>
 		</div>
 	</div> 	<!-- header-left -->
-
-
 	<div class="header-right">
 		<div class="pull-right">
 			<div class="btn-group btn-group-option" style="margin-left: 100px">
@@ -23,17 +21,29 @@
 							<i class="glyphicon glyphicon-user"></i> My Profile</a>
 					</li>
 					<li>
-						<a href='<s:url action="myProfileEditUI" namespace="/manage/account" />'>
-							<i class="glyphicon glyphicon-cog"></i> Account Settings</a>
+						<a href='javascript:changePassword();'>
+							<i class="glyphicon glyphicon-cog"></i>修改密码</a>
 					</li>
 					<li class="divider"></li>
 					<li>
-						<a href='/account/signout'>
-							<i class="glyphicon glyphicon-log-out"></i>Sign Out</a>
+						<a href='javascript:exit(0);'>
+							<i class="glyphicon glyphicon-log-out"></i>退出</a>
 					</li>
 				</ul>
 			</div> <!-- btn-group -->
 		</div> <!-- pull-right -->
 	</div> 	<!-- header-right -->
 </div> <!-- headerwrapper -->
+<script type="text/javascript">
+function exit(obj){
+	var url = "${pageContext.request.contextPath}/account/signout";
+	var data = {};
+	$.post(url,data,function(result){
+		window.location.href="${pageContext.request.contextPath}/account/login";
+	},"json");
+}
+function changePassword(){
+	window.location.href="${pageContext.request.contextPath}/manage/account/changePasswordView";
+}
+</script>
 </header>

@@ -95,7 +95,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									
 									<div style="float: left;width:450px;"><span>用户名:${feedback.member.nickname }</span></div>
 									
-									<div style="float: left;width:600px;"><span>评论时间:${feedback.createDate }</span></div>
+									<div style="float: left;width:600px;"><span>评论时间:<fmt:formatDate value="${feedback.createDate }" type="both"/></span></div>
 									
 									<span><a href="${pageContext.request.contextPath}/manage/feedback/delete?id=${feedback.id}">删除</a></span>
 									</div>

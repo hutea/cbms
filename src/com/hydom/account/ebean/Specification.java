@@ -24,6 +24,7 @@ import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -56,12 +57,13 @@ public class Specification extends BaseEntity {
 	private String memo;
 
 	/** 规格值 */
-	@OneToMany(mappedBy = "specification", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "specification", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OrderBy("order asc")
 	private List<SpecificationValue> specificationValues = new ArrayList<SpecificationValue>();
 
 	/** 商品 */
 	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "specifications")
+	@Where(clause="visible = 1")
 	private Set<Product> products = new HashSet<Product>();
 	
 	/**
@@ -71,9 +73,10 @@ public class Specification extends BaseEntity {
 	@JoinColumn(name="producte_category_id")
 	private ProductCategory productCategory;
 	
-	
 	@Column(name="orders")
 	private Integer order;
+	
+	private Boolean visible =true;
 	
 	public String getName() {
 		return name;
@@ -130,6 +133,14 @@ public class Specification extends BaseEntity {
 
 	public void setProductCategory(ProductCategory productCategory) {
 		this.productCategory = productCategory;
+	}
+
+	public Boolean getVisible() {
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
 	}
 
 }

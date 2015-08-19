@@ -1,9 +1,7 @@
 package com.hydom.api.action;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -16,19 +14,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
-import net.sf.json.JSONObject;
-
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.taglibs.standard.lang.jstl.OrOperator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Controller;
@@ -39,15 +31,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import cn.jpush.api.JPushClient;
-
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.google.gson.Gson;
 import com.hydom.account.ebean.Area;
 import com.hydom.account.ebean.Comment;
 import com.hydom.account.ebean.CommentImg;
@@ -56,7 +44,9 @@ import com.hydom.account.ebean.Feedback;
 import com.hydom.account.ebean.IndexAdvert;
 import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.MemberCoupon;
+import com.hydom.account.ebean.MemberRank;
 import com.hydom.account.ebean.News;
+import com.hydom.account.ebean.NewsRecord;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.Parameter;
 import com.hydom.account.ebean.Product;
@@ -67,8 +57,6 @@ import com.hydom.account.ebean.ProductLabel;
 import com.hydom.account.ebean.ServerOrder;
 import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.ebean.ServiceType;
-import com.hydom.account.ebean.SystemParam;
-import com.hydom.account.ebean.Technician;
 import com.hydom.account.service.AreaService;
 import com.hydom.account.service.CommentImgService;
 import com.hydom.account.service.CommentService;
@@ -77,6 +65,7 @@ import com.hydom.account.service.FeedbackService;
 import com.hydom.account.service.IndexAdvertService;
 import com.hydom.account.service.MemberCouponService;
 import com.hydom.account.service.MemberService;
+import com.hydom.account.service.NewsRecordService;
 import com.hydom.account.service.NewsService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ProductBrandService;
@@ -86,6 +75,7 @@ import com.hydom.account.service.ServerOrderDetailService;
 import com.hydom.account.service.ServerOrderService;
 import com.hydom.account.service.ServiceTypeService;
 import com.hydom.account.service.SystemParamService;
+import com.hydom.account.service.TechnicianService;
 import com.hydom.api.ebean.ShortMessage;
 import com.hydom.api.ebean.Token;
 import com.hydom.api.service.ShortMessageService;
@@ -107,7 +97,6 @@ import com.hydom.util.DateTimeHelper;
 import com.hydom.util.IDGenerator;
 import com.hydom.util.PushUtil;
 import com.hydom.util.UploadImageUtil;
-import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.PageView;
 
 @RequestMapping("/api")
@@ -161,6 +150,10 @@ public class AppServer {
 	private FeeRecordService feeRecordService;
 	@Resource
 	private SystemParamService systemParamService;
+	@Resource
+	private TechnicianService technicianService;
+	@Resource
+	private NewsRecordService newsRecordService;
 
 	@Autowired
 	private HttpServletRequest request;
@@ -177,7 +170,6 @@ public class AppServer {
 							JsonProcessingException {
 						jg.writeString("");
 					}
-
 				});
 	}
 
@@ -199,6 +191,7 @@ public class AppServer {
 				dataMap.put("uid", "");
 				dataMap.put("token", "");
 				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
 				return json;
 			}
 			if (System.currentTimeMillis()
@@ -207,6 +200,7 @@ public class AppServer {
 				dataMap.put("uid", "");
 				dataMap.put("token", "");
 				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
 				return json;
 			}
 			// step2：进行注册或登录
@@ -215,10 +209,15 @@ public class AppServer {
 				member = new Member();
 				member.setMobile(phone);
 				memberService.save(member);
-			} else if (!member.getVisible()) {// 帐号被停用
+			} else if (!member.getVisible() || member.getStatus() == 0) {// 帐号被停用
 				dataMap.put("result", "101");// 帐号被停用？？？
+				dataMap.put("uid", "");
+				dataMap.put("token", "");
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
 			}
-			// step3：产生安全令牌-->获取上次的令牌环?
+			// step3：产生安全令牌-->获取上次的令牌环
 			Token token = new Token();
 			token.setId(IDGenerator.uuid());
 			token.setAuthid(IDGenerator.uuid());
@@ -360,6 +359,7 @@ public class AppServer {
 
 			/** 车辆品牌 数据获取 **/
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("initial", "asc");
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer("o.visible=?1");
 			List<Object> params = new ArrayList<Object>();
@@ -371,7 +371,7 @@ public class AppServer {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("cbid", brand.getId());
 				map.put("cbname", brand.getName());
-				map.put("fletter", brand.getJp());
+				map.put("fletter", brand.getInitial());
 				map.put("cbimage", brand.getImgPath());
 				list.add(map);
 			}
@@ -653,7 +653,7 @@ public class AppServer {
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
 
 			dataMap.put("result", "001");
-			dataMap.put("canserver", 1);// 暂时设定为1
+			dataMap.put("canserver", technicianService.isFree() ? 1 : 0);// 暂时设定为1
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
 			return json;
@@ -702,7 +702,7 @@ public class AppServer {
 	public @ResponseBody
 	String serverCoupon(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, double money,
-			@RequestParam(required = false) String pid) {
+			@RequestParam(required = false) String pid, int otype) {
 		try {
 			log.info("App【判断是否有可用的优惠券】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
@@ -711,8 +711,8 @@ public class AppServer {
 				pids = pid.split("#");
 			}
 			dataMap.put("result", "001");
-			dataMap.put("usable",
-					memberCouponService.canUse(money, uid, pids) ? 1 : 0);
+			dataMap.put("usable", memberCouponService.canUse(money, uid, pids,
+					otype, 1) ? 1 : 0);
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
 			return json;
@@ -729,15 +729,18 @@ public class AppServer {
 	public @ResponseBody
 	String serverCouponList(@RequestParam(required = false) String uid,
 			@RequestParam(required = false) String token, double money,
-			String pid) {
+			@RequestParam(required = false) String pid, int otype) {
 		try {
 			log.info("App【判断是否有可用的优惠券】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-			String[] pids = pid.split("#");
+			String[] pids = null;
+			if (pid != null && !"".equals(pid)) {
+				pids = pid.split("#");
+			}
 			dataMap.put("result", "001");
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 			for (MemberCoupon mc : memberCouponService.canUseList(money, uid,
-					pids)) {
+					pids, otype, 1)) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("cpid", mc.getId());
 				map.put("cptype", mc.getType());
@@ -760,8 +763,7 @@ public class AppServer {
 				}
 				list.add(map);
 			}
-			dataMap.put("usable",
-					memberCouponService.canUse(money, uid, pids) ? 1 : 0);
+			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
 			return json;
@@ -882,8 +884,14 @@ public class AppServer {
 					map.put("pname", product.getName());
 					map.put("pimage", product.getImgPath());
 					map.put("pbuynum", 12);// 商品购买数
-					map.put("price", product.getPrice());
-					map.put("pcomts", 200);
+					if (product.getProuductUniqueType() != null
+							&& product.getProuductUniqueType() == 3) {// 天天特价
+						map.put("price", product.getDiscountMoney());
+					} else {
+						map.put("price", product.getMarketPrice());
+					}
+					map.put("pcomts",
+							commentService.countByPid(product.getId()));
 					list.add(map);
 				} else {
 					// map.put("scid", sid);
@@ -939,8 +947,13 @@ public class AppServer {
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
 				map.put("pbuynum", 12);// 商品购买数
-				map.put("price", product.getPrice());
-				map.put("pcomts", 200);
+				if (product.getProuductUniqueType() != null
+						&& product.getProuductUniqueType() == 3) {// 天天特价
+					map.put("price", product.getDiscountMoney());
+				} else {
+					map.put("price", product.getMarketPrice());
+				}
+				map.put("pcomts", commentService.countByPid(product.getId()));
 				list.add(map);
 			}
 			dataMap.put("result", "001");
@@ -979,7 +992,7 @@ public class AppServer {
 					&& product.getProuductUniqueType() == 3) {// 特价商品：显示折扣后的价格
 				dataMap.put("price", product.getDiscountMoney());
 			} else {
-				dataMap.put("price", product.getPrice());
+				dataMap.put("price", product.getMarketPrice());
 			}
 			dataMap.put("pcomts", commentService.countByPid(product.getId()));
 			dataMap.put("purl", "/webpage/product/" + product.getId());
@@ -989,7 +1002,7 @@ public class AppServer {
 			/** 商品图片列表 */
 			for (ProductImage image : piList) {
 				Map<String, String> map = new LinkedHashMap<String, String>();
-				map.put("pimg", image.getMedium());
+				map.put("pimg", image.getSource());
 				imglist.add(map);
 			}
 			dataMap.put("imglist", imglist);
@@ -1111,8 +1124,14 @@ public class AppServer {
 					map.put("pname", product.getName());
 					map.put("pimage", product.getImgPath());
 					map.put("pbuynum", 12);// 商品购买数
-					map.put("price", product.getPrice());
-					map.put("pcomts", 200);
+					if (product.getProuductUniqueType() != null
+							&& product.getProuductUniqueType() == 3) {// 天天特价
+						map.put("price", product.getDiscountMoney());
+					} else {
+						map.put("price", product.getMarketPrice());
+					}
+					map.put("pcomts",
+							commentService.countByPid(product.getId()));
 					list.add(map);
 				}
 				dataMap.put("result", "001");
@@ -1167,7 +1186,12 @@ public class AppServer {
 				map.put("pimage", product.getImgPath());
 				map.put("ptotalnum", product.getProductCount());// 商口总数
 				map.put("pbuynum", product.getBuyProductCount());// 已抢数
-				map.put("price", product.getPrice());
+				if (product.getProuductUniqueType() != null
+						&& product.getProuductUniqueType() == 3) {// 天天特价
+					map.put("price", product.getDiscountMoney());
+				} else {
+					map.put("price", product.getMarketPrice());
+				}
 				list.add(map);
 			}
 			dataMap.put("result", "001");
@@ -1216,8 +1240,13 @@ public class AppServer {
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
 				map.put("pbuynum", 12);// 商品购买数
-				map.put("price", product.getPrice());
-				map.put("pcomts", 200);
+				if (product.getProuductUniqueType() != null
+						&& product.getProuductUniqueType() == 3) {// 天天特价
+					map.put("price", product.getDiscountMoney());
+				} else {
+					map.put("price", product.getMarketPrice());
+				}
+				map.put("pcomts", commentService.countByPid(product.getId()));
 				list.add(map);
 			}
 			dataMap.put("result", "001");
@@ -1328,7 +1357,7 @@ public class AppServer {
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
 				map.put("pbuynum", 12);// 商品购买数
-				map.put("poriprice", product.getPrice()); // 商品原价
+				map.put("poriprice", product.getMarketPrice()); // 商品原价
 				map.put("pdisprice", product.getDiscountMoney()); // 商品折后价
 				map.put("pdiscount", product.getDiscount()); // 商品折扣值
 				list.add(map);
@@ -1509,8 +1538,13 @@ public class AppServer {
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
 				map.put("pbuynum", 12);// 商品购买数
-				map.put("price", product.getPrice());
-				map.put("pcomts", 200);
+				if (product.getProuductUniqueType() != null
+						&& product.getProuductUniqueType() == 3) {// 天天特价
+					map.put("price", product.getDiscountMoney());
+				} else {
+					map.put("price", product.getMarketPrice());
+				}
+				map.put("pcomts", commentService.countByPid(product.getId()));
 				list.add(map);
 			}
 			dataMap.put("result", "001");
@@ -1591,11 +1625,16 @@ public class AppServer {
 					+ lng + " address=" + address + " cleanType=" + cleanType
 					+ " payWay=" + payWay + " cpid=" + cpid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-
-			/** 核实价格 */
-			String[] scids = { scid };
-
-			Map<String, String> priceMap = this.calcPrice(scids, null, cpid);
+			// 再次判断是否有空闲技师：暂时不作判断、如果这里判断，不利于用户体验。不作判断不影响流程。
+			if (payWay == 5) {// 不支持“现场支付”
+				dataMap.put("result", "503");
+				dataMap.put("oid", "");
+				dataMap.put("onum", "");
+				dataMap.put("payAction", ""); // 余额不足
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
 
 			/** 数据获取 **/
 			Member member = memberService.find(uid);
@@ -1614,8 +1653,20 @@ public class AppServer {
 			order.setCleanType(cleanType);
 			order.setMember(member);
 			order.setCar(userCar.getCar());
+			order.setCarColor(color);
+			order.setCarNum(plateNumber);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
 			order.setStatus(1); // 派单中
+			order.setIsPay(false); // 设置为false为默认值
+			/** 核实价格 */
+			List<String> scids = new ArrayList<String>();
+			scids.add(scid);
+			Map<String, String> priceMap = this.calcPrice(scids, null, cpid, 1,
+					uid);
+			order.setAmount_money(Float.parseFloat(priceMap.get("orimoney"))); // 原价
+			order.setAmount_paid(Float.parseFloat(priceMap.get("cpmoney"))); // 优惠了的价钱
+			order.setPrice(Float.parseFloat(priceMap.get("paymoney"))); // 实付价
+
 			/* 存储服务类型 */
 			ServerOrder serverOrder = new ServerOrder();
 			serverOrder.setName(serviceType.getName());
@@ -1623,18 +1674,53 @@ public class AppServer {
 			serverOrder.setServiceType(serviceType);
 			serverOrder.setOrder(order);
 			order.getServerOrder().add(serverOrder);
+			/**************** 检测会员卡支付START ************/
+			if (payWay == 1) {// 会员卡支付
+				double oprice = order.getPrice();
+				double userMoney = member.getMoney();
+				if (oprice > userMoney) {// 订单价大于了余额
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", "3"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else { // 事务处理..
+					member.setMoney(CommonUtil.subtract(userMoney + "", oprice
+							+ ""));
+					order.setIsPay(true);
+					orderService.memberCarPay(order, member);
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					// new BindPushThread(order.getId()).start();//开辟线程需处理osiv问题
+					new BindPushThread(order.getId()).run();
+					return json;
+				}
+			}
+			/**************** 检测会员卡支付END ************/
+			if (order.getPrice() == 0) { // 不需要支付
+				order.setIsPay(true);
+			}
 			orderService.save(order);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
 			dataMap.put("onum", order.getNum());
+			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
-			// new BindPushThread(order.getId()).start(); //开辟线程需处理osiv问题
-			new BindPushThread(order.getId()).run();
 			log.info("App【数据响应】：" + json);
+			if (order.getIsPay()) {
+				// new BindPushThread(order.getId()).start(); //开辟线程需处理osiv问题
+				new BindPushThread(order.getId()).run();
+			}
 			return json;
 		} catch (CouponUseExcepton cue) {
 			cue.printStackTrace();
-			return "{\"result\":\"000\"}";
+			return "{\"result\":\"502\"}";
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -1750,11 +1836,18 @@ public class AppServer {
 			order.setPayWay(payWay);
 			order.setMember(member);
 			order.setCar(car);
+			order.setCarColor(color);
+			order.setCarNum(plateNumber);
 			order.setStartDate(sdf.parse(stime));
 			order.setEndDate(sdf.parse(etime));
 			order.setRemark(remark);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
 			order.setStatus(11); // 预约成功
+			order.setIsPay(false); // 设置默认为false
+			/** 核实价格--数据准备 */
+			List<String> scids = new ArrayList<String>();
+			Map<String, Integer> productMap = new HashMap<String, Integer>();
+
 			/** 解析httpData Json数据包 **/
 			Map<String, Map<String, Integer>> packMap = mapper.readValue(
 					httpData, Map.class);
@@ -1766,10 +1859,16 @@ public class AppServer {
 				so.setServiceType(serviceType);
 				so.setOrder(order);
 				Map<String, Integer> pmap = packMap.get(scid);
+				scids.add(scid); // 为计算价格作数据准备
 				for (String pid : pmap.keySet()) {
 					Product product = productService.find(pid);
 					ServerOrderDetail sod = new ServerOrderDetail();
-					sod.setPrice(product.getPrice());
+					if (product.getProuductUniqueType() != null
+							&& product.getProuductUniqueType() == 3) {// 天天特价
+						sod.setPrice(product.getDiscountMoney());
+					} else {
+						sod.setPrice(product.getMarketPrice());
+					}
 					sod.setCount(pmap.get(pid).floatValue());
 					sod.setName(product.getName());
 					sod.setServerOrder(so);
@@ -1777,16 +1876,59 @@ public class AppServer {
 					sod.setProduct(product);
 					order.getServerOrderDetail().add(sod);
 					so.getServerOrderDetail().add(sod);
+					productMap.put(pid, pmap.get(pid)); // 为计算价格作数据准备
 				}
 				order.getServerOrder().add(so); // 添加对应服务
+			}
+
+			/** 核实价格 */
+			Map<String, String> priceMap = this.calcPrice(scids, productMap,
+					cpid, 2, uid);
+
+			order.setAmount_money(Float.parseFloat(priceMap.get("orimoney"))); // 原价
+			order.setAmount_paid(Float.parseFloat(priceMap.get("cpmoney"))); // 优惠了的价钱
+			order.setPrice(Float.parseFloat(priceMap.get("paymoney"))); // 实付价
+			/**************** 检测会员卡支付START ************/
+			if (payWay == 1) {// 会员卡支付
+				double oprice = order.getPrice();
+				double userMoney = member.getMoney();
+				if (oprice > userMoney) {// 订单价大于了余额
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", "3"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else { // 事务处理..
+					member.setMoney(CommonUtil.subtract(userMoney + "", oprice
+							+ ""));
+					order.setIsPay(true);
+					orderService.memberCarPay(order, member);
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				}
+			}
+			/**************** 检测会员卡支付END ************/
+			if (order.getPrice() == 0 || order.getPayWay() == 5) { // 不需要支付;POS机现场支付
+				order.setIsPay(true);
 			}
 			orderService.save(order);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
 			dataMap.put("onum", order.getNum());
+			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
 			return json;
+		} catch (CouponUseExcepton cue) {
+			cue.printStackTrace();
+			return "{\"result\":\"502\"}";
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -1799,17 +1941,25 @@ public class AppServer {
 	@RequestMapping(value = "/order/product/save", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String orderProductSave(String uid, String token, String pid,
-			String pnumber, String contact, String phone, String plateNumber,
-			String aid, String address, int payWay,
+			String pnumber, String contact, String phone, String aid,
+			String address, int payWay,
 			@RequestParam(required = false) String cpid,
 			@RequestParam(required = false) String ucid) {
 		try {
 			log.info("App【提交产品订单】：" + "uid=" + uid + " token=" + token
 					+ " ucid=" + ucid + " contract=" + contact + " phone="
-					+ phone + " plateNumber=" + plateNumber + " address="
-					+ address + " ucid=" + ucid + " payWay=" + payWay
-					+ " cpid=" + cpid);
+					+ phone + " address=" + address + " ucid=" + ucid
+					+ " payWay=" + payWay + " cpid=" + cpid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			if (payWay == 5) {// 不支持“现场支付”
+				dataMap.put("result", "503");
+				dataMap.put("oid", "");
+				dataMap.put("onum", "");
+				dataMap.put("payAction", ""); // 余额不足
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
 			/** 数据获取 **/
 			Member member = memberService.find(uid);
 			Order order = new Order();
@@ -1822,6 +1972,16 @@ public class AppServer {
 			order.setMember(member);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
 			order.setStatus(21); // 已下单
+			order.setIsPay(false); // 测试环境，暂时设为true
+			/** 核实价格 */
+			Map<String, Integer> productMap = new HashMap<String, Integer>();
+			productMap.put(pid, Integer.parseInt(pnumber));
+
+			Map<String, String> priceMap = this.calcPrice(null, productMap,
+					cpid, 3, uid);
+			order.setAmount_money(Float.parseFloat(priceMap.get("orimoney"))); // 原价
+			order.setAmount_paid(Float.parseFloat(priceMap.get("cpmoney"))); // 优惠了的价钱
+			order.setPrice(Float.parseFloat(priceMap.get("paymoney"))); // 实付价
 
 			if (ucid != null && !"".equals(ucid)) {
 				UserCar userCar = userCarService.find(ucid);
@@ -1832,19 +1992,61 @@ public class AppServer {
 			}
 			Product product = productService.find(pid);
 			ServerOrderDetail sod = new ServerOrderDetail();
-			sod.setPrice(product.getPrice());
+			if (product.getProuductUniqueType() != null
+					&& product.getProuductUniqueType() == 3) {// 天天特价
+				sod.setPrice(product.getDiscountMoney());
+			} else {
+				sod.setPrice(product.getMarketPrice());
+			}
 			sod.setProduct(product);
 			sod.setName(product.getName());
 			sod.setOrder(order);
 			sod.setCount(Float.parseFloat(pnumber));
 			order.getServerOrderDetail().add(sod);
+
+			/**************** 检测会员卡支付START ************/
+			if (payWay == 1) {// 会员卡支付
+				double oprice = order.getPrice();
+				double userMoney = member.getMoney();
+				if (oprice > userMoney) {// 订单价大于了余额
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", "3"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else { // 事务处理..
+					member.setMoney(CommonUtil.subtract(userMoney + "", oprice
+							+ ""));
+					order.setIsPay(true);
+					orderService.memberCarPay(order, member);
+					dataMap.put("result", "001");
+					dataMap.put("oid", order.getId());
+					dataMap.put("onum", order.getNum());
+					dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				}
+			}
+			/**************** 检测会员卡支付END ************/
+			if (order.getPrice() == 0) { // 不需要支付
+				order.setIsPay(true);
+			}
 			orderService.save(order);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
 			dataMap.put("onum", order.getNum());
+			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
+			// new BindPushThread(order.getId()).start(); //开辟线程需处理osiv问题
+			new BindPushThread(order.getId()).run();
 			return json;
+		} catch (CouponUseExcepton cue) {
+			cue.printStackTrace();
+			return "{\"result\":\"502\"}";
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -1859,19 +2061,26 @@ public class AppServer {
 	String orderPriceCalc(String uid, String token,
 			@RequestParam(required = false) String scid,
 			@RequestParam(required = false) String pid,
-			@RequestParam(required = false) String cpid) {
+			@RequestParam(required = false) String cpid, int otype) {
 		try {
 			log.info("App【计算价格】：" + "uid=" + uid + " token=" + token);
-			String[] scids = null;
+			List<String> scidList = new ArrayList<String>();
+			Map<String, Integer> pidMap = new HashMap<String, Integer>();
 			if (scid != null && scid.length() > 0) {
-				scids = scid.split("#");
+				String[] scids = scid.split("#");
+				for (String str : scids) {
+					scidList.add(str);
+				}
 			}
-			String[] pids = null;
 			if (pid != null && pid.length() > 0) {
-				pids = pid.split("#");
+				String[] pids = pid.split("#");
+				for (String str : pids) {
+					String[] pidNums = str.split("_");
+					pidMap.put(pidNums[0], Integer.parseInt(pidNums[1]));
+				}
 			}
-			String json = mapper.writeValueAsString(this.calcPrice(scids, pids,
-					cpid));
+			String json = mapper.writeValueAsString(this.calcPrice(scidList,
+					pidMap, cpid, otype, uid));
 			return json;
 		} catch (CouponUseExcepton cue) {// 优惠券使用异常
 			return "{\"result\":\"502\"}";
@@ -1885,60 +2094,93 @@ public class AppServer {
 	 * 功能：计算价格 如果优惠券使用错误抛出异常
 	 * 
 	 * @param scids
-	 * @param pids
+	 * @param productMap
 	 * @param cpid
-	 * @return map.put("ocmoney", ocmoney + ""); // 服务品总价<br>
+	 * @param otype
+	 *            订单类型 1=洗车优惠券、2=保养优惠券、3=商品优惠券
+	 * @return map.put("result", "001"); // 结果<br>
+	 *         map.put("ocmoney", ocmoney + ""); // 服务品总价<br>
 	 *         map.put("opmoney", ocmoney + ""); // 商品总价<br>
 	 *         map.put("orimoney", orimoney + ""); // 应付总价<br>
 	 *         map.put("cpmonney", cpmonney + ""); // 优惠的价<br>
 	 *         map.put("paymoney", paymoney + ""); // 实付价<br>
 	 * @throws CouponUseExcepton
 	 */
-	private Map<String, String> calcPrice(String[] scids, String[] pids,
-			String cpid) throws CouponUseExcepton {
-		double ocmoney = 0; // 服务总价
-		double opmoney = 0; // 产品总价
-		if (scids != null && scids.length > 0) {
+	private Map<String, String> calcPrice(List<String> scids,
+			Map<String, Integer> productMap, String cpid, int otype, String uid)
+			throws CouponUseExcepton {
+		float ocmoney = 0; // 服务总价
+		float opmoney = 0; // 产品总价
+		if (scids != null && scids.size() > 0) {
 			for (String scid : scids) {
-				ocmoney = ocmoney + serviceTypeService.find(scid).getPrice();
+				ocmoney = CommonUtil.add(ocmoney + "",
+						serviceTypeService.find(scid).getPrice() + "");
 			}
 		}
-		if (pids != null && pids.length > 0) {
-			for (String pid : pids) {
-				opmoney = opmoney + productService.find(pid).getPrice();
+		if (productMap != null && productMap.size() > 0) {
+			for (String pid : productMap.keySet()) {
+				Product product = productService.find(pid);
+				if (product.getProuductUniqueType() != null
+						&& product.getProuductUniqueType() == 3 && cpid != null
+						&& !"".equals(cpid)) {// 天天特价不能使用优惠券
+					throw new CouponUseExcepton("天天特价商品不能使用优惠券：【商品ID】："
+							+ product.getId() + " 【商品名称】：" + product.getName());
+				} else {
+					opmoney = CommonUtil.add(
+							opmoney + "",
+							CommonUtil.mul(product.getMarketPrice() + "",
+									productMap.get(pid) + "") + "");
+				}
 			}
 		}
-		double orimoney = ocmoney + opmoney; // 应支付的价钱
-		double cpmonney = 0; // 优惠的价钱
-		double paymoney = orimoney; // 实际支付金额
-		if (cpid != null) {
+		float orimoney = CommonUtil.add(ocmoney + "", opmoney + ""); // 应支付的价钱
+		float cpmonney = 0; // 优惠的价钱
+		float paymoney = orimoney; // 实际支付金额
+		if (cpid != null && !"".equals(cpid)) {
 			MemberCoupon memberCoupon = memberCouponService.find(cpid);
+			if (memberCoupon.getUseType() != otype) {
+				throw new CouponUseExcepton("优惠券使用不正确：优惠券类型不对应");
+			}
 			if (memberCoupon.getType() == 1) { // 1满额打折优惠券
 				if (orimoney < memberCoupon.getMinPrice()) {
-					throw new CouponUseExcepton("优惠券使用不正确");
+					throw new CouponUseExcepton("优惠券使用不正确：订单金额少于"
+							+ memberCoupon.getMinPrice());
 				} else {
-					cpmonney = orimoney * memberCoupon.getRate();
-					paymoney = orimoney - cpmonney;
+					cpmonney = CommonUtil.mul(orimoney + "",
+							memberCoupon.getRate() + "");
+					paymoney = CommonUtil
+							.subtract(orimoney + "", cpmonney + "");
 				}
-
 			} else if (memberCoupon.getType() == 2) {// 2满额减免优惠券
 				if (orimoney < memberCoupon.getMinPrice()) {
-					throw new CouponUseExcepton("优惠券使用不正确");
+					throw new CouponUseExcepton("优惠券使用不正确：订单金额少于"
+							+ memberCoupon.getMinPrice());
 				} else {
-					cpmonney = memberCoupon.getDiscount();
-					paymoney = orimoney - cpmonney;
+					cpmonney = Float
+							.parseFloat(memberCoupon.getDiscount() + "");
+					paymoney = CommonUtil
+							.subtract(orimoney + "", cpmonney + "");
 				}
 			} else if (memberCoupon.getType() == 3) { // 3免额多少优惠券
-				cpmonney = memberCoupon.getDiscount();
-				paymoney = orimoney - cpmonney;
+				cpmonney = Float.parseFloat(memberCoupon.getDiscount() + "");
+				paymoney = CommonUtil.subtract(orimoney + "", cpmonney + "");
+			}
+		} else {
+			Member member = memberService.find(uid);
+			MemberRank memberRank = member.getMemberRank();
+			if (memberRank != null) {
+				cpmonney = CommonUtil.mul(orimoney + "", memberRank.getScale()
+						+ "");
+				paymoney = CommonUtil.subtract(orimoney + "", cpmonney + "");
 			}
 		}
 		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("result", "001"); // 产品总价
 		map.put("ocmoney", ocmoney + ""); // 产品总价
-		map.put("opmoney", ocmoney + ""); // 服务总价
+		map.put("opmoney", opmoney + ""); // 服务总价
 		map.put("orimoney", orimoney + ""); // 应付总价
-		map.put("cpmonney", cpmonney + ""); // 优惠的价
-		map.put("paymoney", paymoney + ""); // 实付价
+		map.put("cpmoney", cpmonney + ""); // 优惠的价
+		map.put("paymoney", (paymoney > 0 ? paymoney : 0) + ""); // 实付价
 		return map;
 	}
 
@@ -2105,10 +2347,6 @@ public class AppServer {
 			if (plateNumber != null && !"".equals(plateNumber)) {
 				userCar.setCarNum(plateNumber);
 			}
-			if (defaultCar == 1) {// 重置该用户所有车为非默认车
-				userCarService.resetUndefault(uid);
-				userCar.setDefaultCar(true);
-			}
 			if (fuel != null && fuel > 0) {
 				userCar.setFuel(fuel);
 			}
@@ -2127,6 +2365,10 @@ public class AppServer {
 			}
 			userCar.setMember(member);
 			userCarService.save(userCar);
+			if (defaultCar == 1) {// 重置该用户默认车型
+				userCarService.resetDefaultCar(uid, userCar.getId());
+				userCar.setDefaultCar(true);
+			}
 			dataMap.put("result", "001");
 			dataMap.put("ucid", userCar.getId());
 			String json = mapper.writeValueAsString(dataMap);
@@ -2180,7 +2422,7 @@ public class AppServer {
 				userCar.setCarNum(plateNumber);
 			}
 			if (defaultCar == 1) {// 重置该用户所有车为非默认车
-				userCarService.resetUndefault(uid);
+				userCarService.resetDefaultCar(uid, ucid);
 				userCar.setDefaultCar(true);
 			}
 			if (fuel != null && fuel > 0) {
@@ -2257,12 +2499,13 @@ public class AppServer {
 			orderby.put("createDate", "desc");
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer(
-					"o.visible=?1 and o.status>?2 and o.status<?3 and o.member.id=?4");
+					"o.visible=?1 and o.status>?2 and o.status<?3 and o.member.id=?4 and o.isPay=?5");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(0); // 进行中的订单status>0
 			params.add(31); // 未取消
 			params.add(uid);
+			params.add(true);
 			List<Order> orders = orderService.getScrollData(
 					pageView.getFirstResult(), maxresult, jpql.toString(),
 					params.toArray(), orderby).getResultList();
@@ -2281,7 +2524,7 @@ public class AppServer {
 				map.put("onum", order.getNum());
 				map.put("otype", order.getType());
 				map.put("ostatus", order.getStatusString());
-				map.put("oprice", order.getPrice());
+				map.put("oprice", order.getPrice() + "");
 				if (order.getStatus() == 1 || order.getStatus() == 11
 						|| order.getStatus() == 21) { // 派单中=1、预约成功=11、已下单=21，这三种情况可“取消订单”
 					map.put("ocanop", 1);
@@ -2344,8 +2587,8 @@ public class AppServer {
 							spmap.put("premark", "");
 							spmap.put("pprice", sod.getPrice() == null ? 0
 									: sod.getPrice());
-							spmap.put("pnum",
-									sod.getCount() == null ? 0 : sod.getCount());
+							spmap.put("pnum", sod.getCount() == null ? 0
+									: CommonUtil.getInteger(sod.getCount()));
 							plist.add(spmap);
 						}
 						scmap.put("plist", plist);
@@ -2410,11 +2653,12 @@ public class AppServer {
 			orderby.put("createDate", "desc");
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer(
-					"o.visible=?1 and o.status=?2 and o.member.id=?3");
+					"o.visible=?1 and o.status=?2 and o.member.id=?3 and o.isPay=?4");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(0); // 已完结的订单
 			params.add(uid);
+			params.add(true);
 			List<Order> orders = orderService.getScrollData(
 					pageView.getFirstResult(), maxresult, jpql.toString(),
 					params.toArray(), orderby).getResultList();
@@ -2539,8 +2783,10 @@ public class AppServer {
 	}
 
 	/**
-	 * 查询已取消的订单列表
+	 * 查询已取消的订单列表 取消类型
 	 * 
+	 * @param type
+	 *            1=待审核、2=审核中 3=退款中、4=已完结
 	 * @return
 	 */
 	@RequestMapping(value = "/user/order/cancel", produces = "text/html;charset=UTF-8")
@@ -2558,21 +2804,22 @@ public class AppServer {
 			orderby.put("createDate", "desc");
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer(
-					"o.visible=?1 and o.member.id=?2");
+					"o.visible=?1 and o.member.id=?2 and o.isPay=?3");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(uid);
+			params.add(true);
 			if (type == 1) {// 待审核
-				jpql.append(" and o.status=?3");
+				jpql.append(" and o.status=?4");
 				params.add(31);
 			} else if (type == 2) {// 审核中
-				jpql.append(" and o.status=?3");
+				jpql.append(" and o.status=?4");
 				params.add(32);
 			} else if (type == 3) {// 退款中
-				jpql.append(" and o.status=?3");
+				jpql.append(" and o.status=?4");
 				params.add(33);
 			} else if (type == 4) {// 已完结
-				jpql.append(" and (o.status=?3 or o.status=?4)");
+				jpql.append(" and (o.status=?4 or o.status=?5)");
 				params.add(34);
 				params.add(35);
 			}
@@ -2594,7 +2841,7 @@ public class AppServer {
 				map.put("onum", order.getNum());
 				map.put("otype", order.getType());
 				map.put("ostatus", order.getStatusString());
-				map.put("oprice", order.getPrice());
+				map.put("oprice", order.getPrice() + "");
 				if (order.getStatus() == 35) { // 未通过 可“取消订单”
 					map.put("ocanop", 1);
 				} else {
@@ -2714,7 +2961,7 @@ public class AppServer {
 				return json;
 			}
 			if (order.getStatus() == 1 || order.getStatus() == 11
-					|| order.getStatus() == 21) { // 在这些状态下才能取消订单
+					|| order.getStatus() == 21 || order.getStatus() == 35) { // 在这些状态下才能取消订单
 				order.setStatus(31);
 				orderService.update(order);
 				dataMap.put("result", "001");
@@ -2746,6 +2993,13 @@ public class AppServer {
 			if (order.getStatus() == 22) { // 配货中才能确认收货
 				order.setStatus(0); //
 				orderService.update(order);
+				Member member = memberService.find(uid);
+				/** 处理积分 */
+				for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+					member.setAmount(member.getAmount()
+							+ sod.getProduct().getPoint());
+				}
+				memberService.update(member);// 更新用户积分
 				dataMap.put("result", "001");
 			} else {
 				dataMap.put("result", "110");
@@ -2960,14 +3214,61 @@ public class AppServer {
 	}
 
 	/**
-	 * 获取用户当前领取的优惠券
+	 * 获取系统的优惠券
 	 */
 	@RequestMapping(value = "/user/coupon/list", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String userCouponList(String uid, String token, int page, int maxresult,
-			int type) {
+	String userCouponList(String uid, String token) {
 		try {
-			log.info("App【获取用户领取过的优惠券】：" + "uid=" + uid + " token=" + token
+			log.info("App【获取系统优惠券】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			/** 数据获取 **/
+			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+			orderby.put("point", "asc");
+			orderby.put("id", "desc");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.isEnabled=?2 and o.isExchange=?3");
+			List<Object> params = new ArrayList<Object>();
+			params.add(true);
+			params.add(true);
+			params.add(true);
+
+			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+			List<Coupon> couponList = couponService.getScrollData(0, 20,
+					jpql.toString(), params.toArray(), orderby).getResultList();
+			for (Coupon cp : couponList) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				map.put("cpid", cp.getId());
+				map.put("cptype", cp.getType());
+				map.put("cpname", cp.getName());
+				map.put("cpintroduction", cp.getIntroduction());
+				map.put("cpimg", cp.getImgPath2()); // 兑换图
+				map.put("cpexscore",
+						cp.getPoint() == null ? "0" : cp.getPoint() + "");
+				list.add(map);
+			}
+			dataMap.put("result", "001");
+			dataMap.put("score", memberService.find(uid).getAmount());
+			dataMap.put("list", list);
+			String json = mapper.writeValueAsString(dataMap);
+			log.info("App【数据响应】：" + json);
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 获取用户当前领取的优惠券
+	 */
+	@RequestMapping(value = "user/coupon/exchange/list", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userCouponExchangeList(String uid, String token, int page,
+			int maxresult, int type) {
+		try {
+			log.info("App【获取用户领取的优惠券】：" + "uid=" + uid + " token=" + token
 					+ "page=" + page + " maxresult=" + maxresult);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
 
@@ -2976,14 +3277,16 @@ public class AppServer {
 					maxresult, page);
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
-			StringBuffer jpql = new StringBuffer("o.visible=?1");
+			StringBuffer jpql = new StringBuffer(
+					"o.visible=?1 and o.member.id=?2");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
+			params.add(uid);
 			if (type == 1) {// 查询未过期的
-				jpql.append(" and (o.endDate>=?2 or o.endDate is null)");
+				jpql.append(" and (o.endDate>=?3 or o.endDate is null)");
 				params.add(new Date());
 			} else if (type == 0) {// 查询过期的
-				jpql.append(" and o.endDate<?2");
+				jpql.append(" and o.endDate<?3 ");
 				params.add(new Date());
 			}
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -3002,50 +3305,6 @@ public class AppServer {
 			}
 			dataMap.put("result", "001");
 			dataMap.put("pages", pageView.getTotalPage());
-			dataMap.put("list", list);
-			String json = mapper.writeValueAsString(dataMap);
-			log.info("App【数据响应】：" + json);
-			return json;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "{\"result\":\"000\"}";
-		}
-	}
-
-	/**
-	 * 获取用户当前领取的优惠券
-	 */
-	@RequestMapping(value = "user/coupon/exchange/list", produces = "text/html;charset=UTF-8")
-	public @ResponseBody
-	String userCouponExchangeList(String uid, String token) {
-		try {
-			log.info("App【获取用户领取过的优惠券】：" + "uid=" + uid + " token=" + token);
-			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-
-			/** 数据获取 **/
-			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-			orderby.put("point", "asc");
-			orderby.put("id", "desc");
-			StringBuffer jpql = new StringBuffer("o.visible=?1");
-			List<Object> params = new ArrayList<Object>();
-			params.add(true);
-
-			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-			List<Coupon> couponList = couponService.getScrollData(0, 20,
-					jpql.toString(), params.toArray(), orderby).getResultList();
-			for (Coupon cp : couponList) {
-				Map<String, Object> map = new LinkedHashMap<String, Object>();
-				map.put("cpid", cp.getId());
-				map.put("cptype", cp.getType());
-				map.put("cpname", cp.getName());
-				map.put("cpintroduction", cp.getIntroduction());
-				map.put("cpimg", cp.getImgPath());
-				map.put("cpexscore",
-						cp.getPoint() == null ? "0" : cp.getPoint() + "");
-				list.add(map);
-			}
-			dataMap.put("result", "001");
-			dataMap.put("score", memberService.find(uid).getAmount());
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
@@ -3135,10 +3394,28 @@ public class AppServer {
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
 			Member member = memberService.find(uid);
 			Comment comment = new Comment();
+
 			if (type == 1) {// 评论商品
-				comment.setServerOrder(serverOrderService.find(pid));
+				ServerOrder serverOrder = serverOrderService.find(pid);
+				if (serverOrder.getComment() != null) {
+					dataMap.put("result", "112"); // 已评价过
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else {
+					comment.setServerOrder(serverOrder);
+				}
 			} else if (type == 2) {
-				comment.setServerOrderDetail(serverOrderDetailService.find(pid));
+				ServerOrderDetail serverOrderDetail = serverOrderDetailService
+						.find(pid);
+				if (serverOrderDetail.getComment() != null) {
+					dataMap.put("result", "112"); // 已评价过
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else {
+					comment.setServerOrderDetail(serverOrderDetail);
+				}
 			}
 			comment.setContent(content);
 			comment.setStar(star);
@@ -3245,9 +3522,54 @@ public class AppServer {
 		}
 	}
 
+	/**
+	 * 获取用户充值编号
+	 * 
+	 * @param uid
+	 * @param token
+	 * @param page
+	 * @param maxresult
+	 * @param type
+	 * @return
+	 */
+	@RequestMapping(value = "/user/fee/rechareg/number", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String userFeeRechargeNumber(String uid, String token, float money) {
+		try {
+			log.info("App【用户充值】：" + "uid=" + uid + " token=" + token);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			if (money <= 0) {
+				dataMap.put("result", "114");
+				dataMap.put("num", "");
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			} else {
+				FeeRecord feeRecord = new FeeRecord();
+				Member member = memberService.find(uid);
+				feeRecord.setRechargeNo(CommonUtil.getOrderNum());
+				feeRecord.setMember(member);
+				feeRecord.setPhone(member.getPhone());
+				feeRecord.setFee(money);
+				feeRecord.setType(1);
+				feeRecord.setVisible(false);
+				feeRecordService.save(feeRecord);
+				dataMap.put("result", "001");
+				dataMap.put("num", feeRecord.getRechargeNo());
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+
+	}
+
 	@RequestMapping(value = "/user/fee/record/list", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String userfeeRecordList(String uid, String token, int page, int maxresult,
+	String userFeeRecordList(String uid, String token, int page, int maxresult,
 			int type) {
 		try {
 			log.info("App【费用信息】：" + "uid=" + uid + " token=" + token + "page="
@@ -3383,12 +3705,40 @@ public class AppServer {
 	 * 显示新闻 详细页面
 	 */
 	@RequestMapping("/webpage/news/{nwid}")
-	public ModelAndView webpageNews(@PathVariable String nwid) {
+	public ModelAndView webpageNews(@PathVariable String nwid,
+			@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token) {
 		ModelAndView mav = new ModelAndView("api/news_view");
 		News nw = newsService.find(nwid);
-		System.out.println(nw.getTitle() + "---?");
+		nw.setContent(nw.getContent().replaceAll("<img",
+				"<img class='img-responsive'"));
 		mav.addObject("news", nw);
+		mav.addObject("star", newsRecordService.starRecord(uid, nw.getId()));
+		mav.addObject("uid", uid);
+		mav.addObject("token", token);
 		return mav;
+	}
+
+	/**
+	 * 新闻 点击喜欢 操作
+	 */
+	@RequestMapping(value = "/webpage/news/star", produces = "text/html;charset=UTF-8")
+	public @ResponseBody
+	String webpageNewsStar(String nwid, String uid, String token) {
+		NewsRecord nr = newsRecordService.starRecord(uid, nwid);
+		if (nr != null) {// 已点击
+			return "0";
+		} else {
+			News news = newsService.find(nwid);
+			Member member = memberService.find(uid);
+			NewsRecord record = new NewsRecord();
+			record.setNews(news);
+			record.setMember(member);
+			newsRecordService.save(record);
+			news.setStar(news.getStar() + 1);
+			newsService.update(news);
+			return "1";
+		}
 	}
 
 	/**
@@ -3398,6 +3748,10 @@ public class AppServer {
 	public ModelAndView webpageProduct(@PathVariable String pid) {
 		ModelAndView mav = new ModelAndView("api/product_view");
 		Product product = productService.find(pid);
+		if (product.getIntroduction() != null) {
+			product.setIntroduction(product.getIntroduction().replaceAll(
+					"<img", "<img class='img-responsive'"));
+		}
 		mav.addObject("product", product);
 		return mav;
 	}
@@ -3409,6 +3763,8 @@ public class AppServer {
 	public ModelAndView webpageAdvert(@PathVariable String adid) {
 		ModelAndView mav = new ModelAndView("api/advert_view");
 		IndexAdvert advert = indexAdvertService.find(adid);
+		advert.setContent(advert.getContent().replaceAll("<img",
+				"<img class='img-responsive'"));
 		mav.addObject("advert", advert);
 		return mav;
 	}
@@ -3651,5 +4007,19 @@ public class AppServer {
 	}
 
 	public static void main(String[] args) {
+		double s1 = 0;
+		double s2 = 0.2;
+		double s = CommonUtil.add(s1 + "", s2 + "");
+		System.out.println(s);
+		String pid = "abc_1";
+		String[] pids = pid.split("#");
+		System.out.println(pids.length);
+		for (String str : pids) {
+			String[] pn = str.split("_");
+			System.out.println(pn[0]);
+			System.out.println(pn[1]);
+		}
+
 	}
+
 }

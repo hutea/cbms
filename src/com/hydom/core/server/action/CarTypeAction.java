@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -60,7 +61,7 @@ public class CarTypeAction extends BaseAction{
 	@ResponseBody
 	public String getCarType(String carBrandId) {
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		String jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
 		List<Object> params = new ArrayList<Object>();
 		params.add(carBrandId);
@@ -69,7 +70,7 @@ public class CarTypeAction extends BaseAction{
 		for(CarType entity:carTypes){
 			JSONObject obj = new JSONObject();
 			obj.put("id", entity.getId());
-			obj.put("name", null);//entity.getName()
+			obj.put("name", entity.getName());//entity.getName()
 			array.add(obj);
 		}
 		return ajaxSuccess(array, response);
@@ -133,7 +134,7 @@ public class CarTypeAction extends BaseAction{
 		//顶级分类
 		if(carType.getParent() != null || carType.getLevel() != 1){
 			orderby = new LinkedHashMap<String, String>();
-			orderby.put("id", "desc");
+			orderby.put("createDate", "desc");
 			jpql = "o.visible = true and o.carBrand.id=?1 and o.level = 1";
 			List<Object> params = new ArrayList<Object>();
 			params.add(carType.getCarBrand().getId());
@@ -150,23 +151,18 @@ public class CarTypeAction extends BaseAction{
 	 * 列表
 	 */
 	@RequestMapping("/list")
-	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
+	public String list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent,ModelMap model) {
+		
+		
 		PageView<CarType> pageView = new PageView<CarType>(maxresult, page);
-		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
-		String jpql = "o.visible = 1";
-		Object[] params = new Object[]{};
-		if(queryContent!=null){
-			jpql+=" and (o.name like ?1 or o.parent.name like ?2 or o.carBrand.name like ?3 or o.jp like ?4 or o.qp like ?5)";
-			params = new Object[]{"%"+queryContent+"%","%"+queryContent+"%","%"+queryContent+"%","%"+queryContent+"%","%"+queryContent+"%"};
-		}
-		pageView.setQueryResult(carTypeService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
-		request.setAttribute("pageView", pageView);
-		ModelAndView mav = new ModelAndView("/carType/carType_list");
-		mav.addObject("paveView", pageView);
-		mav.addObject("queryContent", queryContent);
-		mav.addObject("m", 2);
-		return mav;
+		
+		pageView = carTypeService.getPage(pageView,queryContent);
+	
+		model.addAttribute("pageView", pageView);
+		model.addAttribute("queryContent", queryContent);
+		model.addAttribute("m", mark);
+		
+		return base + "/carType_list";
 	}
 	
 	/**

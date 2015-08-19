@@ -1,4 +1,5 @@
 <%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@ include file="/WEB-INF/page/common/taglib.jsp" %>
 <%
 String path = request.getContextPath();
 String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
@@ -17,14 +18,43 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	<!--
 	<link rel="stylesheet" type="text/css" href="styles.css">
 	-->
+	<script type="text/javascript">
+	function star(uid,token,nwid) {
+			$.post("${pageContext.request.contextPath}/api/webpage/news/star",
+					{
+					uid:uid,
+					token:token,
+					nwid:nwid,
+					},function(data) {
+					if (data == 1) {//表示 帐户存在
+						$("#switch").attr("src", "${pageContext.request.contextPath}/resource/image/app_news_like_after.png"); 
+					} else {
+						//alert("网络异常稍后再试");
+					}
+			});
+	}
+	</script>
 
   </head>
   
   <body>
-    <h3>${news.title}</h3>
-    <div><fmt:formatDate value="${news.createDate}" pattern="yyyy-MM-dd HH:mm:ss" /> </div>
-    <div style="border-top: 1px dashed ddd;">
-    	${news.content}
-    </div>
+  	<div class="container" style="padding: 5px 10px;">
+	    <h3>${news.title}</h3> 
+	    <div style="font-size: 12px;color: d3d3d3;"><fmt:formatDate value="${news.createDate}" pattern="yyyy-MM-dd" /></div>
+	    <div><img class="img-responsive" src="${news.imgPath}" /></div>
+	    <div style="border-top: 1px dashed ddd;">
+	    	${news.content}
+	    </div>
+	    <p class="container text-center" style="width:200px;" >
+	    	<c:if test="${star!=null}" > 
+	    			<img class="img-responsive" src="${pageContext.request.contextPath}/resource/image/app_news_like_after.png" />
+	    	</c:if>
+	    	<c:if test="${star==null && uid!=null && token!=null}" > 
+	    		<a href="javascript:star('${uid}','${token}','${news.id}')">
+	    			<img class="img-responsive" id="switch" src="${pageContext.request.contextPath}/resource/image/app_news_like_before.png" />
+	    		</a>
+	    	</c:if>
+	    </p>
+  	</div>
   </body>
 </html>

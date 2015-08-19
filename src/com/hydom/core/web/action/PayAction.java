@@ -1,11 +1,12 @@
 package com.hydom.core.web.action;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -13,27 +14,29 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONObject;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jboss.weld.bean.builtin.ee.EEResourceProducerField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alipay.util.AlipayNotify;
 import com.hydom.account.ebean.FeeRecord;
+import com.hydom.account.ebean.Member;
+import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
-import com.hydom.account.ebean.ServerOrder;
-import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.service.FeeRecordService;
 import com.hydom.account.service.MemberCouponService;
 import com.hydom.account.service.MemberService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ServerOrderDetailService;
 import com.hydom.account.service.ServerOrderService;
-import com.hydom.core.server.service.CarBrandService;
-import com.hydom.core.server.service.CarService;
-import com.hydom.core.server.service.CarTypeService;
 import com.hydom.util.BaseAction;
-import com.hydom.util.cache.CachedManager;
+import com.hydom.util.CommonUtil;
+import com.hydom.util.PushUtil;
 
 /**
  * web首页
@@ -67,6 +70,7 @@ public class PayAction extends BaseAction {
 	@Resource
 	private FeeRecordService feeRecordService;
 	
+	private Log log = LogFactory.getLog("payLog");
 	/**
 	 * 
 	 */
@@ -74,7 +78,7 @@ public class PayAction extends BaseAction {
 	@ResponseBody
 	public String payOrder(String confimId) {
 		//生成订单中获取order
-		Order order = (Order) CachedManager.getObjectCached("order", confimId);
+		Order order = orderService.getOrderByOrderNum(confimId);
 		
 		//将该订单加入到payOrder中
 		//CachedManager.putObjectCached("payOrder", order.getNum(), order);
@@ -94,10 +98,11 @@ public class PayAction extends BaseAction {
 	 * 
 	 * @param confimId
 	 * @return
+	 * @throws IOException 
 	 */
-	@RequestMapping("/alipay_return")
+	@RequestMapping("/{type}")
 	public void alipayReturn(HttpServletRequest request,
-			HttpServletResponse response) {
+			HttpServletResponse response,@PathVariable String type) throws IOException {
 		try {
 			// 获取支付宝POST过来反馈信息
 			Map<String, String> params = new HashMap<String, String>();
@@ -128,7 +133,10 @@ public class PayAction extends BaseAction {
 			// 交易状态
 			String trade_status = new String(request.getParameter(
 					"trade_status").getBytes("ISO-8859-1"), "UTF-8");
-
+			
+			String total_fee = new String(request.getParameter(
+					"total_fee").getBytes("ISO-8859-1"), "UTF-8");
+			
 			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以上仅供参考)//
 
 			if (AlipayNotify.verify(params)) {// 验证成功
@@ -157,11 +165,18 @@ public class PayAction extends BaseAction {
 
 				// ——请根据您的业务逻辑来编写程序（以上代码仅作参考）——
 				
-				saveServiceOrder(out_trade_no,trade_no);
-				
-				response.getWriter().println("success");
+				if("alipay_return".equals(type)){//订单消费
+					
+					String m = saveServiceOrder(out_trade_no,trade_no,total_fee,2);
+					response.getWriter().println(m);
+					
+				}else if("alipay_recharge_return".equals(type)){//充值
+					String m = saveRecharge(out_trade_no,trade_no,total_fee,2);
+					response.getWriter().println(m);
+				}else{
+					response.getWriter().println("fail");
+				}
 				// 请不要修改或删除
-				
 				// ////////////////////////////////////////////////////////////////////////////////////////
 			} else {// 验证失败
 				response.getWriter().println("fail");
@@ -171,37 +186,32 @@ public class PayAction extends BaseAction {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		response.getWriter().println("fail");
 	}
 	
-	//保存订单
-	public void saveServiceOrder(String confimId,String tradeNum){
-		
+	/**
+	 * 订单保存
+	 * @param confimId
+	 * @param tradeNum
+	 * @param total_fee
+	 * @return
+	 */
+	public String saveServiceOrder(String confimId,String tradeNum,String total_fee,Integer type){
+		log.info("消费编号："+tradeNum + "进入保存流程");
 		try {
-			//保存一条订单记录
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
-			//Set<ServerOrderDetail> serverOrderDetailSet = order.getServerOrderDetail();
-			Set<ServerOrder> serverOrderSet = order.getServerOrder();
+			//查询该订单
+			Order order = orderService.getOrderByOrderNum(confimId);
 			
-			//order.setNum(CommonUtil.getOrderNum());
-			order.setStatus(11);
-			order.setServerOrderDetail(null);
-			order.setServerOrder(null);
-			orderService.save(order);
+			//BigDecimal fb = new BigDecimal(0).setScale(2, BigDecimal.ROUND_DOWN);
 			
-			for(ServerOrder bean : serverOrderSet){
-				if(order.getType() == 1){//有服务
-					bean.setOrder(order);
-					serverOrderService.save(bean);
-				}
-				for(ServerOrderDetail detailbean : bean.getServerOrderDetail()){
-					detailbean.setOrder(order);
-					if(order.getType() == 1){//有服务
-						detailbean.setServerOrder(bean);
-					}else{
-						detailbean.setServerOrder(null);
-					}
-					detailService.save(detailbean);
-				}
+			if(!CommonUtil.compareToFloat(total_fee, order.getPrice()+"")){
+				return "fail";
+			}
+			
+			if(order.getMemberCoupon() != null){
+				MemberCoupon memberCoupon = order.getMemberCoupon();
+				memberCoupon.setStatus(1);
+				memberCouponService.update(memberCoupon);
 			}
 			
 			//保存一条消费记录
@@ -209,24 +219,68 @@ public class PayAction extends BaseAction {
 			feeRecord.setType(2);
 			feeRecord.setOrder(order);
 			feeRecord.setPayWay(order.getPayWay());
+			
 			feeRecord.setPhone(order.getPhone());
 			feeRecord.setTradeNo(tradeNum);
 			feeRecord.setFee(order.getPrice());
 			feeRecordService.save(feeRecord);
 			
+			order.setIsPay(true);
+			orderService.update(order);
+			
+			if(order.getType() == 1){//洗车订单
+				PushUtil.pushTechnician(order.getId());
+			}
+			log.info("消费编号："+feeRecord.getTradeNo() + "保存成功");
 			//删除payOrder缓存
 		//	CachedManager.remove("payOrder", confimId);
 			//删除order缓存
-			CachedManager.remove("order", confimId);
-		
+			//CachedManager.remove("order", confimId);
+			return "success";
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	
+		return "fail";
 	}
 	
-
+	/**
+	 * 支付宝充值
+	 */
+	public String saveRecharge(String confimId,String tradeNum,String total_fee,Integer type){
+		try{
+			
+			FeeRecord feeRecord = feeRecordService.findByRechargeNum(confimId);
+			if(feeRecord == null){
+				return "fail";
+			}
+			
+			if(!CommonUtil.compareToFloat(total_fee, feeRecord.getFee()+"")){
+				return "fail";
+			}
+			
+			feeRecord.setPayWay(type);
+			feeRecord.setVisible(true);
+			feeRecord.setTradeNo(tradeNum);
+			feeRecordService.update(feeRecord);
+			
+			Member member = feeRecord.getMember();
+			
+			Float sum = CommonUtil.add(member.getMoney()+"",feeRecord.getFee()+"");
+			member.setMoney(sum);
+			memberService.update(member);
+			
+			return "success";
+		}catch(Exception e){
+			
+		}
+		return "fail";
+	}
+	
+	
+	
+	
+	
 	/**
 	 * 支付宝 退费
 	 * 
@@ -302,6 +356,8 @@ public class PayAction extends BaseAction {
 			order.setStatus(34);
 			order.setModifyDate(new Date());
 			orderService.update(order);
+			feeRecord.setIsRefund(1);
+			feeRecordService.update(feeRecord);
 		}
 	}
 	

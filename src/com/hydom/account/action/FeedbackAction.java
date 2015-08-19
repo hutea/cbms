@@ -30,7 +30,7 @@ public class FeedbackAction extends BaseAction{
 	
 	private int maxresult = 6;
 
-	private final static int mark = 13;
+	private final static int mark = 14;
 	/**列表*/
 	@RequestMapping("/list")
 	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page) {

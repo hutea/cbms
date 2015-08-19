@@ -23,15 +23,24 @@ private MemberService memberService;
 private HttpServletRequest request;
 @Autowired
 private HttpServletResponse response;
+/**跳转基本信息页面*/
 @RequestMapping("/info")
 public ModelAndView basicinfo(){
 	MemberBean bean = getMemberBean(request);
 	Member member = bean.getMember();
+	//Member member = memberService.find(memberId);
 	ModelAndView mav = new ModelAndView("/web/myInformation/basicinformation");
 	mav.addObject("member", member);
 	return mav;
+
+}
+@RequestMapping("/goup")
+public ModelAndView goup(){
+	ModelAndView mav = new ModelAndView("/web/updatePassword/updatepassword");
+	return mav;
 	
 }
+/**修改密码*/
 @RequestMapping("/updatepassword")
 public ModelAndView updatepassword(@RequestParam String newpassword){
 	MemberBean bean = getMemberBean(request);

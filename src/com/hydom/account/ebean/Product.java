@@ -32,6 +32,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -122,19 +123,19 @@ public class Product extends BaseEntity {
 
 	/** 销售价 */
 	@JsonProperty
-	@Column(nullable = false, precision = 21, scale = 6)
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float price;
 
 	/** 成本价 */
 	@JsonProperty
 	@NotNull
-	@Column(nullable = false, precision = 21, scale = 6)
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float cost;
 
 	/** 市场价 */
 	@JsonProperty
 	@NotNull
-	@Column(nullable = false, precision = 21, scale = 6)
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float marketPrice;
 
 	/** 展示图片 */
@@ -165,6 +166,11 @@ public class Product extends BaseEntity {
 	 * 是否可以使用优惠卷 0可以使用 其他不能使用
 	 */
 	private Integer useCoupon;
+
+	/**
+	 * 是否可以推荐该商品 1推荐 其他 不能推荐
+	 */
+	private Integer recommend;
 
 	/** 是否上架 */
 	private Boolean isMarketable;
@@ -332,6 +338,7 @@ public class Product extends BaseEntity {
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "t_product_specification", joinColumns = { @JoinColumn(name = "product_id") }, inverseJoinColumns = { @JoinColumn(name = "specification_id") })
 	@OrderBy("order asc")
+	@Where(clause = "visible = 1")
 	private Set<Specification> specifications = new HashSet<Specification>();
 
 	/**
@@ -387,13 +394,13 @@ public class Product extends BaseEntity {
 	/**
 	 * 折扣
 	 */
-	@Column(name = "discount")
+	@Column(name = "discount", columnDefinition = "decimal(20,2)")
 	private Float discount;
 
 	/**
 	 * 折扣价格
 	 */
-	@Column(name = "discount_money")
+	@Column(name = "discount_money", columnDefinition = "decimal(20,2)")
 	private Float discountMoney;
 
 	/**
@@ -413,6 +420,14 @@ public class Product extends BaseEntity {
 	private List<ServerOrderDetail> orderProduct = new ArrayList<ServerOrderDetail>();
 
 	private Boolean visible = true;
+
+	public Integer getRecommend() {
+		return recommend;
+	}
+
+	public void setRecommend(Integer recommend) {
+		this.recommend = recommend;
+	}
 
 	public List<ServerOrderDetail> getOrderProduct() {
 		return orderProduct;

@@ -64,7 +64,7 @@ public class ProductLabelAction extends BaseAction{
 	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
 		PageView<ProductLabel> pageView = new PageView<ProductLabel>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("labelStats", "desc");
 		String jpql = "";
 		Object[] params = new Object[]{};
 		if(queryContent!=null){

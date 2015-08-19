@@ -31,53 +31,76 @@ public class MemberCouponServiceBean extends DAOSupport<MemberCoupon> implements
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<MemberCoupon> canUseList(double pay, String memberId,
-			String[] pids) {
-		if (pids != null && pids.length > 0) { // 检查产品是否支持使用优惠券
-			for (String pid : pids) {
-				Product product = productService.find(pid);
-				if (product.getUseCoupon() == null
-						|| product.getUseCoupon() != 0) { // 0可以使用
-					return null;
+			Object[] pids, int useType, int callOri) {
+		try {
+			if (pids != null && pids.length > 0) { // 检查产品是否支持使用优惠券
+				for (Object pid : pids) {
+					Product product = productService.find(pid.toString());
+					if (product.getUseCoupon() == null
+							|| product.getUseCoupon() != 0) { // 0可以使用
+						return null;
+					}
+					if (product.getProuductUniqueType() != null
+							&& product.getProuductUniqueType() == 3
+							&& callOri == 1) {// 特价商品且来源app则不能使用优惠券
+						return null;
+					}
 				}
 			}
+			Date now = new Date();
+			// 起始日期<=当前日期；结束日期>=当前日期（或为null值的无限期）；未使用；
+			Query query = em
+					.createQuery(
+							"select o from  MemberCoupon o where (o.beginDate<=?1 or o.beginDate is null) and (o.endDate is null or o.endDate>=?2) and o.status=?3 and o.member.id=?4 and ((o.type=1 and o.minPrice<=?5) or (o.type=2 and o.minPrice <=?6) or o.type=3) and o.useType=?7")
+					.setParameter(1, now).setParameter(2, now)
+					.setParameter(3, 0).setParameter(4, memberId)
+					.setParameter(5, pay).setParameter(6, pay)
+					.setParameter(7, useType);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
-		Date now = new Date();
-		// 起始日期<=当前日期；结束日期>=当前日期（或为null值的无限期）；未使用；
-		return em
-				.createQuery(
-						"select o from  MemberCoupon o where o.beginDate<=?1 and (o.endDate is null or o.endDate>=?2) and o.status=?3 and o.member.id=?4 and ((o.type=1 and o.minPrice=?5) or (o.type=2 and o.minPrice=?6) or o.type=3)")
-				.setParameter(1, now).setParameter(2, now).setParameter(3, 0)
-				.setParameter(4, memberId).setParameter(5, pay)
-				.setParameter(6, pay).getResultList();
 
 	}
 
 	@Override
-	public boolean canUse(double pay, String memmberId, String[] pids) {
-		if (pids != null && pids.length > 0) { // 检查产品是否支持使用优惠券
-			for (String pid : pids) {
-				Product product = productService.find(pid);
-				if (product.getUseCoupon() == null
-						|| product.getUseCoupon() != 0) { // 0可以使用
-					return false;
+	public boolean canUse(double pay, String memmberId, String[] pids,
+			int useType, int callOri) {
+		try {
+
+			if (pids != null && pids.length > 0) { // 检查产品是否支持使用优惠券
+				for (String pid : pids) {
+					Product product = productService.find(pid);
+					if (product.getUseCoupon() == null
+							|| product.getUseCoupon() != 0) { // 0可以使用
+						return false;
+					}
+					if (product.getProuductUniqueType() != null
+							&& product.getProuductUniqueType() == 3
+							&& callOri == 1) {// 特价商品且来源app则不能使用优惠券
+						return false;
+					}
 				}
 			}
-		}
-		Date now = new Date();
-		// 起始日期<=当前日期；结束日期>=当前日期（或为null值的无限期）；未使用；
-		Long count = (Long) em
-				.createQuery(
-						"select count(o.id) from  MemberCoupon o where o.beginDate<=?1 and (o.endDate is null or o.endDate>=?2) and o.status=?3 and o.member.id=?4  and ((o.type=1 and o.minPrice=?5) or (o.type=2 and o.minPrice=?6) or o.type=3)")
-				.setParameter(1, now).setParameter(2, now).setParameter(3, 0)
-				.setParameter(4, memmberId).setParameter(5, pay)
-				.setParameter(6, pay).getSingleResult();
-		if (count > 0) {
-			return true;
-
-		} else {
+			Date now = new Date();
+			// 起始日期<=当前日期；结束日期>=当前日期（或为null值的无限期）；未使用；
+			Long count = (Long) em
+					.createQuery(
+							"select count(o.id) from  MemberCoupon o where o.beginDate<=?1 and (o.endDate is null or o.endDate>=?2) and o.status=?3 and o.member.id=?4  and ((o.type=1 and o.minPrice<=?5) or (o.type=2 and o.minPrice<=?6) or o.type=3) and o.useType=?7")
+					.setParameter(1, now).setParameter(2, now)
+					.setParameter(3, 0).setParameter(4, memmberId)
+					.setParameter(5, pay).setParameter(6, pay)
+					.setParameter(7, useType).getSingleResult();
+			if (count > 0) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
-
 	}
 
 	@Override
@@ -107,18 +130,24 @@ public class MemberCouponServiceBean extends DAOSupport<MemberCoupon> implements
 		try {
 			Member member = memberService.find(uid);
 			Coupon coupon = couponService.find(cpid);
-			System.out.println(member);
-			System.out.println(coupon);
 			int requireScore = (coupon.getPoint() == null ? 0 : coupon
 					.getPoint());
-			if (member.getAmount() >= requireScore) {// 可以兑换
+			if (coupon.getIsExchange() && coupon.getIsEnabled()
+					&& member.getAmount() >= requireScore) {// 可以兑换
 				MemberCoupon memberCoupon = new MemberCoupon();
+				memberCoupon.setName(coupon.getName());
 				memberCoupon.setBeginDate(coupon.getBeginDate());
-				memberCoupon.setCoupon(coupon);
+				memberCoupon.setEndDate(coupon.getEndDate());
+				memberCoupon.setIntroduction(coupon.getIntroduction());
+				memberCoupon.setType(coupon.getType());
+				memberCoupon.setUseType(coupon.getUseType());
 				memberCoupon.setDiscount(coupon.getDiscount());
 				memberCoupon.setRate(coupon.getRate());
 				memberCoupon.setMinPrice(coupon.getMinPrice());
 				memberCoupon.setImgPath(coupon.getImgPath());
+				memberCoupon.setMember(member);
+				memberCoupon.setCoupon(coupon);
+				memberCoupon.setReceiveDate(new Date());
 				this.save(memberCoupon);
 				member.setAmount(member.getAmount() - requireScore);
 				memberService.update(member);

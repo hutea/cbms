@@ -36,6 +36,7 @@
 		p.load(in);
 		//付款账号
 		String email = p.getProperty("alipayAccount");
+	
 		//网站地址
 		String network_address = p.getProperty("system.network_address");
 		//网站端口
@@ -72,7 +73,7 @@
 
 		//付款金额
 		//String payMoney = request.getParameter("money");
-		String total_fee = "0.01";//request.getParameter("money");
+		String total_fee = request.getParameter("orderPrice");
 		//必填
 
 		//订单描述
@@ -105,7 +106,7 @@
 		sParaTemp.put("payment_type", payment_type);
 		sParaTemp.put("notify_url", notify_url);
 		//sParaTemp.put("return_url", return_url);
-		sParaTemp.put("seller_email", seller_email);
+		sParaTemp.put("seller_email", email);
 		sParaTemp.put("out_trade_no", out_trade_no);
 		sParaTemp.put("subject", subject);
 		sParaTemp.put("total_fee", total_fee);

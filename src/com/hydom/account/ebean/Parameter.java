@@ -44,6 +44,7 @@ public class Parameter extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="parameter_group_id",nullable = false)
 	private ParameterGroup parameterGroup;
+
 	
 	@Column(name="orders")
 	private Integer order;

@@ -16,64 +16,80 @@ import com.hydom.util.dao.BaseEntity;
 
 @Entity
 @Table(name = "t_coupon")
-public class Coupon extends BaseEntity{
-	
+public class Coupon extends BaseEntity {
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 991331523049071823L;
 
-	/**名称*/
-	@Column(name="name",nullable=false)
+	/** 优惠券使用类型：1=洗车优惠券、2=保养优惠券、3=商品优惠券 */
+	@Column(nullable = false)
+	private Integer useType;
+
+	/** 名称 */
+	@Column(name = "name", nullable = false)
 	private String name;
-	
-	/**使用起始时间*/
-	@Column(name="begin_date")
+
+	/** 使用起始时间 */
+	@Column(name = "begin_date")
 	private Date beginDate;
-	
-	/**使用结束时间*/
-	@Column(name="end_date")
+
+	/** 使用结束时间 */
+	@Column(name = "end_date")
 	private Date endDate;
-	
-	/**介绍*/
-	@Column(name="introduction")
+
+	/** 介绍 */
+	@Column(name = "introduction")
 	private String introduction;
-	
-	/**是否启用*/
-	@Column(name="is_enabled",nullable=false)
+
+	/** 是否启用 */
+	@Column(name = "is_enabled", nullable = false)
 	private Boolean isEnabled = true;
-	
-	/**是否允许积分兑换*/
-	@Column(name="is_exchange",nullable=false)
+
+	/** 是否允许积分兑换 */
+	@Column(name = "is_exchange", nullable = false)
 	private Boolean isExchange = true;
-	
-	/**优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
-	@Column(name="type",nullable=false,length=1)
+
+	/** 优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
+	@Column(name = "type", nullable = false, length = 1)
 	private Integer type = 1;
-	
-	/**积分兑换数*/
-	@Column(name="point")
+
+	/** 积分兑换数 */
+	@Column(name = "point")
 	private Integer point;
-	
-	/**折扣额*/
-	@Column(name="discount")
+
+	/** 折扣额 */
+	@Column(name = "discount", columnDefinition = "decimal(20,2)")
 	private Double discount;
-	
-	/**最小商品价格*/
-	@Column(name="min_price")
+
+	/** 最小商品价格 */
+	@Column(name = "min_price", columnDefinition = "decimal(20,2)")
 	private Double minPrice;
-	
-	/**折扣率*/
-	@Column(name="rate")
+
+	/** 折扣率 */
+	@Column(name = "rate", columnDefinition = "decimal(20,2)")
 	private Double rate;
-	
-	/**图片*/
-	@Column(name="imgPath")
+
+	/** 展示图片 */
+	@Column(name = "imgPath")
 	private String imgPath;
-	
+
+	/** 兑换图片 */
+	@Column(name = "imgPath2")
+	private String imgPath2;
+
 	/** 逻辑删除标志 */
-	@Column(name="visible",nullable=false)
+	@Column(name = "visible", nullable = false)
 	private Boolean visible = true;
+
+	public String getImgPath2() {
+		return imgPath2;
+	}
+
+	public void setImgPath2(String imgPath2) {
+		this.imgPath2 = imgPath2;
+	}
 
 	public Double getRate() {
 		return rate;
@@ -177,6 +193,14 @@ public class Coupon extends BaseEntity{
 
 	public void setVisible(Boolean visible) {
 		this.visible = visible;
+	}
+
+	public Integer getUseType() {
+		return useType;
+	}
+
+	public void setUseType(Integer useType) {
+		this.useType = useType;
 	}
 
 }

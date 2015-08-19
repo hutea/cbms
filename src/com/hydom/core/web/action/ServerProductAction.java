@@ -262,10 +262,11 @@ public class ServerProductAction extends BaseAction{
 	 * 商品详情
 	 */
 	@RequestMapping("/productDetail")
-	public String productDetail(String productId,ModelMap model){
+	public String productDetail(String productId,ModelMap model,String type){
 		//商品
 		Product product = productService.find(productId);
 		model.addAttribute("product", product);
+		model.addAttribute("type", type);
 		//参数
 		Map<Parameter, String> parameterValue = product.getParameterValue();
 		Set<Parameter> iterable = parameterValue.keySet();
@@ -290,12 +291,20 @@ public class ServerProductAction extends BaseAction{
 			Set<SpecificationValue> specificationValues = entityProduct.getSpecificationValues();
 			for(SpecificationValue value : specificationValues){
 				Specification specification = value.getSpecification();
-				List<SpecificationValue> valueList = allProductMap.get(specification);
-				if(valueList == null){
-					valueList = new ArrayList<SpecificationValue>();
+				if(specification != null){
+					if(specification.getVisible() == null){
+						continue;
+					}
+					if(!specification.getVisible()){
+						continue;
+					}
+					List<SpecificationValue> valueList = allProductMap.get(specification);
+					if(valueList == null){
+						valueList = new ArrayList<SpecificationValue>();
+					}
+					valueList.add(value);
+					allProductMap.put(specification, valueList);
 				}
-				valueList.add(value);
-				allProductMap.put(specification, valueList);
 			}
 		}
 		model.addAttribute("allProductMap", allProductMap);
@@ -327,9 +336,9 @@ public class ServerProductAction extends BaseAction{
 		
 		PageView<Comment> pageView = new PageView<Comment>(pageSize,page);
 		
-		pageView = commentService.getListByProduct(product,hasImg,pageView);
+		//pageView = commentService.getListByProduct(product,hasImg,pageView);
 		
-		model.addAttribute("pageView", pageView);
+		model.addAttribute("pageView", null);
 		
 		return base + "/server_productComment";
 	}

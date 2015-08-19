@@ -283,6 +283,12 @@
 												</c:forEach>
 											</div>
 										</div>
+										<div class="form-group">
+											<label class="col-sm-4 control-label">是否推荐</label>
+											<div class="col-sm-8">
+												<label class="mg10"><input type="checkbox" name="recommend" value="1" <c:if test="${entity.recommend eq 1}">checked="checked"</c:if> />推荐</label>
+											</div>
+										</div>
 										<script type="text/javascript">
 											function prouductUniqueTypeChange(obj){
 												var selectValue = $(obj).val();
@@ -352,6 +358,9 @@
                               		}
                               		//删除图片
                               		function deleteImg(imgId,e){
+                              			if(!confirm("是否删除该图片?")){
+                              				return;
+                              			}
                               			var url = base + "manage/product/deleteProductImg";
                               			var data = {
                               				imgId:imgId
@@ -382,7 +391,7 @@
 															<a href="<%=basePath %>${img.source}" target="_blank">查看</a>
 			                              				</td>
 														<td>
-															<a href="javascript:void(0);" onclick="deleteImg('${img.id}');">[删除]</a>
+															<a href="javascript:void(0);" onclick="deleteImg('${img.id}',this);">[删除]</a>
 														</td>
 													</tr>
 												</c:forEach>
@@ -698,6 +707,49 @@
 		});
 		
 		function saveForm(){
+			
+			var productCategoryId = $("#productCategoryId").val();
+			if(productCategoryId == ""){
+				alert("请选择商品分类");
+				return;
+			}
+			
+			if($("input[name='name']").val() == ""){
+				alert("请输入商品名称");
+				return;
+			}
+			
+			var productBrand = $("#productBrandSelect").val();
+			if(productBrand == ""){
+				alert("请选择品牌");
+				return;
+			}
+			
+			var cost = $("input[name='cost']").val();
+			var marketPrice = $("input[name='marketPrice']").val();
+			var point = $("input[name='point']").val();
+			
+			if(isNaN(cost)){
+				alert("成本价请输入数字");
+				return;
+			}
+			
+			if(isNaN(marketPrice)){
+				alert("市场价请输入数字");
+				return;
+			}
+			
+			if(isNaN(point)){
+				alert("积分请输入数字");
+				return;
+			}
+			
+			if(!checkCar()){
+				return;
+			}
+			
+			//参数值
+			setParameterDate();
 			//设置规格值
 			setSpecificationInputValue();
 			//修改规格值

@@ -1,5 +1,8 @@
 package com.hydom.account.action;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -51,15 +54,30 @@ public class SpecificationAction extends BaseAction {
 
 	@RequestMapping("/list")
 	public String list(
-			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "1") int page,String queryContent,
 			ModelMap model) {
 		
-		PageView<Specification> pageView = new PageView<Specification>();
-		pageView = specificationService.getPage(pageView);
+		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+		orderby.put("createDate", "desc");
 		
+		PageView<Specification> pageView = new PageView<Specification>();
+		StringBuffer sql = new StringBuffer();
+		List<Object> params = new ArrayList<Object>();
+		sql.append("o.visible = true ");
+		if(StringUtils.isNotEmpty(queryContent)){
+			sql.append("and o.name like ?1 or o.productCategory.name like ?1");
+			params.add("%"+queryContent+"%");
+		}
+		
+		pageView.setJpql(sql.toString());
+		pageView.setParams(params.toArray());
+		pageView.setOrderby(orderby);
+		
+		pageView = specificationService.getPage(pageView);
 		
 		model.addAttribute("m", mark);
 		model.addAttribute("pageView", pageView);
+		model.addAttribute("queryContent", queryContent);
 		// mav.addAllObjects(model);
 		return basePath + "/specification_list";
 	}
@@ -86,19 +104,17 @@ public class SpecificationAction extends BaseAction {
 			@RequestParam(required = false) String[] specificationNames,
 			@RequestParam(required = false) Integer[] specificationOrders) {
 			
-			if(StringUtils.isEmpty(entity.getProductCategory().getId())){
-				entity.setProductCategory(null);
-			}
-			
 			if(StringUtils.isNotEmpty(entity.getId())){
 				Specification specification = specificationService.find(entity.getId());
-				specification.setProductCategory(entity.getProductCategory());
 				specification.setMemo(entity.getMemo());
 				specification.setName(entity.getName());
 				specification.setOrder(entity.getOrder());
 				specificationService.update(specification);
 				entity = specification;
 			}else{
+				if(StringUtils.isEmpty(entity.getProductCategory().getId())){
+					entity.setProductCategory(null);
+				}
 				specificationService.save(entity);
 			}
 			if(specificationNames != null && specificationNames.length > 0){
@@ -115,7 +131,7 @@ public class SpecificationAction extends BaseAction {
 						specificationValue.setImage(imgMap.get("source"));
 					}
 					
-					if(specificationOrders[i]!=null&&specificationOrders.length>0){
+					if(specificationOrders !=null && specificationOrders.length>0){
 						specificationValue.setOrder(specificationOrders[i]);
 					}
 					
@@ -134,7 +150,10 @@ public class SpecificationAction extends BaseAction {
 			if (specification != null && specification.getProducts() != null && !specification.getProducts().isEmpty()) {
 				return ajaxError("有商品在使用该数据,无法删除", response);
 			}
-			specificationService.delete(id);
+			
+			specification.setVisible(false);
+			specificationService.update(specification);
+			
 			return ajaxSuccess("成功", response);
 			
 		}catch(Exception e){
@@ -149,6 +168,21 @@ public class SpecificationAction extends BaseAction {
 		try{
 			specificationValueService.deleteBySql(id);
 			return ajaxSuccess("成功", response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return ajaxError("失败", response);
+	}
+	
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String productCategory, String name) {
+		try{
+			Specification specification = specificationValueService.findByCategoryAndName(name,productCategory);
+			if(specification != null){
+				return ajaxError("该名称已存在", response);
+			}
+			return ajaxSuccess("", response);
 		}catch(Exception e){
 			e.printStackTrace();
 		}

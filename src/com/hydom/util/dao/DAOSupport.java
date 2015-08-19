@@ -18,6 +18,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -64,15 +65,21 @@ public abstract class DAOSupport<T> implements DAO<T> {
 
 	
 	@Override
-	public void deleteBySql(Serializable... ids) {
-		for (Serializable id : ids){
-			String sql = "delete "+buildEntityName()+" o where 1=1 and o.id=?1";
+	@Transactional
+	public void deleteBySql(String... ids) {
+		
+		if(ids.length > 0){
+			List<String> params = new ArrayList<String>();
+			for(String id : ids){
+				params.add(id);
+			}
+			String sql = "delete "+buildEntityName()+" o where 1=1 and o.id in (:ids)";
 			Query query = em.createQuery(sql);
-			List<Serializable> params = new ArrayList<Serializable>();
-			params.add(id);
-			this.setParms(query, params.toArray());
-			query.executeUpdate();
+			query.setParameter("ids", params);
+			int i = query.executeUpdate();
+			System.out.println(i);
 		}
+		
 	}
 
 	@Override
@@ -97,12 +104,19 @@ public abstract class DAOSupport<T> implements DAO<T> {
 	 * 删除对象
 	 */
 	@Override
-	public void remove(T entity) {
-		if (entity != null) {
-			em.remove(entity);
+	public void removeById(String id) {
+		if (StringUtils.isNotEmpty(id)) {
+			em.remove(this.find(id));
 		}
 	}
 	
+	@Override
+	public void remove(T entity) {
+		if (entity!=null) {
+			em.remove(entity);
+		}
+	}
+
 	@Transactional(readOnly = true, propagation = Propagation.NOT_SUPPORTED)
 	public QueryResult<T> getScrollData(int startIndex, int maxresult,
 			String jpql, Object[] params) {

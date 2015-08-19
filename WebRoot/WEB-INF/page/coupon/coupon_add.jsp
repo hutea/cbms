@@ -57,14 +57,12 @@
 <script type="text/javascript">
 	
 	function check(v){
-		if($(v).is(':visible')){
-			if($(v).val() == ''){
-				$("#"+$(v).attr("name")+"_error").html($(v).attr("CHname")+"不能为空");
-				$(v).next().val("");
-		    } else {
-				$("#"+$(v).attr("name")+"_error").html("");
-				$(v).next().val("success");
-			}
+		if($(v).val() == ''){
+			$("#"+$(v).attr("name")+"_error").html($(v).attr("CHname")+"不能为空");
+			$(v).next().val("");
+	    } else {
+			$("#"+$(v).attr("name")+"_error").html("");
+			$(v).next().val("success");
 		}
 	}
 	$(document).ready(function(){
@@ -72,12 +70,12 @@
 			$("#repeat").val("");
 			$("#inputForm")[0].reset();
 			couponType();
-// 			isExchange();
+			isExchange();
 		});
 	});
 	$(document).ready(function(){
 		couponType();
-// 		isExchange();
+		isExchange();
 	});
 	
 	function isVisible(e){
@@ -89,14 +87,24 @@
 	function saveType(){
 		$(function(){
 			isVisible($("#name"));
-// 			isVisible($("#point"));
+			isVisible($("#point"));
 			isVisible($("#discount"));
 			isVisible($("#minPrice"));
 			isVisible($("#rate"));
+			check($("#imgPath"));
+			check($("#imgPath2"));
 			var flag = true;
 			$(".repeat").each(function(){
 				if($(this).prev().is(":visible") && $(this).val()!="success") flag = false;
+				if($(this).prev().attr("id")=="imgPath" && $(this).val()!="success") flag = false;
+				if($(this).prev().attr("id")=="imgPath2" && $(this).val()!="success") flag = false;
 			});
+			if(flag && $("input[name=isExchange]:checked").val()==1 && $("#point").val()==0){
+				flag=false;
+				if(confirm("如果允许积分兑换，并且兑换所需积分数设为0，这样可能会导致用户恶意领取囤积此优惠券，是否确定要这样做？")){
+					flag=true;
+				}
+			}
 			if(flag){
 				$().ready(function(){
 					couponTypeRemoveAttr();
@@ -133,13 +141,21 @@
 		}
 	}
 	
-// 	function isExchange(){
-// 		if($("input[name=isExchange]:checked").val()==1){
-// 			$("#pointDiv").show();
-// 		}else{
-// 			$("#pointDiv").hide();
-// 		}
-// 	}
+	function rateInputRestrict(e){
+		var v=$(e).val();
+		var r = /^\d(\.\d)?$/;
+		if(!r.test(v)){
+			$(e).val("");
+		}
+	}
+	
+	function isExchange(){
+		if($("input[name=isExchange]:checked").val()==1){
+			$("#pointDiv").show();
+		}else{
+			$("#pointDiv").hide();
+		}
+	}
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -237,16 +253,33 @@
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">优惠券图片</label>
+									<label class="col-sm-4 control-label">优惠券展示图片</label>
 									<div class="col-sm-8">
 										<div class="img_div">
 											<img alt="" src="" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
-											<input type="hidden" name="imgPath" value=""/>
+											<input type="hidden" name="imgPath" id="imgPath" value="" CHname="图片"/>
+											<input type="hidden" class="repeat"/>
+											<span class="errorStyle" id="imgPath_error"></span>
 										</div>
 										<label>
 											<span id="spanButtonPlaceholder"></span>
 										</label>
 										
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">优惠券兑换图片</label>
+									<div class="col-sm-8">
+										<div class="img_div">
+											<img alt="" src="" onerror="<%=basePath %>/resource/image/default.png" id="show_img2"/>
+											<input type="hidden" name="imgPath2" id="imgPath2" value="" CHname="兑换图片"/>
+											<input type="hidden" class="repeat"/>
+											<span class="errorStyle" id="imgPath2_error"></span>
+										</div>
+										<label>
+											<span id="spanButtonPlacehold"></span>
+										</label>
 									</div>
 								</div>
 
@@ -264,7 +297,7 @@
 									</div>
 								</div>
 								
-								<!-- <div class="form-group">
+ 								<div class="form-group">
 									<label class="col-sm-4 control-label">是否允许积分兑换</label>
 									<div class="col-sm-8" onchange="isExchange()">
 										<div class="rdio rdio-default" style="width: 140px;">
@@ -276,16 +309,34 @@
 											<label for="radioZH-4">否</label>
 										</div>
 									</div>
-								</div> -->
+								</div>
 
-								<!-- <div class="form-group" id="pointDiv">
+ 								<div class="form-group" id="pointDiv">
 									<label class="col-sm-4 control-label">兑换所需积分</label>
 									<div class="col-sm-8">
 										<input type="text" class="form-control" name="point" id="point" placeholder="请填写积分数" maxlength="11" CHname="积分" onBlur="check(this)">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="point_error"></span>
 									</div>
-								</div> -->
+								</div>
+								
+								<div class="form-group">
+									<label class="col-sm-4 control-label">优惠券使用类型</label>
+									<div class="col-sm-8 rdio3">
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-8" value="1" checked="checked">
+											<label for="radioZH-8">洗车优惠券</label>
+										</div>
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-9" value="2">
+											<label for="radioZH-9">保养优惠券</label>
+										</div>
+										<div class="rdio rdio-default" style="width: 140px;">
+											<input type="radio" name="useType" id="radioZH-10" value="3">
+											<label for="radioZH-10">商品优惠券</label>
+										</div>
+									</div>
+								</div>
 								
 								<div class="form-group">
 									<label class="col-sm-4 control-label">优惠券类型</label>
@@ -317,7 +368,8 @@
 								<div class="form-group" id="rateDiv">
 									<label class="col-sm-4 control-label">折扣率（折）</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写折扣率" maxlength="1" CHname="折扣率" onBlur="check(this)">
+										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写小于10的折扣率,如：8.5" CHname="折扣率" 
+										onBlur="check(this);rateInputRestrict(this);">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="rate_error"></span>
 									</div>
@@ -337,7 +389,7 @@
 						<div class="panel-footer">
 							<div class="row">
 								<div class="col-sm-9 col-sm-offset-3">
-									<button id="addCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
+									<button type="button" id="addCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
 								</div>
 							</div>
@@ -346,6 +398,7 @@
 				</div>
 				<div class="bottomwrapper">
 					<%@ include file="/WEB-INF/page/common/bottom.jsp"%>
+					
 				</div>
 			</div>
 			<!-- mainpanel -->
@@ -354,6 +407,8 @@
 	</section>
 	<!-- 上传图片页面 -->
 	<jsp:include page="../common/imgUpload.jsp"></jsp:include>
+	<jsp:include page="./imgUpload2.jsp"></jsp:include>
+	
 	<script type="text/javascript">
 		$('[data-toggle="tooltip"]').popover();
 		

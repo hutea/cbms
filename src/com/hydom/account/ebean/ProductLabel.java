@@ -5,6 +5,7 @@ package com.hydom.account.ebean;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -33,7 +34,7 @@ public class ProductLabel extends BaseEntity{
 	@Column(name="labelstats",nullable=false)
 	private Boolean labelStats = false;
 	
-	@ManyToMany(fetch=FetchType.LAZY,mappedBy="labels")
+	@ManyToMany(fetch=FetchType.LAZY,mappedBy="labels",cascade=CascadeType.MERGE)
 	private Set<Product> productSet = new HashSet<Product>();
 	
 	public boolean isLabelStats() {

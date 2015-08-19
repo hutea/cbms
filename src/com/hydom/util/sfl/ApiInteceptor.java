@@ -4,7 +4,6 @@ import java.io.PrintWriter;
 import java.util.Map;
 
 import javax.annotation.Resource;
-import javax.ejb.Remove;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,7 +12,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import com.hydom.account.ebean.Member;
 import com.hydom.api.service.TokenService;
 
 @Component
@@ -46,14 +44,22 @@ public class ApiInteceptor extends HandlerInterceptorAdapter {
 			}
 		}
 		log.info("【API原始请求数据：】" + request.getRequestURI() + param);
-		/*
-		if (request.getRequestURI().contains("/api/user/") && !request.getRequestURI().contains("/api/user/signin")  ) { // 对用户操作数据(排除登录)进行拦截响应
-			boolean validToken =  tokenService.findToken(uid, authId) != null ? true: false;
-			if (!validToken) {// token失效
+
+		if (request.getRequestURI().contains("/api/user/")
+				&& !request.getRequestURI().contains("/api/user/signin")) { // 对用户操作数据(排除登录)进行拦截响应
+			try {
+				boolean validToken = tokenService.findToken(uid, authId) != null ? true
+						: false;
+				if (!validToken) {// token失效
+					PrintWriter out = response.getWriter();
+					out.print("{\"result\":\"102\"}");
+				}
+			} catch (Exception e) {
 				PrintWriter out = response.getWriter();
 				out.print("{\"result\":\"102\"}");
+
 			}
-		}*/
+		}
 		return super.preHandle(request, response, handler);
 	}
 

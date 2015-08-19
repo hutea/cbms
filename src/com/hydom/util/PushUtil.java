@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hydom.account.ebean.Order;
+import com.hydom.account.service.OrderService;
 
 import cn.jpush.api.JPushClient;
 import cn.jpush.api.common.resp.APIConnectionException;
@@ -51,7 +53,38 @@ public class PushUtil {
 
 		push("test标题", "中文内容..test...", 0, dataMap, "020557e87ac");
 	}
-
+	
+	
+	public static Boolean pushTechnician(String orderId){
+		OrderService orderService = (OrderService) SpringUtil.getBean("orderService");
+		boolean bindResult = orderService.bindTechnician(orderId); // 分配技师
+		if (bindResult) {// 执行推送
+			Order order = orderService.find(orderId);
+			Map<String, String> dataMap = new LinkedHashMap<String, String>();
+			dataMap.put("orderId", order.getId());
+			dataMap.put("orderNum", order.getNum());
+			dataMap.put("contact", order.getContact());
+			dataMap.put("phone", order.getPhone());
+			dataMap.put("car", order.getCar().getName());
+			dataMap.put("carNum", order.getCarNum());
+			dataMap.put("carColor", order.getCarColor());
+			dataMap.put("cleanType", order.getCleanType() + "");
+			dataMap.put("mlng", order.getLng() + "");
+			dataMap.put("mlat", order.getLat() + "");
+			try {// 保留时长根据 “几分钟用户不响应重新分配订单”来设定
+				PushUtil.push("一动车保", "您有一个新的订单，请查收.", 86400, dataMap,
+						order.getTechMember().getPushId());
+				System.out.println("推送成功");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return bindResult;
+	}
+	
+	
+	
+	
 	/**
 	 * 推送
 	 * 

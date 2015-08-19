@@ -53,35 +53,23 @@ public class ProductCategoryAction extends BaseAction{
 	@RequestMapping("/list")
 	public String list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp) {
 		
-		PageView<ProductCategory> pageView = new PageView<ProductCategory>(null,page);
-		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("order", "asc");
-		List<Object> params = new ArrayList<Object>();
-		
-		StringBuffer jpql = new StringBuffer("o.visible = ?"+ (params.size()+1));
-		params.add(true);
-		
-		if(StringUtils.isNotEmpty(searchProp)){
-			jpql.append(" and o.parent.id = ?"+ (params.size()+1) );
-			params.add(searchProp);
-		}else{
-			jpql.append(" and o.parent is null");
-		}
-		
 		String queryContent = request.getParameter("queryContent");
-		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append(" and o.name like ?"+(params.size()+1));
-			params.add("%"+queryContent+"%");
-		}
 		model.addAttribute("queryContent", queryContent);
 		
-		
-		pageView.setJpql(jpql.toString());
-		pageView.setParams(params.toArray());
-		pageView.setOrderby(orderby);
-		pageView = productCategoryService.getPage(pageView);
+		/*if(StringUtils.isNotEmpty(queryContent)){
+			List<String> m = new ArrayList<String>();
+			List<ProductCategory> list = productCategoryService.findProductCategorybyName(queryContent);
+			for(ProductCategory pc : list){
+				m.add(pc.getId());
+			}
+			if(m.size() > 0){
+				model.addAttribute("pageView", productCategoryService.findProductCategoryByEntityIds(m));
+			}
+		}else{*/
+			model.addAttribute("pageView", productCategoryService.findProductCategory(null));
+		//}
+	
 	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
-		model.addAttribute("pageView", productCategoryService.findProductCategory(null));
 		model.addAttribute("m", mark);
 		model.addAttribute("searchProp", searchProp);
 		//mav.addAllObjects(model);
@@ -111,6 +99,7 @@ public class ProductCategoryAction extends BaseAction{
 				newServiceTypes.add(serviceType);
 			}
 		}
+		
 		model.addAttribute("serviceTypes", newServiceTypes);
 		
 		
@@ -213,7 +202,16 @@ public class ProductCategoryAction extends BaseAction{
 	public String delete(String[] ids){
 		for(String id : ids){
 			ProductCategory productCategory = productCategoryService.find(id);
+			if(productCategory.getChildren().size()>0){
+				return ajaxError("无法删除,请删除下级分类", response);
+			}
+			
+			if(productCategory.getAttributeSet().size()>0){
+				return ajaxError("无法删除,请删除该分类下的规格", response);
+			}
+			
 			productCategory.setVisible(false);
+			productCategory.setServiceType(null);
 			productCategoryService.update(productCategory);
 		}
 		return ajaxSuccess("成功", response);
@@ -245,4 +243,28 @@ public class ProductCategoryAction extends BaseAction{
 		
 		return ajaxSuccess(jsonArray, response);
 	}
+	
+	
+	/**
+	 * 是否重名
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/checkName")
+	@ResponseBody
+	public String checkName(String name,String parentId){
+		
+		try{
+			ProductCategory productCategory = productCategoryService.getEntityByNameAndParentId(name,parentId);
+			if(productCategory != null){
+				return ajaxError("该分类下已存在该名称", response);
+			}
+			return ajaxSuccess("", response);
+		}catch(Exception e){
+		}
+		return ajaxError("检测出错", response);
+	}
+	
+	
+	
 }

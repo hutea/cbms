@@ -54,7 +54,7 @@ public class ParameterGroup extends BaseEntity {
 	@OneToMany(mappedBy = "parameterGroup", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("order asc")
 	private List<Parameter> parameters = new ArrayList<Parameter>();
-
+	
 	public String getName() {
 		return name;
 	}

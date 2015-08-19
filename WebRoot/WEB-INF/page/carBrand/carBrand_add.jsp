@@ -56,27 +56,21 @@
 <script type="text/javascript">
 	function checkName() {
 		var name = $("#name").val();
-		$
-				.post(
-						"${pageContext.request.contextPath}/manage/carBrand/check",
-						{
-							name : name
-						},
-						function(data) {
-							if(name == "" || name == null){
-								$("#name_error").html("品牌不能为空");
-								$("#name").next().val("");
-							} else if (data == true) {//表示品牌存在
-								$("#name_error").html("品牌已经存在");
-								$("#name").next().val("");
-							} else {
-								$("#name_error").html("");
-								$("#name").next().val("success");
-							}
-							getInitial();
-							getAbridge();
-							getPinYin();
-						});
+		$.post("${pageContext.request.contextPath}/manage/carBrand/check",{name : name},function(data) {
+				if(name == "" || name == null){
+					$("#name_error").html("品牌不能为空");
+					$("#name").next().val("");
+				} else if (data == true) {//表示品牌存在
+					$("#name_error").html("品牌已经存在");
+					$("#name").next().val("");
+				} else {
+					$("#name_error").html("");
+					$("#name").next().val("success");
+				}
+				getInitial();
+				getAbridge();
+				getPinYin();
+		});
 	}
 	
 	function getInitial() {
@@ -143,13 +137,22 @@
 			checkNull($("#initial"));
 			checkNull($("#jp"));
 			checkNull($("#qp"));
-			var flag = true;
-			$(".repeat").each(function(){
-				if($(this).val()!="success") flag = false;
+				
+			var name = $("#name").val();
+			$.post("${pageContext.request.contextPath}/manage/carBrand/check",{name : name},function(data) {
+					if(name == "" || name == null){
+						$("#name_error").html("品牌不能为空");
+						$("#name").next().val("");
+					} else if (data == true) {//表示品牌存在
+						$("#name_error").html("品牌已经存在");
+						$("#name").next().val("");
+					} else {
+						$("#inputForm").submit();
+					}
 			});
-			if(flag){
-				$("#inputForm").submit();
-			}
+			
+			//$("#inputForm").submit();
+			
 		});
 	}
 </script>

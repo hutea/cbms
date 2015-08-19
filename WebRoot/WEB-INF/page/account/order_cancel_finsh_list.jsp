@@ -140,7 +140,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 										保养订单
 									</c:if>
 									<c:if test="${order.type eq 3}">
-										纯商品订单
+										商品订单
 									</c:if>
 								</td>
 								<td>

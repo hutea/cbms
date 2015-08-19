@@ -165,18 +165,18 @@
 											<label class="control-label">${entity.email }</label>
 										</div>
 									</div>
-									<div class="form-group">
+									<%-- <div class="form-group">
 										<label class="col-sm-4 control-label">密码</label>
 										<div class="col-sm-8">
-											<input type="password" name="password" class="form-control"/>
+											<input type="password" name="password" class="form-control" value="${entity.password }"/>
 										</div>
 									</div>
 									<div class="form-group">
 										<label class="col-sm-4 control-label">重复密码</label>
 										<div class="col-sm-8">
-											<input type="password" class="form-control"/>
+											<input type="password" class="form-control" id="rePassword"/>
 										</div>
-									</div>
+									</div> --%>
 									<div class="form-group">
 										<label class="col-sm-4 control-label">积分</label>
 										<div class="col-sm-8">
@@ -330,6 +330,32 @@
 			});
 		});
 		function saveForm(){
+			
+			
+			/* var password = $("input[name='password']").val();
+			if(password == ""){
+				alert("请输入密码");
+				return;
+			}
+			var rePassword = $("#rePassword").val();		
+			
+			if(password == rePassword){
+				alert("两次输入的密码不一致，请重新输入");
+				return;
+			} */
+			
+			var amount = $("input[name='adjustAmount']").val();
+			var money = $("input[name='adjustMoney']").val();
+			
+			if(isNaN(amount)){
+				alert("调整积分请输入数字");
+				return;
+			}
+			
+			if(isNaN(money)){
+				alert("调整余额请输入数字");
+				return;
+			}
 			
 			var url = $("#inputForm").attr("action");
 			var data = $("#inputForm").serialize();

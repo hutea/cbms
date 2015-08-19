@@ -84,7 +84,7 @@ public class CarBrandAction extends BaseAction{
 	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
 		PageView<CarBrand> pageView = new PageView<CarBrand>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		String jpql = "o.visible = 1";
 		Object[] params = new Object[]{};
 		if(queryContent!=null){

@@ -11,7 +11,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 <head>
 	<meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=8" />
-	<title>一动车保首页</title>
+	<title>商品评论</title>
 	<link href="${pageContext.request.contextPath}/resource/chain/css/style.css" type="text/css" rel="stylesheet" />
 		
 	<script type="text/javascript" src="${pageContext.request.contextPath}/resource/page/js/jquery.js"></script>
@@ -65,13 +65,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder on">
-					<a href="#">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -79,7 +79,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -87,16 +87,16 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
-				<li class="menu-item changePass">
+				<!-- <li class="menu-item changePass">
 					<a href="#">修改密码</a>
-				</li>
+				</li> -->
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
@@ -110,15 +110,21 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						<div class="right"><a href="${pageContext.request.contextPath}/user/order/list">返回订单列表&gt;&gt;</a></div>
 					</div>
 					<div class="orderDetailsContent">
-						<div class="left"><a href="#"><img src="images/orderDetails1.png" /></a></div>
+						<div class="left"><a href="#"><img src="<%=base%>${serverOrderDetail.product.imgPath }" /></a></div>
 						<div class="right">
 							<ul>
-								<li><b>订单编号：</b>${serverOrderDetail.order.id }</li>
-								<li><b>订单状态：</b><c:if test="${serverOrderDetail.order.status==1 }">派单中</c:if>
-												<c:if test="${serverOrderDetail.order.status==2 }">服务中</c:if>
-												<c:if test="${serverOrderDetail.order.status==3 }">交易成功</c:if>
-												<c:if test="${serverOrderDetail.order.status==4 }">退费订单</c:if>
-												<c:if test="${serverOrderDetail.order.status==5 }">失败订单</c:if></li>
+								<li><b>订单编号：</b>${serverOrderDetail.order.num }</li>
+								<li><b>订单状态：</b>
+								<c:if test="${serverOrderDetail.order.status==0 }">已完结</c:if>
+												<c:if test="${serverOrderDetail.order.status==1 }">派单中</c:if>
+												<c:if test="${serverOrderDetail.order.status==2 }">路途中</c:if>
+												<c:if test="${serverOrderDetail.order.status==3 }">服务中</c:if>
+												<c:if test="${serverOrderDetail.order.status==11 }">预约成功</c:if>
+												<c:if test="${serverOrderDetail.order.status==12 }">已分配车队</c:if>
+												<c:if test="${serverOrderDetail.order.status==21 }">已下单</c:if>
+												<c:if test="${serverOrderDetail.order.status==22 }">配货中</c:if>
+												<c:if test="${serverOrderDetail.order.status==23 }">送货中</c:if>
+								</li>
 								<li><b>下单时间：</b>${serverOrderDetail.order.createDate }</li>
 							</ul>
 							<ul>

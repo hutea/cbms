@@ -10,6 +10,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import com.hydom.account.ebean.Account;
 import com.hydom.account.ebean.Privilege;
 import com.hydom.account.ebean.PrivilegeGroup;
+import com.hydom.account.service.AccountService;
 import com.hydom.account.service.PrivilegeService;
 import com.hydom.util.WebUtil;
 import com.hydom.util.bean.AdminBean;
@@ -24,13 +25,15 @@ import com.hydom.util.bean.AdminBean;
 public class PrivilegeInteceptor extends HandlerInterceptorAdapter {
 	@Resource
 	private PrivilegeService systemPrivilegeService;
+	@Resource
+	private AccountService accountService;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request,
 			HttpServletResponse response, Object handler) throws Exception {
 		try {
-
-			Account account = WebUtil.getlogonAccount(request).getMember();
+			Account account = accountService.findByUsername(WebUtil
+					.getlogonAccount(request).getUsername());
 			if (account != null && "admin".equals(account.getUsername())) {
 				return true;
 			}
@@ -43,13 +46,11 @@ public class PrivilegeInteceptor extends HandlerInterceptorAdapter {
 			Privilege sp = systemPrivilegeService.findByURL(url);
 			if (sp != null) { // request url is required
 				if (account != null && account.getGroups() != null) {
-					System.out.println(account + "-->account");
 					for (PrivilegeGroup group : account.getGroups()) {
 						if (group.getPrivileges().contains(sp)) {
 							return true;
 						}
 					}
-					return false;
 				} else {
 					return false;
 				}
@@ -57,9 +58,11 @@ public class PrivilegeInteceptor extends HandlerInterceptorAdapter {
 				return true;
 			}
 		} catch (Exception e) {
-			return true; // 测试返回true,正式返回false
+			// e.printStackTrace();
 		}
+		request.getRequestDispatcher("/WEB-INF/page/common/unAuth.jsp")
+				.forward(request, response);
+		return false;
 
 	}
-
 }

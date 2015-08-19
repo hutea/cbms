@@ -161,25 +161,16 @@
 								<div class="form-group">
 									<label class="col-sm-4 control-label">商品分类</label>
 									<div class="col-sm-8">
-										<select name="productCategory.id" class="mg10" id="productCategoryId">
-											<option value="">请选择商品分类</option>
-											<c:forEach var="category" items="${productCategorys }">
-												<option value="${category.id }" <c:if test="${entity.productCategory.id eq category.id }">selected="selected"</c:if> >
-													<c:if test="${category.grade gt 0}">
-														<c:forEach begin="1" end="${category.grade }">
-															&nbsp;&nbsp;
-														</c:forEach>
-													</c:if>
-													${category.name}
-												</option>
-											</c:forEach>
-										</select>
+										<label class="control-label">${entity.productCategory.name }</label>
 									</div>
 								</div>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">名称</label>
 									<div class="col-sm-8">
 										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
+										<label id="nameLabel">
+											<span class="success"></span>
+										</label>	
 									</div>
 								</div>
 								<div class="form-group">
@@ -239,7 +230,7 @@
 														<label>${value.order }</label>
 													</td>
 													<td>
-															<a href="javascript:void(0);" onclick="deletOption(this,'${value.id}');">[删除]</a>
+														<a href="javascript:void(0);" onclick="deletOption(this,'${value.id}');">[删除]</a>
 													</td>
 												</tr> 						        			
 							        		</c:forEach>
@@ -271,10 +262,50 @@
 		$(document).ready(function(){
 			
 		});
+		var entityId = "${entity.id}";
+		var productCategoryId = "${entity.productCategory.id }";
+		var entityName = "${entity.name}";
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}
+		}
+		
+		function checkName() {
+			setErrorMessage("",2);
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				return;
+			}		
+			if(entityName == name){
+				return;
+			}
+			var url = "<%=basePath%>manage/specification/checkName";
+			var data = {
+				productCategory:productCategoryId,
+				name:name
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		}
+		
+		
 		function saveForm(){
 			
-			if($("#productCategoryId").val() == ""){
-				alert("请选择商品分类");
+			var name = $("input[name='name']").val();
+			if(name==""){
+				alert("请输入名称");
 				return;
 			}
 			
@@ -286,7 +317,26 @@
 				}
 			}
 			
-			$("#inputForm").submit();
+			if(entityName == name){
+				$("#inputForm").submit();
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/specification/checkName";
+			var data = {
+				productCategory:productCategoryId,
+				name:name
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$("#inputForm").submit();
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+			
+			
 		}
 		function addAttributeValue(){
 			var value = $("#selectType").val();

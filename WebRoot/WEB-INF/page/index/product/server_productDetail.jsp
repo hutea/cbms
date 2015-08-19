@@ -12,12 +12,12 @@
 	width: 50%;
 }
 
-#ma5_select_pic img {
-	height: 370px;
-	width: 370px;
+#ma5_select_pic_1 img {
+	height: 180px;
+	width: 100%;
 }
 
-#productColor img {
+#productColor_1 img {
 	height: 40px;
 	width: 40px;
 }
@@ -35,31 +35,41 @@
 	</div>
 	<div class="description_top">
 		<div class="description_top_left">
-			<ul class="ma5_select" id="ma5_select">
-				<c:forEach var="img" items="${product.productImages }" varStatus="s">
-					<li class="" onMouseOver="ma5Select(${s.index})"><img
-						src="<%=basePath%>${img.source}" alt="" /></li>
-				</c:forEach>
-				<!-- <li class="" onMouseOver="ma5Select(0)"><img
-					src="images/ma5_2.png" alt="" /></li> -->
-			</ul>
-			<div class="ma5_select_pic" id="ma5_select_pic">
+			<div class="ma5_select_pic" id="ma5_select_pic_1">
 				<c:forEach var="img" items="${product.productImages }">
 					<img src="<%=basePath%>${img.source}" alt="" style="display: none;" />
 				</c:forEach>
 				<!-- <img src="images/ma5_12.png" alt="" style="display: none;" /> -->
 			</div>
+			<div>
+				<ul class="ma5_select" id="ma5_select">
+					<c:forEach var="img" items="${product.productImages }" varStatus="s">
+						<li class="" onMouseOver="ma5Select(${s.index})"><img
+							src="<%=basePath%>${img.source}" alt="" /></li>
+					</c:forEach>
+					<!-- <li class="" onMouseOver="ma5Select(0)"><img
+						src="images/ma5_2.png" alt="" /></li> -->
+				</ul>
+			</div>
 		</div>
 		<script type="text/javascript">
 			//ma5左侧tab
 			function ma5Select(m) {
-				var li = document.getElementById("ma5_select")
-						.getElementsByTagName("li");
-				var img = document.getElementById("ma5_select_pic")
-						.getElementsByTagName("img");
+				
+				var li = $("#ma5_select").find("li");   //document.getElementById("ma5_select").getElementsByTagName("li");
+				var img = $("#ma5_select_pic_1").find("img"); //document.getElementById("ma5_select_pic").getElementsByTagName("img");
+						
 				for (var i = 0; i <= li.length; i++) {
-					li[i].className = i == m ? "img-hover" : "";
-					img[i].style.display = i == m ? "block" : "none";
+					if(i == m){
+						$(li[i]).addClass("img-hover");
+						$(img[i]).css("display","block");
+					}else{
+						$(li[i]).removeClass("img-hover");
+						$(img[i]).css("display","none");
+					}
+					
+					//li[i].className = i == m ? "img-hover" : "";
+					//img[i].style.display = i == m ? "block" : "none";
 				}
 			}
 		</script>
@@ -101,7 +111,7 @@
 					<c:otherwise>
 						<div class="product_color">
 							<span>${beans.key.name}:</span>
-							<ul id="productColor">
+							<ul id="productColor_1">
 								<c:forEach var="sbBean" items="${beans.value }">
 									<li class="selected"><img
 										src="<%=basePath%>${sbBean.image}" alt="" /></li>
@@ -112,33 +122,76 @@
 					</c:otherwise>
 				</c:choose>
 			</c:forEach>
-			
-			<script>
-				/* $(function() {
-					function tabs(tabTit, on) {
-						$(tabTit).children().click(function() {
-							$(this).addClass(on).siblings().removeClass(on);
-						});
-					}
-					tabs("#productSize", "selected");
-					tabs("#productColor", "selected");
-				}) */
-			</script>
-			<div class="quantity">
+			<div class="quantity changeProductButton">
 				<h2>购买数量：</h2>
 				<div class="quantity1">
 					<input type="text" id="spin5" value="1"
-						style="border: 1px solid #ddd; width: 80px; height: 26px; " />
+						style="border: 1px solid #ddd; width: 80px; height: 26px; " class="productCount2111"/>
 				</div>
 			</div>
-			<button class="button5">购买</button>
+			<button class="button5 changeProductButton" type="button" onclick="detailChangeProduct();">购买</button>
 		</div>
+		<script type="text/javascript">
+		
+		
+		function forcheck22(ss){
+			 var type="^[0-9]*[1-9][0-9]*$"; 
+			 var re = new RegExp(type); 
+			 if(ss.match(re)==null){ 
+				 return false;
+			}
+			 return true;
+		}
+		
+			var name = "${product.name}";
+			var id = "${product.id}";
+			var price = "${product.marketPrice}";
+			var productCategoryId = "${product.productCategory.id}";
+			var productCategoryName = "${product.productCategory.name}";
+			var serviceId = "${product.productCategory.serviceType.id}";
+			var type = "${type}";
+			
+			$(document).ready(function(){
+				var table = $(".productDetailTableDIV").find("table");
+				var product_trs = $(table).find("tr.product_tr");
+				for(var i = 0; i < product_trs.length; i++){
+					var productId = $(product_trs[i]).attr("id");
+					console.log(productId);
+					if(id == productId){
+						$(".changeProductButton").hide();
+					}
+				}
+			});
+			
+			function detailChangeProduct(){
+				var count = $(".productCount2111").val();
+				if(!forcheck22(count)){
+					alert("请填写大于0的整数");
+					return;
+				}
+				var data = {
+						name :name,
+						id:id,
+						price:price,
+						count:count,
+						productCategoryId:productCategoryId,
+						productCategoryName:productCategoryName,
+						serviceId:serviceId,
+						type:type
+				};
+				if(type == "1"){//更换商品
+					changeProductHTML(data);
+				}else{//添加商品
+					addServiceProduct(data);
+				}	
+			}
+		</script>
 	</div>
 	<div class="description_bottom">
 		<ul class="description_bottom_nav" id="description_bottom_nav">
 			<li class="tab-hover" onclick="tab2(0)">商品详情</li>
 			<li class="" onclick="tab2(1)">商品参数</li>
-			<li class="" onclick="tab2(2)">商品评论（<span>566</span>）
+			<li class="" onclick="tab2(2)">商品评论（<span>0</span>）
 			</li>
 		</ul>
 		<div id="des_con">
@@ -172,6 +225,7 @@
 			<script type="text/javascript">
 			/* 分页三方法 */
 				$(document).ready(function(){
+					ma5Select(0);
 					showDetailHTML();
 					hideProductList();
 					getProductComment();
@@ -223,7 +277,7 @@
 			<div class="description_bottom_con" style="display: none; ">
 				<div class="form2">
 					<label><input type="radio" name="comment" checked value="0"/>全部</label> <label><input
-						type="radio" name="comment" value="1"/>仅显示有照片的评论（<span>56</span>）</label>
+						type="radio" name="comment" value="1"/>仅显示有照片的评论（<span>0</span>）</label>
 				</div>
 				<div class="comment1" id="commentDetail">
 					

@@ -89,11 +89,13 @@ public class Member extends BaseEntity {
 	/**
 	 * 积分
 	 */
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float amount = 0f;
 
 	/**
 	 * 余额
 	 */
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float money = 0f;
 
 	/**

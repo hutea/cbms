@@ -66,7 +66,7 @@ public class ProductServiceBean extends DAOSupport<Product> implements
 
 	@Override
 	public Product defaultForServer(String stid, String cid) {
-		String sql = "select p from Product p left join p.carSet c where p.visible=?1 and p.productCategory.serviceType.id=?2 and (c.id=?3 or p.useAllCar=?4) order by p.createDate desc";
+		String sql = "select p from Product p left join p.carSet c where p.visible=?1 and p.productCategory.serviceType.id=?2 and (c.id=?3 or p.useAllCar=?4) order by p.recommend desc,p.createDate desc";
 		try {
 			return (Product) em.createQuery(sql).setParameter(1, true)
 					.setParameter(2, stid).setParameter(3, cid)

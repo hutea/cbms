@@ -142,7 +142,7 @@
 										<input type="text" name="email" class="form-control" maxlength="200" value=""/>
 									</div>
 								</div>
-								<div class="form-group">
+								<!-- <div class="form-group">
 									<label class="col-sm-4 control-label">密码</label>
 									<div class="col-sm-8">
 										<input type="password" name="password" class="form-control" maxlength="200"/>
@@ -151,9 +151,9 @@
 								<div class="form-group">
 									<label class="col-sm-4 control-label">重复密码</label>
 									<div class="col-sm-8">
-										<input type="password" class="form-control" maxlength="200" />
+										<input type="password" class="form-control" maxlength="200" id="rePassword"/>
 									</div>
-								</div>
+								</div> -->
 								<div class="form-group">
 									<label class="col-sm-4 control-label">积分</label>
 									<div class="col-sm-8">
@@ -282,8 +282,10 @@
 		}
 		function saveForm(){
 			
-			var username = $("input[name='mobile']").val();
-			if(username == ""){
+			
+			
+			var mobile = $("input[name='mobile']").val();
+			if(mobile == ""){
 				alert("请输入电话号码");
 				return;
 			}
@@ -293,12 +295,47 @@
 				return;
 			}
 			
-			if(!checkMobile(username)){
+			if(!checkMobile(mobile)){
 				alert("请输入正确的电话号码");
 				return;
 			}
 			
-			$("#inputForm").submit();
+			/* var password = $("input[name='password']").val();
+			if(password == ""){
+				alert("请输入密码");
+				return;
+			}
+			var rePassword = $("#rePassword").val();		
+			
+			if(password == rePassword){
+				alert("两次输入的密码不一致，请重新输入");
+				return;
+			} */
+			
+			var amount = $("input[name='amount']").val();
+			var money = $("input[name='money']").val();
+			
+			if(isNaN(amount)){
+				alert("积分请输入数字");
+				return;
+			}
+			
+			if(isNaN(money)){
+				alert("余额请输入数字");
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/member/checkName";
+			var data = {
+				mobile : mobile
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$("#inputForm").submit();
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
 		}
 		//设置时间
 		function getLaydate(obj){

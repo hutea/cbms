@@ -219,6 +219,25 @@
 			
 		});
 		function saveForm(){
+			
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				alert("请填写名称");
+				return;
+			}
+			
+			var inputs = $("input[name='attributeValues']");
+			if(inputs.length > 0){
+				for(var i = 0; i < inputs.length; i++){
+					if($(inputs[i]).val() == ""){
+						alert("请将可选项填写完整");
+						return;
+					}
+				}
+			}else{
+				alert("请添加可选项");
+				return;
+			}
 			$("#inputForm").submit();
 		}
 		function addAttributeValue(){

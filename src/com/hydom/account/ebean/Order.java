@@ -46,23 +46,26 @@ public class Order extends BaseEntity {
 	/** 详细地址 */
 	private String address;
 
-	/** 支付方式 1=货到付款；2=支付宝 ；3=银联 4=微信 **/
+	/** 支付方式 1=会员卡支付；2=支付宝 ；3=银联 4=微信 5=现成支付**/
 	private Integer payWay;
 
 	/** 配送方式 1=上门服务； 2=到门店 **/
 	private Integer serverWay = 1;
 
 	/** 优惠价：优惠了多少钱 **/
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float amount_paid;
 
 	/** 原价 **/
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float amount_money;
 
 	/** 实际价格 **/
+	@Column(columnDefinition = "decimal(20,2)")
 	private Float price;
 
 	/** 订单编号 **/
-	@Column(nullable = false, unique = true)
+	@Column(unique=true,nullable=false)
 	private String num;
 
 	/**
@@ -194,6 +197,12 @@ public class Order extends BaseEntity {
 	/** 逻辑删除标志 **/
 	@Column(name = "visible")
 	private Boolean visible = true;
+
+	/**
+	 * 是否支付 默认为未支付false true为支付
+	 */
+	@Column(name = "ispay", nullable=false)
+	private Boolean isPay = false;
 
 	public FeeRecord getFeeRecord() {
 		return feeRecord;
@@ -450,6 +459,14 @@ public class Order extends BaseEntity {
 
 	public void setArea(Area area) {
 		this.area = area;
+	}
+
+	public Boolean getIsPay() {
+		return isPay;
+	}
+
+	public void setIsPay(Boolean isPay) {
+		this.isPay = isPay;
 	}
 
 	@Transient

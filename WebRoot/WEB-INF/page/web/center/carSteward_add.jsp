@@ -12,7 +12,6 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	<title>添加爱车</title>
 	<link href="<%=basePath %>resource/page/css/carSteward/style.css" type="text/css" rel="stylesheet" />
 	<script type="text/javascript" src="<%=basePath %>resource/page/js/jquery.js"></script>
-	<script type="text/javascript" src="<%=basePath %>resource/page/js/carSteward/function.js"></script>
 	<!-- 日期插件需要的包 -->
 	<link rel="stylesheet" href="<%=basePath %>resource/page/js/carSteward/development-bundle/themes/ui-lightness/jquery.ui.all.css">
 	<script type="text/javascript" src="<%=basePath %>resource/page/js/carSteward/development-bundle/ui/jquery.ui.core.js"></script>
@@ -200,13 +199,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder">
-					<a href="#">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home active">
@@ -214,7 +213,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel on">
-					<a href="<%=basePath%>user/carSteward/list">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -222,30 +221,26 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
-				</li>
-				<li class="menu-item changePass">
-					<a href="#">修改密码</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
 		<div class="steward1-detail" id="steward1-detail">
-			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; ">0000000000000000000</div>
-			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail">111111111111111111111111</div>
-			<div id="myCouponContent" class="myCouponContent myOrderDetail">22222222222222222222222222</div>
+			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; "></div>
+			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail"></div>
+			<div id="myCouponContent" class="myCouponContent myOrderDetail"></div>
 			<div id="myCarModelContent" class="myCarModelContent myOrderDetail">
 				<div class="orderDetails" style="border: none; ">
 					<div class="orderDetailsTop">
 						<div class="left">
 							<a href="#"><img src="<%=basePath %>resource/page/images/steward_4.png" /></a><span class="span1">|</span><span>爱车基本信息</span>
 						</div>
-						<div class="right"><a href="#">新增爱车&gt;&gt;</a></div>
 					</div>
 					<div class="orderDetailsContent">
 						<div class="orderDetailsContentLeft">
@@ -261,7 +256,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									品&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;牌：<input type="text" placeholder="选择品牌" class="carSelectInput carBrand selectBrand selectInput"
 										id="carBrandInput" onkeyup="getValue(this);" onclick="inputFocus(this)" value="${userCar.car.carBrand.name }"/>
 									<div class="input_search_result">
-										<ul id="carBrand"></ul>
+										<ul id="carBrand" style="overflow-y: auto; height: 250px;"></ul>
 									</div>
 									<input type="hidden" id="carBrandId" value="${userCar.car.carBrand.id }"/>
 								</div>
@@ -269,7 +264,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									车&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;系：<input type="text" placeholder="选择车系" class="carSelectInput carType selectCars selectInput"
 									id="carTypeInput" onkeyup="getValue(this);" onclick="inputFocus(this);getValue(this)" value="${userCar.car.carType.name }" />
 									<div class="input_search_result">
-										<ul id="carType"></ul>
+										<ul id="carType" style="overflow-y: auto; height: 250px;"></ul>
 									</div>
 									<input type="hidden" id="carTypeId" value="${userCar.car.carType.id }"/>
 								</div>
@@ -277,7 +272,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									车&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;型：<input type="text" placeholder="选择车型" class="carSelectInput car selectType selectInput" 
 									id="carInput" readonly="readonly" onclick="inputFocus(this);getValue(this)"  value="${userCar.car.name }"/>
 									<div class="input_search_result">
-										<ul id="car"></ul>
+										<ul id="car" style="overflow-y: auto; height: 250px;"></ul>
 									</div>
 									<input type="hidden" id="carId" name="carId" value="${userCar.car.id }" CHname="车型"/>
 									<input type="hidden" class="repeat"/>
@@ -304,10 +299,10 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 					</div>
 				</div>
 			</div>
-			<div id="accountBalContent" class="accountBalContent myOrderDetail">444444444444444444444444444-1-1-1-1--1-1-1-1-1</div>
-			<div id="basicInfoContent" class="basicInfoContent myOrderDetail">55555555555555555555555555555555555555555555555444444444444</div>
-			<div id="changePassContent" class="changePassContent myOrderDetail">66666666666666666666666666666666666666666666665555555555555555555555555555555555555555555555</div>
-			<div id="feedBackContent" class="feedBackContent myOrderDetail">777777777777777777777777777777777777777777777-2-2-2-2-2-2-2--2-2-2-2</div>
+			<div id="accountBalContent" class="accountBalContent myOrderDetail"></div>
+			<div id="basicInfoContent" class="basicInfoContent myOrderDetail"></div>
+			<div id="changePassContent" class="changePassContent myOrderDetail"></div>
+			<div id="feedBackContent" class="feedBackContent myOrderDetail"></div>
 		</div>
 	</div>
 	
@@ -457,8 +452,5 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	</div>
 </div>
 <!--底部结束-->
-
-<!-- 上传图片页面 -->
-<jsp:include page="../../common/imgUpload.jsp"></jsp:include>
 </body>
 </html>

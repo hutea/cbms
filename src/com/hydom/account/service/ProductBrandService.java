@@ -10,5 +10,12 @@ public interface ProductBrandService extends DAO<ProductBrand> {
 	 * @return
 	 */
 	public ProductBrand findOneRecommendBrand();
+	
+	/**
+	 * 判断是否重名
+	 * @param name
+	 * @return
+	 */
+	public ProductBrand findbyName(String name);
 
 }

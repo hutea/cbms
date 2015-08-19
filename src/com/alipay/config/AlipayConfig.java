@@ -27,8 +27,8 @@ public class AlipayConfig {
 	// 合作身份者ID，以2088开头由16位纯数字组成的字符串
 	public static String partner = "2088021002450046";
 	// 商户的私钥
-	public static String key = "b4418381sn5vvkzvcjaatbt11g4kdg9s";
-
+	public static String key = "mcaz21yup0k127frnkccmt0hczsx9de4";
+	
 	//↑↑↑↑↑↑↑↑↑↑请在这里配置您的基本信息↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 	
 

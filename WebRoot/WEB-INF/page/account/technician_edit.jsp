@@ -62,9 +62,9 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
 <script type="text/javascript">
-	window.onload = function(){
+	/* window.onload = function(){
     	document.getElementById("account").focus();
-	}
+	}; */
 
 	function checkAccount() {
 		
@@ -89,7 +89,8 @@
 						});
 						
 	}
-function checkName() {
+		
+	function checkName() {
 		
 		var name = $("#name").val();
 							if(name == "" || name == null){
@@ -101,41 +102,6 @@ function checkName() {
 							};
 						
 	}
-	
-function checkPhoneNumber() {
-	
-	var phoneNumber = $("#phonenumber").val();
-	$
-			.post(
-					"${pageContext.request.contextPath}/manage/technician/checkPhoneNumber",
-					{
-						phoneNumber : phoneNumber
-					},
-					function(data) {
-						if(phoneNumber == "" || phoneNumber == null){
-							$("#phonenumber_error").html("手机号码不能为空");
-							$("#phonenumber").next().val("");
-						} else if (data == true && phoneNumber!="${technician.phonenumber }") {//表示品牌存在
-							$("#phonenumber_error").html("手机号码已经存在");
-							$("#phonenumber").next().val("");
-						} else {
-							$("#phonenumber_error").html("");
-							$("#phonenumber").next().val("success");
-						}
-					});
-					
-}
-	
-	$(document).ready(function(){
-		$("#reset").bind("click",function() {
-			$("#inputForm")[0].reset();
-			checkAccount();
-			checkName();
-			checkPhoneNumber();
-		});
-		
-		
-	});
 
 	function checkLevel() {
 		var level = $("#level").val();
@@ -146,13 +112,47 @@ function checkPhoneNumber() {
 			$("#level").next().val("success");
 		}
 	}
-	
-	function saveType(){
-		
-		checkAccount();
-		checkName();
-		checkPhoneNumber();
-		checkLevel();
+	function checkPhoneNumber() {
+		var reg = /^(1[3|5|8])[\d]{9}$/;
+		var phoneNumber = $("#phonenumber").val();
+		$
+				.post(
+						"${pageContext.request.contextPath}/manage/technician/checkPhoneNumber",
+						{
+							phoneNumber : phoneNumber
+						},
+						function(data) {
+							if(phoneNumber == "" || phoneNumber == null){
+								$("#phonenumber_error").html("手机号码不能为空");
+								$("#phonenumber").next().val("");
+							} else if(phoneNumber.length!=11){
+								$("#phonenumber_error").html("请输入11位手机号码");
+								$("#phonenumber").next().val("");
+							}else if(!reg.test(phoneNumber)){
+								$("#phonenumber_error").html("请输入正确格式的手机号码");
+								$("#phonenumber").next().val("");
+							}else if (data == true && phoneNumber!="${technician.phonenumber }") {//表示品牌存在
+								$("#phonenumber_error").html("手机号码已经存在");
+								$("#phonenumber").next().val("");
+							} else{
+								$("#phonenumber_error").html("");
+								$("#phonenumber").next().val("success");
+							}
+						});
+						
+	}
+
+		$(document).ready(function(){
+			$("#reset").bind("click",function() {
+				$("#inputForm")[0].reset();
+			});
+		});
+
+		function saveType(){
+			checkAccount();
+			checkName();
+			checkPhoneNumber();
+			checkLevel();
 			$(function(){
 				var flag = true;
 				$(".repeat").each(function(){
@@ -162,11 +162,7 @@ function checkPhoneNumber() {
 					$("#inputForm").submit();
 				}
 			});
-		
-		
-	}
-	
-	
+		}
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -283,7 +279,7 @@ function checkPhoneNumber() {
 									<label class="col-sm-4 control-label">头像</label>
 									<div class="col-sm-8">
 										<div class="img_div">
-											<img alt="" src="<%=basePath %>/${technician.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
+											<img alt="" src="<%=basePath %>${technician.imgPath }" onerror="<%=basePath %>/resource/image/default.png" id="show_img"/>
 											<input type="hidden" name="imgPath" value="${technician.imgPath }"/>
 										</div>
 										<label>

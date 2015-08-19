@@ -50,17 +50,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	  					id : id	
 	  			};
 	  			$.post(url,data,function(result){
-	  				console.log(result);
+	  				
 	  			},"json");
-	  			/* $.post("${pageContext.request.contextPath}/manage/technician/restPassWord",
-						{
-							id : id
-						},
-						function(data) {
-							alert("密码已重置为:123456");
-						});
 	  			
-				} */
 	  			alert("密码已重置为:123456");
 	  		}
 	  	}	

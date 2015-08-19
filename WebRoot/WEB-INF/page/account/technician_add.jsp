@@ -113,7 +113,7 @@ function checkLevel() {
 	}
 }
 function checkPhoneNumber() {
-	
+	var reg = /^(1[3|5|8])[\d]{9}$/;
 	var phoneNumber = $("#phonenumber").val();
 	$
 			.post(
@@ -125,10 +125,16 @@ function checkPhoneNumber() {
 						if(phoneNumber == "" || phoneNumber == null){
 							$("#phonenumber_error").html("手机号码不能为空");
 							$("#phonenumber").next().val("");
-						} else if (data == true && phoneNumber!="${technician.phonenumber }") {//表示品牌存在
+						} else if(phoneNumber.length!=11){
+							$("#phonenumber_error").html("请输入11位手机号码");
+							$("#phonenumber").next().val("");
+						}else if(!reg.test(phoneNumber)){
+							$("#phonenumber_error").html("请输入正确格式的手机号码");
+							$("#phonenumber").next().val("");
+						}else if (data == true && phoneNumber!="${technician.phonenumber }") {//表示品牌存在
 							$("#phonenumber_error").html("手机号码已经存在");
 							$("#phonenumber").next().val("");
-						} else {
+						} else{
 							$("#phonenumber_error").html("");
 							$("#phonenumber").next().val("success");
 						}
@@ -210,7 +216,7 @@ function checkPhoneNumber() {
 								<div class="form-group">
 									<label class="col-sm-4 control-label">技师帐号</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name=account
+										<input type="text" class="form-control" name="account"
 											onBlur="checkAccount()" placeholder="请填技师帐号" id="account">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="account_error"></span>
@@ -220,7 +226,7 @@ function checkPhoneNumber() {
 							<div class="form-group">
 									<label class="col-sm-4 control-label">技师姓名</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name=name
+										<input type="text" class="form-control" name="name"
 											onBlur="checkName()" placeholder="请填技师姓名" id="name">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="name_error"></span>
@@ -230,13 +236,12 @@ function checkPhoneNumber() {
 								<div class="form-group">
 									<label class="col-sm-4 control-label">联系电话</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name=phonenumber
+										<input type="text" class="form-control" name="phonenumber"
 											onBlur="checkPhoneNumber()" placeholder="请填技师电话" id="phonenumber">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="phonenumber_error"></span>
 									</div>
 								</div>
-								
 								<div class="form-group">
 									<label class="col-sm-4 control-label">技师星级</label>
 									<div class="col-sm-8">

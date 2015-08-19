@@ -28,4 +28,21 @@ public interface ProductCategoryService extends DAO<ProductCategory> {
 	 * @return
 	 */
 	List<ProductCategory> listChildCategory(String parentId);
+	
+	/**
+	 * 模糊名称 查询所有类集合
+	 * @param queryContent
+	 * @return
+	 */
+	List<ProductCategory> findProductCategorybyName(String queryContent);
+	
+	List<ProductCategory> findProductCategoryByEntityIds(List<String> m);
+	
+	/**
+	 * 根据名称  跟 分类上级ID 获取分类
+	 * @param name
+	 * @param parentId
+	 * @return
+	 */
+	ProductCategory getEntityByNameAndParentId(String name, String parentId);
 }

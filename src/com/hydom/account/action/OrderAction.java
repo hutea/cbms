@@ -23,14 +23,19 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Area;
 import com.hydom.account.ebean.Member;
+import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
+import com.hydom.account.ebean.ServerOrder;
+import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.service.AreaService;
 import com.hydom.account.service.MemberService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ServiceTypeService;
 import com.hydom.core.server.ebean.CarTeam;
+import com.hydom.core.server.ebean.Coupon;
 import com.hydom.core.server.service.CarTeamService;
 import com.hydom.util.BaseAction;
+import com.hydom.util.CommonUtil;
 import com.hydom.util.DateTimeHelper;
 import com.hydom.util.dao.PageView;
 
@@ -67,7 +72,7 @@ public class OrderAction extends BaseAction{
 		
 		StringBuffer jpql = new StringBuffer();
 		List<String> params = new ArrayList<String>();
-		jpql.append("o.visible = true");
+		jpql.append("o.visible = true and o.isPay = true");
 		if("true".equals(endOrder)){
 			jpql.append(" and o.status = 0");
 		}else{
@@ -93,6 +98,40 @@ public class OrderAction extends BaseAction{
 		//mav.addAllObjects(model);
 		return basePath+"/order_list";
 	}
+	
+	@RequestMapping("/detail")
+	public String detail(String id,ModelMap model) {
+		Order order = orderService.find(id);
+		
+		model.addAttribute("entity", order);
+		
+		
+		String productSum = "0";
+		String serverSum = "0";
+		
+		for(ServerOrder serverOrder:order.getServerOrder()){
+			serverSum = CommonUtil.add(serverOrder.getPrice()+"",serverSum)+"";
+		}
+		
+		for(ServerOrderDetail serverOrderDetail : order.getServerOrderDetail()){
+			productSum = CommonUtil.add(serverOrderDetail.getSum()+"",productSum)+"";
+		}
+		
+		Float sum = CommonUtil.add(productSum,serverSum);
+		
+		String youhuiSum = "0";
+		if(order.getMemberCoupon() != null){
+			MemberCoupon memberCoupon = order.getMemberCoupon();
+			youhuiSum = orderService.getCouponPrice(memberCoupon, sum);
+		}
+		model.addAttribute("productSum", productSum);
+		model.addAttribute("serverSum", serverSum);
+		model.addAttribute("youhuiSum", youhuiSum);
+		//mav.addAllObjects(model);
+		return basePath+"/order_detail";
+	}
+	
+	
 	
 	//获取空闲的服务车队
 	@RequestMapping("/getCarTeam")
@@ -244,7 +283,7 @@ public class OrderAction extends BaseAction{
 		orderby.put("modifyDate", "desc");
 		
 		StringBuffer jpql = new StringBuffer();
-		jpql.append("o.visible = true and o.status = 31");
+		jpql.append("o.visible = true and o.status = 31 and o.isPay = true");
 		
 		if(StringUtils.isNotEmpty(queryContent)){
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
@@ -292,7 +331,7 @@ public class OrderAction extends BaseAction{
 		orderby.put("modifyDate", "desc");
 		
 		StringBuffer jpql = new StringBuffer();
-		jpql.append("o.visible = true and o.status = 32");
+		jpql.append("o.visible = true and o.status = 32 and o.isPay = true");
 		if(StringUtils.isNotEmpty(queryContent)){
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
 		}
@@ -346,7 +385,7 @@ public class OrderAction extends BaseAction{
 		orderby.put("modifyDate", "desc");
 		
 		StringBuffer jpql = new StringBuffer();
-		jpql.append("o.visible = true and o.status = 33 or o.status = 34 ");
+		jpql.append("o.visible = true and o.status = 33 or o.status = 34 and o.isPay = true");
 		
 		if(StringUtils.isNotEmpty(queryContent)){
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");

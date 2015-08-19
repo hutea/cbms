@@ -236,7 +236,7 @@
 									<div class="col-sm-8">
 										<select id="carBrandId" name="carBrandId" class="selects">
 											<c:forEach items="${carBrands }" var="carBrand" >
-												<option value="${carBrand.id}" <c:if test="${carBrand.id eq carBrandId}">selected="selected"</c:if>>${carBrand.name }</option>
+												<option value="${carBrand.id}" <c:if test="${carBrand.id eq car.carBrand.id}">selected="selected"</c:if>>${carBrand.name }</option>
 											</c:forEach>
 										</select>
 									</div>

@@ -57,13 +57,13 @@
 					</div>
 					<div class="orderInfoConDe" style="padding-left: 60px; ">
 						<ul>
-							<li><b>姓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名：</b>${order.contact }</li>
-							<li><b>手&nbsp;机&nbsp;&nbsp;号：</b>${order.phone }</li>
+							<li><b>姓名：</b>${order.contact }</li>
+							<li><b>手机号：</b>${order.phone }</li>
 						</ul>
 						<ul>
 							<li><b>服务车型：</b>${carBrand.name }&nbsp; ${carType.name }&nbsp; ${car.name }</li>
 							<li><b>车身颜色：</b>${order.carColor }</li>
-							<li><b>车&nbsp;牌&nbsp;&nbsp;号：</b>${order.carNum }</li>
+							<li><b>车牌号：</b>${order.carNum }</li>
 						</ul>
 						<ul>
 							<li><b>收货地址：</b>${area.treeFull }&nbsp;${order.address }</li>
@@ -71,24 +71,25 @@
 						<c:forEach var="product" items="${order.serverOrderDetail }">
 							<ul>
 								<li><b>商品名称：</b>${product.name }</li>
-								<li><b>价&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;格：</b>￥${product.sum }</li>
-								<li><b>数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;量：</b>${product.count }</li>
+								<li><b>价格：</b>￥${product.sum }</li>
+								<li><b>数量：</b>${product.count }</li>
 							</ul>
 						</c:forEach>
 						<ul>
 							<li><b>支付方式：</b>
-								<c:if test="${order.payWay eq 1}">现金支付</c:if>
+								<c:if test="${order.payWay eq 1}">会员卡支付</c:if>
 								<c:if test="${order.payWay eq 2}">支付宝</c:if>
 								<c:if test="${order.payWay eq 3}">银联</c:if>
 								<c:if test="${order.payWay eq 4}">微信</c:if>
+								<c:if test="${order.payWay eq 5}">现成支付</c:if>
 							</li>
 							<li><b>服务费用：</b><i>￥${serviceMoney }</i></li>
-							<li><b>优&nbsp;惠&nbsp;&nbsp;券：</b><i>-￥${order.amount_paid }</i>（<em>
+							<li><b>优惠券：</b><i>-￥${order.amount_paid }</i>（<em>
 								<c:if test="${empty memberCoupon }">
 									无优惠
 								</c:if>
 								<c:if test="${!empty memberCoupon }">
-									${memberCoupon.coupon.name }
+									${memberCoupon}
 								</c:if></em>）</li>
 							<li><b>实付金额：</b><i>￥${order.price }</i></li>
 						</ul>
@@ -98,12 +99,17 @@
 					</div>
 				</div>
 				<dl class="modify">
-					<dd>
-						<a href="javascript:modifyOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_5.png" /></a>
-					</dd>
-					<dd>
-						<a href="javascript:payOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/sure2.png" /></a>
-					</dd>
+					<c:if test="${order.isPay eq false}">
+						<dd>
+							<a href="javascript:modifyOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_5.png" /></a>
+						</dd>
+						<dd>
+							<a href="javascript:payOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/sure2.png" /></a>
+						</dd>
+					</c:if>
+					<c:if test="${order.isPay eq true}">
+						<dd>该订单已完成支付</dd>
+					</c:if>
 				</dl>
 			</div>
 		</div>
@@ -147,8 +153,14 @@
 	<!--网上支付提示-->
 	
 	<script type="text/javascript">
+	
+		var sessionId = "${member.id}";
+		var sessionMoney = "${member.money}";
+		var orderPrice = "${order.price }";
+		
 		var confirmId = "${confimId}";
 		var payWay = "${order.payWay}";
+		
 		function modifyOrder(){
 			var url = "<%=basePath%>/web/modify";
 			var data = {
@@ -162,13 +174,19 @@
 		//将当前支付
 		function payOrder(){
 			
-			
 			if(payWay == "1"){//现金支付
-				saveOrder();
+				if(sessionId != ""){
+					saveOrder();
+				}else{
+					alert("请先登录,才能使用会员卡支付");
+					return;
+				}
 			}else if(payWay == "2"){//支付宝支付
 				$(".pay").show();
 				$("#mabg8").show();
 				alipay();
+			}else if(payWay == "5"){//现场支付
+				saveOrder();
 			}
 		}
 		
@@ -183,7 +201,8 @@
 					var orderNum = value.orderNum;
 					var orderPrice = value.orderPrice;
 					var orderName = value.orderName;
-					var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName;
+					var address = "alipay_return";
+					var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address;
 					window.open(openUrl);					
 				}else{
 					alert(result.message);
@@ -222,6 +241,8 @@
 					$(".success").show();
 					$("#mabg8").show();
 					run();
+				}else{
+					alert(result.message);
 				}
 			},"json");
 		}
@@ -235,13 +256,14 @@
 		var intterval;
 		function run(){
 			intterval = setInterval(function(){
-				var timeOut = $("#spanTime").text();
+				var timeOut = $("#time").text();
 				timeOut = timeOut*1 - 1;
 				if(timeOut <= 0){
 					clearInterval(intterval);
 					gotoIndex();
+				}else{
+					$("#time").text(timeOut);
 				}
-				$("#time").text(timeOut);
 			},1000);
 		}
 	

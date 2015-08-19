@@ -3,6 +3,7 @@ package com.hydom.core.web.action;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,20 +20,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.FeeRecord;
 import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.MemberCoupon;
+import com.hydom.account.ebean.MemberRank;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.Product;
 import com.hydom.account.ebean.ServerOrder;
 import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.ebean.ServiceType;
 import com.hydom.account.service.AreaService;
+import com.hydom.account.service.FeeRecordService;
 import com.hydom.account.service.MemberCouponService;
 import com.hydom.account.service.MemberService;
 import com.hydom.account.service.OrderService;
+import com.hydom.account.service.ProductService;
 import com.hydom.account.service.ServerOrderDetailService;
 import com.hydom.account.service.ServerOrderService;
 import com.hydom.account.service.ServiceTypeService;
@@ -50,6 +58,7 @@ import com.hydom.util.CommonAttributes;
 import com.hydom.util.CommonUtil;
 import com.hydom.util.DateTimeHelper;
 import com.hydom.util.IDGenerator;
+import com.hydom.util.PushUtil;
 import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.bean.MemberBean;
 import com.hydom.util.bean.ServerOrderBean;
@@ -91,6 +100,10 @@ public class Index2Action extends BaseAction{
 	private CouponService couponService;
 	@Resource
 	private UserCarService userCarService;
+	@Resource
+	private FeeRecordService feeRecordService;
+	@Resource
+	private ProductService productService;
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -164,16 +177,36 @@ public class Index2Action extends BaseAction{
 		
 		MemberBean memberBean = getMemberBean(request);
 		
-		if(memberBean!=null){
+		if(memberBean == null || memberBean.getDefaultCar() == null){
+			if(StringUtils.isEmpty(carId)){
+				return base+"/server_chooseCar";
+			}
+			Car car = carService.find(carId);
+			UserCarBean bean = new UserCarBean(null,null,car,null);
+			model.addAttribute("cleanCar", bean);
+		}else{
 			UserCar userCar = userCarService.find(memberBean.getDefaultCar().getId());
 			//将 cleanCarAddOrder 方法返回的参数统一
 			UserCarBean bean = new UserCarBean(userCar.getCarNum(),userCar.getCarColor(),userCar.getCar(),userCar);
 			model.addAttribute("cleanCar", bean);
+		}
+		
+		/*if(memberBean!=null){
+			if(memberBean.getDefaultCar() != null){
+				UserCar userCar = userCarService.find(memberBean.getDefaultCar().getId());
+				//将 cleanCarAddOrder 方法返回的参数统一
+				UserCarBean bean = new UserCarBean(userCar.getCarNum(),userCar.getCarColor(),userCar.getCar(),userCar);
+				model.addAttribute("cleanCar", bean);
+			}else{
+				Car car = carService.find(carId);
+				UserCarBean bean = new UserCarBean(null,null,car,null);
+				model.addAttribute("cleanCar", bean);
+			}
 		}else{
 			Car car = carService.find(carId);
 			UserCarBean bean = new UserCarBean(null,null,car,null);
 			model.addAttribute("cleanCar", bean);
-		}
+		}*/
 		
 		List<ServiceType> serviceTypes = serviceTypeService.getServiceType(1);
 		model.addAttribute("serviceTypes", serviceTypes);
@@ -194,19 +227,18 @@ public class Index2Action extends BaseAction{
 	 * @param carNum 车牌号
 	 * @return
 	 */
-	@RequestMapping("/serverAddOrder")
-	public String serverAddOrder(ModelMap model,String content,
-			Integer chooseServer,String memberCouponId,
+	@RequestMapping(value="/serverAddOrder",method=RequestMethod.POST)
+	public String serverAddOrder(ModelMap model,@RequestParam(required=true,defaultValue="") String content,
+			Integer chooseServer,/*String memberCouponId,*/
 			String carId,String userCarId,String carColor,String carNum){
 		
 		model.put("content", content);//选择商品 或者 服务
 		model.put("chooseServer", chooseServer); //是否选择服务
-		model.put("memberCouponId", memberCouponId);//用户的优惠卷
+	/*	model.put("memberCouponId", memberCouponId);//用户的优惠卷*/
 		model.put("carId", carId);//车辆ID
 		model.put("userCarId", userCarId);//用户车管家ID
 		model.put("carColor", carColor);//车辆颜色
 		model.put("carNum", carNum);//车牌号
-		
 		
 		//商品清单
 		List<ServerOrderBean> serverOrderBeans = ServerOrderBean.conver2Bean(content);
@@ -215,8 +247,10 @@ public class Index2Action extends BaseAction{
 		String productSum = map.get("productSum");
 		String serverSum = map.get("serverSum");
 		
+		Integer useCouponType = 2;
 		if(chooseServer == 0){//没有选中一动车保服务
 			serverSum = "0";
+			useCouponType = 3;
 		}
 		
 		//优惠卷
@@ -228,7 +262,7 @@ public class Index2Action extends BaseAction{
 		
 		Float sum = CommonUtil.add(productSum,serverSum);
 		
-		if(StringUtils.isNotEmpty(memberCouponId)){
+		/*if(StringUtils.isNotEmpty(memberCouponId)){
 			MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
 			Coupon coupon = memberCoupon.getCoupon();
 			model.addAttribute("memberCoupon", memberCoupon);
@@ -242,10 +276,15 @@ public class Index2Action extends BaseAction{
 
 		}else{
 			model.addAttribute("memberCoupon", null);
-		}
+		}*/
 		model.put("youhuiSum", youhuiSum);
 		
-		String totail = CommonUtil.subtract(sum+"", youhuiSum)+"";
+		Float totail = CommonUtil.subtract(sum+"", youhuiSum);
+		
+		if(totail < 0){//判断该
+			totail = 0f;
+		}
+		
 		//总计
 		model.put("total", totail);
 		
@@ -265,6 +304,22 @@ public class Index2Action extends BaseAction{
 		}
 		model.put("bespeakDate", DateTimeHelper.formatDateTimetoString(cal.getTime(), "yyyy-MM-dd"));
 		model.put("dateTimeMap", CommonAttributes.getInstance().getDateTimeMap());
+		
+		MemberBean bean = getMemberBean(request);
+		if(bean != null){
+			//优惠卷
+			List<MemberCoupon> memeberCoupon = memberCouponService.canUseList(sum, bean.getId(), 
+					ServerOrderBean.getProductIds(serverOrderBeans).toArray(),useCouponType,2);
+			model.put("memberCoupon", memeberCoupon);
+			
+			//会员等级
+			Member member = memberService.find(bean.getId());
+			MemberRank memberRank = member.getMemberRank();
+			if(memberRank != null){
+				model.put("memberRank", memberRank);
+			}
+		}
+		
 		return base + "/server_addOrder";
 	}
 	
@@ -310,65 +365,74 @@ public class Index2Action extends BaseAction{
 			order.setCarColor(carColor);
 			order.setCarNum(carNum);
 			
-			//设置优惠卷
-			if(StringUtils.isNotEmpty(memberCouponId)){
+			
+			/*if(StringUtils.isNotEmpty(memberCouponId)){
 				MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
-				order.setMemberCoupon(memberCoupon);
-			}
+				
+			}*/
 		
 			//设置用户
-			MemberBean bean = getMemberBean(request);
-			if(bean != null){
-				order.setMember(bean.getMember());
-			}
-			
 			
 			if(chooseServer == 1){//已选择保养服务   保养订单
 				order.setType(2);
+				order.setStatus(11);
 			}else{//纯商品 商品订单
 				order.setType(3);
+				order.setStatus(21);
 			}
 
 			//开始服务时间
 			DateMapBean mapBean = CommonAttributes.getInstance().getDateTimeMap().get(dateTimeSelect);
 			String startStr = bespeakDate + " " + DateTimeHelper.formatDateTimetoString(mapBean.getStartDate(), "HH:mm");
-			System.out.println(startStr);
+			//System.out.println(startStr);
 			Date srartDate = DateTimeHelper.parseToDate(startStr, "yyyy-MM-dd HH:mm");
 			order.setStartDate(srartDate);
 			
 			//结束服务时间
 			String endStr = bespeakDate + " " + DateTimeHelper.formatDateTimetoString(mapBean.getEndDate(), "HH:mm");
-			System.out.println(endStr);
+			//System.out.println(endStr);
 			Date endDate = DateTimeHelper.parseToDate(endStr, "yyyy-MM-dd HH:mm");
 			order.setEndDate(endDate);
 			
+			order.setNum(CommonUtil.getOrderNum());
+			
+			order.setServerOrderDetail(null);
+			order.setServerOrder(null);
+			order.setIsPay(false);
+			orderService.save(order);
+			
+			
 			//组装订单服务 以及 商品服务
-			Set<ServerOrder> serverOrderSet = new HashSet<ServerOrder>();
-			Set<ServerOrderDetail> allServerOrderDetailSet = new HashSet<ServerOrderDetail>();
 			List<ServerOrderBean> serverOrderBeans = ServerOrderBean.conver2Bean(content);
 			for(ServerOrderBean serverBean : serverOrderBeans){
-				ServerOrder serverOrder = new ServerOrder();
-				serverOrder.setName(serverBean.getServerName());
-				serverOrder.setPrice(Float.parseFloat(serverBean.getServerPrice()));
-				serverOrder.setServiceType(new ServiceType(serverBean.getServerId()));
-				
-				Set<ServerOrderDetail> serverOrderDetailSet = new HashSet<ServerOrderDetail>();
+				ServerOrder serverOrder = null;
+				if(order.getType() == 2){//有服务
+					serverOrder = new ServerOrder();
+					serverOrder.setName(serverBean.getServerName());
+					ServiceType serviceType = serviceTypeService.find(serverBean.getServerId());
+					serverOrder.setPrice(serviceType.getPrice());
+					serverOrder.setServiceType(serviceType);
+					serverOrder.setOrder(order);
+					serverOrderService.save(serverOrder);
+				}
 				for(ServerOrderProductBean productBean : serverBean.getServerOrderProductBeans()){
 					ServerOrderDetail serverOrderDetail = new ServerOrderDetail();
 					serverOrderDetail.setName(productBean.getName());
+					
+					Product product = productService.find(productBean.getId());
 					serverOrderDetail.setCount(Float.parseFloat(productBean.getCount()));
-					serverOrderDetail.setPrice(Float.parseFloat(productBean.getPrice()));
-					serverOrderDetail.setProduct(new Product(productBean.getId()));
+					serverOrderDetail.setPrice(product.getMarketPrice());
+					serverOrderDetail.setProduct(product);
 					serverOrderDetail.setServerOrder(serverOrder);
-					serverOrderDetailSet.add(serverOrderDetail);
+					serverOrderDetail.setOrder(order);
+					detailService.save(serverOrderDetail);
 				}
-				serverOrder.setServerOrderDetail(serverOrderDetailSet);
-				allServerOrderDetailSet.addAll(serverOrderDetailSet);
-				serverOrderSet.add(serverOrder);
 			}
-			order.setServerOrderDetail(allServerOrderDetailSet);
-			order.setServerOrder(serverOrderSet);
 			
+			MemberBean bean = getMemberBean(request);
+			if(bean != null){
+				order.setMember(bean.getMember());
+			}
 			
 			Map<String,String> map = ServerOrderBean.getSum(serverOrderBeans);
 			String productSum = map.get("productSum");
@@ -383,28 +447,46 @@ public class Index2Action extends BaseAction{
 			
 			Float sum = CommonUtil.add(productSum,serverSum);
 			
+			//设置优惠金额
 			if(StringUtils.isNotEmpty(memberCouponId)){
-				MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
-				Coupon coupon = memberCoupon.getCoupon();
+				if("memberRank".equals(memberCouponId)){//会员等级
+					Member member = memberService.find(bean.getId());
+					MemberRank memberRank = member.getMemberRank();//判断会员是否有等级
+					if(member.getMemberRank() == null){
+						youhuiSum = CommonUtil.mul(sum+"", "1")+"";
+					}else{
+						youhuiSum = CommonUtil.mul(sum+"", memberRank.getScale()+"")+"";
+					}
+				}else {
+					MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
+					order.setMemberCoupon(memberCoupon);
+					youhuiSum = orderService.getCouponPrice(memberCoupon,sum);	
+				} 
+				
+				
+				/*Coupon coupon = memberCoupon.getCoupon();
 				if(coupon.getType() == 1){//满额打折
-					youhuiSum = CommonUtil.subtract(sum+"", CommonUtil.mul(sum+"", coupon.getDiscount()+"")+"")+"";
+					youhuiSum = CommonUtil.mul(sum+"", CommonUtil.mul(sum+"", memberCoupon.getRate()+"")+"")+"";
 				}else if(coupon.getType() == 2){//满额减免
-					youhuiSum = CommonUtil.mul(coupon.getDiscount()+"", "0")+"";
+					youhuiSum = CommonUtil.subtract(coupon.getDiscount()+"", "0")+"";
 				}else if(coupon.getType() == 3){
-					youhuiSum = CommonUtil.mul(coupon.getDiscount()+"", "0")+"";
-				}
+					youhuiSum = CommonUtil.subtract(coupon.getDiscount()+"", "0")+"";
+				}*/
 			}
 			
 			Float totail = CommonUtil.subtract(sum+"", youhuiSum);
+			if(totail < 0){
+				totail = 0f;
+			}
 		//amount_paid 优惠价     amount_money 原价    price 实际价格
 			order.setAmount_money(sum);
 			order.setAmount_paid(Float.parseFloat(youhuiSum));
 			order.setPrice(totail);
 			
-			order.setNum(CommonUtil.getOrderNum());
+			orderService.update(order);
 			
 			String orderCachedId = order.getNum();//IDGenerator.getRandomString(32, 0);
-			CachedManager.putObjectCached("order", orderCachedId, order);
+			//CachedManager.putObjectCached("order", orderCachedId, order);
 			return "redirect:gotoConfirmServer?confimId="+orderCachedId;
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -422,7 +504,7 @@ public class Index2Action extends BaseAction{
 	public String gotoConfirmServer(String confimId,ModelMap model){
 		
 		try {
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
+			Order order = orderService.getOrderByOrderNum(confimId);
 			
 			if(order == null){
 				return base + "/server_confirmOrder";
@@ -433,10 +515,21 @@ public class Index2Action extends BaseAction{
 			Car car =carService.find(order.getCar().getId()) ;
 			CarBrand carBrand = car.getCarBrand();
 			CarType carType = car.getCarType();
-			if(order.getMemberCoupon()!=null){
+			
+			/*if(order.getMemberCoupon()!=null){
 				MemberCoupon memberCoupon = memberCouponService.find(order.getMemberCoupon().getId());
 				model.addAttribute("memberCoupon", memberCoupon);
+			}*/
+			
+			if(order.getAmount_paid() > 0f){
+				if(order.getMemberCoupon()!=null){
+					MemberCoupon memberCoupon = memberCouponService.find(order.getMemberCoupon().getId());
+					model.addAttribute("memberCoupon", memberCoupon.getName());
+				}else{
+					model.addAttribute("memberCoupon", "会员等级优惠");
+				}
 			}
+			
 			
 			model.addAttribute("car", car);
 			model.addAttribute("carBrand", carBrand);
@@ -446,14 +539,20 @@ public class Index2Action extends BaseAction{
 			String productSum = "0";
 			Set<ServerOrderDetail> serverOrderDetailSet = order.getServerOrderDetail();
 			for(ServerOrderDetail bean : serverOrderDetailSet){
-				//String sum = bean.getSum();----
-				//productSum = CommonUtil.add(productSum,sum)+"";
+				String sum = bean.getSum();
+				productSum = CommonUtil.add(productSum,sum)+"";
 			}
 			model.addAttribute("serviceMoney", CommonUtil.subtract(order.getAmount_money()+"", productSum));
 			
 			
 			if(order.getArea() != null){
 				model.addAttribute("area", areaService.find(order.getArea().getId()));
+			}
+			
+			MemberBean memberBean = getMemberBean(request);
+			if(memberBean != null){
+				Member member = memberService.find(memberBean.getId());
+				model.addAttribute("member", member);
 			}
 			
 		} catch (Exception e) {
@@ -467,8 +566,7 @@ public class Index2Action extends BaseAction{
 	@ResponseBody
 	public String findOrderNum(String confimId){
 		
-		JSONArray array = new JSONArray();
-		Order order = orderService.getOrderByOrderNum(confimId);
+		Order order = orderService.getOrderByOrderNumAndPay(confimId,true);
 		if(order != null){
 			return ajaxSuccess("成功", response);
 		}
@@ -484,38 +582,48 @@ public class Index2Action extends BaseAction{
 	@ResponseBody
 	public String saveServiceOrder(String confimId){
 		
-		try {
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
-			//Set<ServerOrderDetail> serverOrderDetailSet = order.getServerOrderDetail();
-			Set<ServerOrder> serverOrderSet = order.getServerOrder();
-			
-			//order.setNum(CommonUtil.getOrderNum());
-			if(order.getType() == 2){//保养服务
-				order.setStatus(11);
-			}else if(order.getType() == 3){//商品订单
-				order.setStatus(21);
-			}
-			
-			order.setServerOrderDetail(null);
-			order.setServerOrder(null);
-			orderService.save(order);
-			
-			for(ServerOrder bean : serverOrderSet){
-				if(order.getType() == 1){//有服务
-					bean.setOrder(order);
-					serverOrderService.save(bean);
-				}
-				for(ServerOrderDetail detailbean : bean.getServerOrderDetail()){
-					detailbean.setOrder(order);
-					if(order.getType() == 1){//有服务
-						detailbean.setServerOrder(bean);
-					}else{
-						detailbean.setServerOrder(null);
+		try {	
+			//查询该订单
+			Order order = orderService.getOrderByOrderNum(confimId);
+			if(order.getPayWay() == 1){//会员卡支付
+				if(getMemberBean(request) == null){
+					return ajaxError("请重新登录", response);
+				}else{
+					Member member = memberService.find(getMemberBean(request).getId());
+					Float money = member.getMoney();
+					
+					if(money < order.getPrice()){
+						return ajaxError("会员卡余额不足", response);
 					}
-					detailService.save(detailbean);
+					
+					Float newMoney = CommonUtil.subtract(money+"", order.getPrice()+"");
+					member.setMoney(newMoney);
+					memberService.update(member);
+					
 				}
+			}else if(order.getPayWay() == 5){//现场支付
+				
 			}
-			CachedManager.remove("order", confimId);
+			//如果含有优惠卷  这将其优惠卷设置为已使用
+			if(order.getMemberCoupon() != null){
+				MemberCoupon memberCoupon = order.getMemberCoupon();
+				memberCoupon.setStatus(1);
+				memberCouponService.update(memberCoupon);
+			}
+			
+			//保存一条消费记录
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo("");
+			feeRecord.setFee(order.getPrice());
+			feeRecordService.save(feeRecord);
+			
+			order.setIsPay(true);
+			orderService.update(order);
+			
 			return ajaxSuccess("成功", response);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -596,10 +704,22 @@ public class Index2Action extends BaseAction{
 		
 	//	Member member = memberService.find(memberBean.getId());
 		
-		//优惠卷
-		//List<MemberCoupon> coupons = memberCouponService.getCouponByMember(member.getId());
+		//服务单价 获取可以使用的优惠卷
+		Float price = serviceType.getPrice();
+		if(memberBean != null){
+			List<MemberCoupon> coupons = memberCouponService.canUseList(price, memberBean.getId(), null, 1,2);
+			model.addAttribute("memberCoupon", coupons);
+			
+			//会员等级
+			Member member = memberService.find(memberBean.getId());
+			MemberRank memberRank = member.getMemberRank();
+			if(memberRank != null){
+				model.put("memberRank", memberRank);
+			}
+			
+		}
 		
-		//model.addAttribute("coupons", coupons);
+		model.addAttribute("serviceContent", CommonAttributes.getInstance().getSystemBean().getContent());
 		
 		return base+"/cleanCar_addOrder";
 	}
@@ -616,48 +736,79 @@ public class Index2Action extends BaseAction{
 	 * @return
 	 */
 	@RequestMapping("/existOrder")
-	public String existOrder(Order order,String couponId){
+	public String existOrder(Order order,String memberCouponSelect){
 		
 		try {
-			
+			//保存订单
 			Car car = carService.find(order.getCar().getId());
 			order.setCar(car);
 			
 			//ServiceType serviceType = serviceTypeService.find(order.getServiceType().getId());
 			//order.setType(serviceType.getType());
 			
-			if(StringUtils.isNotEmpty(couponId)){
-				MemberBean bean = getMemberBean(request);
-				MemberCoupon couponMember = memberCouponService.getCoupon(bean,couponId);
-				order.setMemberCoupon(couponMember);
+			String youhuiSum = "0";
+			ServiceType serviceType = serviceTypeService.find(CommonAttributes.getInstance().getCleanCar());
+			
+			//订单金额
+			Float sum = CommonUtil.add("0",serviceType.getPrice()+"");
+			if(StringUtils.isNotEmpty(memberCouponSelect)){
+				if("memberRank".equals(memberCouponSelect)){
+					MemberBean bean = getMemberBean(request);
+					Member member = memberService.find(bean.getId());
+					MemberRank memberRank = member.getMemberRank();//判断会员是否有等级
+					if(member.getMemberRank() == null){
+						youhuiSum = CommonUtil.mul(sum+"", "1")+"";
+					}else{
+						youhuiSum = CommonUtil.mul(sum+"", memberRank.getScale()+"")+"";
+					}
+				}else{//优惠卷
+					MemberCoupon memberCoupon = memberCouponService.find(memberCouponSelect);
+					order.setMemberCoupon(memberCoupon);
+					youhuiSum = orderService.getCouponPrice(memberCoupon,sum);
+				}
+				
+				
 			}
+			
+			Float totail = CommonUtil.subtract(sum+"", youhuiSum);
+		//amount_paid 优惠价     amount_money 原价    price 实际价格
+			order.setAmount_money(sum);//原价
+			order.setAmount_paid(Float.parseFloat(youhuiSum));//优惠价
+			order.setPrice(totail);//实际价格
+			
+			/*if(StringUtils.isNotEmpty(memberCouponId)){
+				MemberBean bean = getMemberBean(request);
+				MemberCoupon couponMember = memberCouponService.getCoupon(bean,memberCouponId);
+				order.setMemberCoupon(couponMember);
+			}*/
 			
 			order.setStatus(11);
 			
-			Float money = order.getAmount_money();
-			Float paid = order.getAmount_paid();
+			/*Float money = order.getAmount_money();//原价
+			Float paid = order.getAmount_paid();//优惠价
 			Float price = CommonUtil.subtract(money+"", paid+"");
-			order.setPrice(price);
+			order.setPrice(price);*/
 			order.setType(1);
-			
+			order.setIsPay(false);
 			order.setNum(CommonUtil.getOrderNum());
+			orderService.save(order);
 			
-			Set<ServerOrder> serverOrderSet = new HashSet<ServerOrder>();
+			//保存服务订单
 			ServerOrder serverOrder = new ServerOrder();
-			
-			ServiceType serviceType = serviceTypeService.find(CommonAttributes.getInstance().getCleanCar());
 			
 			serverOrder.setServiceType(serviceType);
 			serverOrder.setName(serviceType.getName());
 			serverOrder.setPrice(serviceType.getPrice());
+			serverOrder.setOrder(order);
+			serverOrderService.save(serverOrder);
 			
-			serverOrderSet.add(serverOrder);
-			//将Order放入缓存
-			order.setServerOrder(serverOrderSet);
+			//serverOrderSet.add(serverOrder);
+			////将Order放入缓存
+			//order.setServerOrder(serverOrderSet);
 			
 			String orderCachedId = order.getNum();//IDGenerator.getRandomString(32, 0);
 			
-			CachedManager.putObjectCached("order", orderCachedId, order);
+			//CachedManager.putObjectCached("order", orderCachedId, order);
 			
 			return "redirect:gotoConfirm?confimId="+orderCachedId;
 			
@@ -677,7 +828,7 @@ public class Index2Action extends BaseAction{
 	public String gotoConfirm(String confimId,ModelMap model){
 		
 		try {
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
+			Order order = orderService.getOrderByOrderNum(confimId);
 			model.addAttribute("freeTech", technicianService.isFree());//
 			if(order == null){
 				return base + "/cleanCar_confirmOrder";
@@ -688,14 +839,28 @@ public class Index2Action extends BaseAction{
 			Car car =carService.find(order.getCar().getId()) ;
 			CarBrand carBrand = car.getCarBrand();
 			CarType carType = car.getCarType();
-			if(order.getMemberCoupon()!=null){
-				MemberCoupon memberCoupon = memberCouponService.find(order.getMemberCoupon().getId());
-				model.addAttribute("memberCoupon", memberCoupon);
+			
+			if(order.getAmount_paid() > 0f){
+				if(order.getMemberCoupon()!=null){
+					MemberCoupon memberCoupon = memberCouponService.find(order.getMemberCoupon().getId());
+					model.addAttribute("memberCoupon", memberCoupon.getName());
+				}else{
+					model.addAttribute("memberCoupon", "会员等级优惠");
+				}
 			}
 			
 			model.addAttribute("car", car);
 			model.addAttribute("carBrand", carBrand);
 			model.addAttribute("carType", carType);
+			model.addAttribute("carColor", order.getCarColor());
+			model.addAttribute("carNum", order.getCarNum());
+			
+			
+			MemberBean memberBean = getMemberBean(request);
+			if(memberBean != null){
+				Member member = memberService.find(memberBean.getId());
+				model.addAttribute("member", member);
+			}
 			
 		//	model.addAttribute("freeTech", "1111111111");//technicianService.isFree()
 			
@@ -716,43 +881,47 @@ public class Index2Action extends BaseAction{
 	public String save(String confimId){
 		
 		try {
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
-			//orderService.save(order);
-			Set<ServerOrder> serverOrderSet = order.getServerOrder();
+			Order order = orderService.getOrderByOrderNum(confimId);
 			
-			order.setStatus(11);
-			order.setServerOrderDetail(null);
-			order.setServerOrder(null);
-			orderService.save(order);
-			
-			for(ServerOrder bean : serverOrderSet){
-				if(order.getType() == 1){//有服务
-					bean.setOrder(order);
-					serverOrderService.save(bean);
-				}
-				for(ServerOrderDetail detailbean : bean.getServerOrderDetail()){
-					detailbean.setOrder(order);
-					if(order.getType() == 1){//有服务
-						detailbean.setServerOrder(bean);
-					}else{
-						detailbean.setServerOrder(null);
+			if(order.getPayWay() == 1){//会员卡支付
+				if(getMemberBean(request) == null){
+					return ajaxError("请重新登录", response);
+				}else{
+					Member member = memberService.find(getMemberBean(request).getId());
+					Float money = member.getMoney();
+					
+					if(money < order.getPrice()){
+						return ajaxError("会员卡余额不足", response);
 					}
-					detailService.save(detailbean);
+					
+					Float newMoney = CommonUtil.subtract(money+"", order.getPrice()+"");
+					member.setMoney(newMoney);
+					memberService.update(member);
 				}
 			}
+			//如果含有优惠卷  这将其优惠卷设置为已使用
+			if(order.getMemberCoupon() != null){
+				MemberCoupon memberCoupon = order.getMemberCoupon();
+				memberCoupon.setStatus(1);
+				memberCouponService.update(memberCoupon);
+			}
 			
-			CachedManager.remove("order", confimId);
+			//保存一条消费记录
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo("");
+			feeRecord.setFee(order.getPrice());
+			feeRecordService.save(feeRecord);
 			
-		/*	ServerOrder serverOrder = new ServerOrder();
-			ServiceType serverType = serviceTypeService.find(CommonAttributes.getInstance().getCleanCar());
-			serverOrder.setServiceType(serverType);
-			serverOrder.setPrice(serverType.getPrice());
-			serverOrder.setOrder(order);
-			serverOrder.setName(serverType.getName());*/
-			//serverOrderService.save(serverOrder);
+			order.setIsPay(true);
+			orderService.update(order);
 			
+			//推送技师
+			pushTechnician(order.getId());
 			
-		//	CachedManager.remove("order", confimId);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -760,6 +929,34 @@ public class Index2Action extends BaseAction{
 		
 		return ajaxSuccess("成功", response);
 	}
+		
+	
+	public Boolean pushTechnician(String orderId){
+		boolean bindResult = orderService.bindTechnician(orderId); // 分配技师
+		if (bindResult) {// 执行推送
+			Order order = orderService.find(orderId);
+			Map<String, String> dataMap = new LinkedHashMap<String, String>();
+			dataMap.put("orderId", order.getId());
+			dataMap.put("orderNum", order.getNum());
+			dataMap.put("contact", order.getContact());
+			dataMap.put("phone", order.getPhone());
+			dataMap.put("car", order.getCar().getName());
+			dataMap.put("carNum", order.getCarNum());
+			dataMap.put("carColor", order.getCarColor());
+			dataMap.put("cleanType", order.getCleanType() + "");
+			dataMap.put("mlng", order.getLng() + "");
+			dataMap.put("mlat", order.getLat() + "");
+			try {// 保留时长根据 “几分钟用户不响应重新分配订单”来设定
+				PushUtil.push("一动车保", "您有一个新的订单，请查收.", 86400, dataMap,
+						order.getTechMember().getPushId());
+				System.out.println("推送成功");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return bindResult;
+	}
+	
 	
 	/**
 	 * 修改订单
@@ -790,7 +987,8 @@ public class Index2Action extends BaseAction{
 	public String getFreeTechnicain(String confimId){
 		try {
 			Order order = (Order) CachedManager.getObjectCached("order", confimId);
-			if(technicianService.isFree()){
+			//technicianService.isFree()
+			if(true){
 				return ajaxSuccess("成功", response);
 			}
 		} catch (Exception e) {

@@ -208,7 +208,7 @@
                                     	<div class="form-group">
 											<label class="col-sm-4 control-label">商品分类</label>
 											<div class="col-sm-8">
-												<select name="productCategory.id" onchange="changeProductCategory(this);" class="mg10">
+												<select name="productCategory.id" onchange="changeProductCategory(this);" class="mg10" id="productCategoryId">
 													<option value="">请选择商品分类</option>
 													<c:forEach var="category" items="${productCategorys }">
 														<option value="${category.id }">
@@ -261,19 +261,19 @@
 										<div class="form-group">
 											<label class="col-sm-4 control-label">成本价</label>
 											<div class="col-sm-8">
-												<input type="text" name="cost" class="form-control" value="${entity.url }"/>
+												<input type="text" name="cost" class="form-control" value="0"/>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">市场价</label>
 											<div class="col-sm-8">
-												<input type="text" name="marketPrice" class="form-control" value="${entity.url }"/>
+												<input type="text" name="marketPrice" class="form-control" value="0"/>
 											</div>
 										</div>
 										<div class="form-group">
 											<label class="col-sm-4 control-label">赠送积分</label>
 											<div class="col-sm-8">
-												<input type="text" name="point" class="form-control" value="${entity.url }"/>
+												<input type="text" name="point" class="form-control" value="0"/>
 											</div>
 										</div>
 										<div class="form-group">
@@ -296,6 +296,12 @@
 												<c:forEach var="value" items="${labels }">
 													<label class="mg10"><input type="checkbox" name="labelIds" value="${value.id }" checked="checked"/>${value.labelName }</label>
 												</c:forEach>
+											</div>
+										</div>
+										<div class="form-group">
+											<label class="col-sm-4 control-label">是否推荐</label>
+											<div class="col-sm-8">
+												<label class="mg10"><input type="checkbox" name="recommend" value="1"/>推荐</label>
 											</div>
 										</div>
 										<script type="text/javascript">
@@ -622,22 +628,59 @@
 				for(var v = 0; v<selects.length; v++){
 					var select = $(selects[v]).val();
 					if(specificationValue!=""){
-						specificationValue +=",";
+						specificationValue +="^";
 					}
 					specificationValue += select;
 				}
 				$(tr[i]).find("input[name='specificationValueIds']").val(specificationValue);
-				
 			}
 		}
-		
+		//
 		function saveForm(){
-			//设置规格值
-			setSpecificationInputValue();
+			var productCategoryId = $("#productCategoryId").val();
+			if(productCategoryId == ""){
+				alert("请选择商品分类");
+				return;
+			}
+			
+			if($("input[name='name']").val() == ""){
+				alert("请输入商品名称");
+				return;
+			}
+			
+			var productBrand = $("#productBrandSelect").val();
+			if(productBrand == ""){
+				alert("请选择品牌");
+				return;
+			}
+			
+			var cost = $("input[name='cost']").val();
+			var marketPrice = $("input[name='marketPrice']").val();
+			var point = $("input[name='point']").val();
+			
+			if(isNaN(cost)){
+				alert("成本价请输入数字");
+				return;
+			}
+			
+			if(isNaN(marketPrice)){
+				alert("市场价请输入数字");
+				return;
+			}
+			
+			if(isNaN(point)){
+				alert("积分请输入数字");
+				return;
+			}
 			
 			if(!checkCar()){
 				return;
-			}
+			}	
+			
+			//设置参数值
+			setParameterDate();
+			//设置规格值
+			setSpecificationInputValue();
 			
 			$("#content").val(ue.getContent());
 			

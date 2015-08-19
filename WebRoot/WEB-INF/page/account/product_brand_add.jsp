@@ -65,25 +65,6 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/html5shiv.js"></script>
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
-	
-<script type="text/javascript">
-	function checkUsername() {
-		var username = $("#username").val();
-		$.post("${pageContext.request.contextPath}/manage/serviceType/checkUsername.action",
-		{
-			username : username
-		},
-		function(data) {
-			if (data == 0 && username != "" && username != null) {//表示 帐户存在
-				$("#username_error").html("用户名已经存在");
-				$("#repeat").val("");
-			} else {
-				$("#username_error").html("");
-				$("#repeat").val("success");
-			}
-		});
-	}
-</script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -151,7 +132,10 @@
 								<div class="form-group">
 									<label class="col-sm-4 control-label">名称</label>
 									<div class="col-sm-8">
-										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
+										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }" onchange="checkName();"/>
+										<label id="nameLabel">
+											<span class="success"></span>
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
@@ -224,9 +208,72 @@
 				allClear : true
 			});
 		});
+		
 		function saveForm(){
-			$("#inputForm").submit();
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				alert("请输入名称");
+				return;
+			}
+			
+			if(entityName == name){
+				$("#inputForm").submit();
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/productBrand/checkName";
+			var data = {
+				name:name
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$("#inputForm").submit();
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
 		}
+		
+		var entityId = "${entity.id}";
+		var entityName = "${entity.name}";
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#nameLabel").html(html);
+			}
+		}
+		
+		function checkName() {
+			setErrorMessage("",2);
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				return;
+			}
+			
+			if(entityName == name){
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/productBrand/checkName";
+			var data = {
+				name:name
+			};
+			
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		}
+		
+		
 	</script>
 </body>
 </html>

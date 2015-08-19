@@ -28,8 +28,8 @@ public class Technician extends BaseEntity{
 	@Column(name="password",nullable=false)
 	private String password = "123456";
 	/**推送id*/
-	@Column(name="pushId",nullable=false)
-	private String pushId;
+	@Column(name="pushId")
+	private String pushId="1";
 	/**姓名*/
 	@Column(name="name",nullable=false)
 	private String name;
@@ -37,7 +37,7 @@ public class Technician extends BaseEntity{
 	@Column(name="phonenumber",nullable=false)
 	private String phonenumber;
 	/**工作状态*/
-	//0为空闲中，1为派单中，2为服务中
+	//0为空闲中，1路途中，2为服务中
 	@Column(name="stats")
 	private int stats = 0;
 	
@@ -65,6 +65,11 @@ public class Technician extends BaseEntity{
 	@Column(name="latitude")
 	private Double latitude;
 	
+	/** 逻辑删除标志 **/
+	@Column(name="visible")
+	private Boolean visible = true;
+
+	
 	/**技师星级*/
 	
 	@Column(name="level")
@@ -73,8 +78,7 @@ public class Technician extends BaseEntity{
 	/**头像*/
 	@Column(name="ico")
 	private String imgPath;
-	
-	private Boolean visible = true;
+
 	
 	public String getPushId() {
 		return pushId;

@@ -37,6 +37,16 @@ img.brandImage{
 		//绑定事件
 		bindElement();
 	});
+	
+	function forcheck(ss){
+		 var type="^[0-9]*[1-9][0-9]*$"; 
+		 var re = new RegExp(type); 
+		 if(ss.match(re)==null){ 
+			 return false;
+		}
+		 return true;
+	}
+	
 	function nextForm(){
 		
 		var array = new Array();
@@ -60,6 +70,12 @@ img.brandImage{
 				var productId = product_tr.attr("id");
 				var productPrice = product_tr.find("span.productPrice").text();
 				var productCount = product_tr.find("input.productCount").val();
+				
+				if(!forcheck(productCount)){
+					alert("请填写大于0的整数");
+					return;
+				}
+				
 				var productTotal = product_tr.find("span.productTotal").text();
 				var productName = product_tr.find("a").text();
 				var productData = {
@@ -89,6 +105,22 @@ img.brandImage{
 		$("#serviceContent").val(content);
 		if($("li.selectMaintainDoor").length <= 0){
 			alert("请选择服务");
+			return;
+		}
+		
+		//判断是否有车辆颜色
+		
+		var carColor = $("input[name='carColor']").val();
+		if(carColor == ""){
+			alert("车辆颜色不能为空");
+			return;
+		}
+		
+		
+		//判断是否还有车牌号
+		var carNum = $("input[name='carNum']").val();
+		if(carNum == ""){
+			alert("车牌号不能为空");
 			return;
 		}
 		
@@ -254,11 +286,12 @@ img.brandImage{
 						$(document).on("blur","input.productCount",function(){
 							var tr = $(this).closest("tr.product_tr");
 							var inputCount = tr.find("input.productCount").val();
-							if(isNaN(inputCount)){
-								alert("请填写数字");
-								$(this).focus();
+							
+							if(!forcheck(inputCount)){
+								alert("数量请填写大于0的整数");
 								return;
 							}
+							
 							var inputPrice = tr.find("span.productPrice").text();
 							var sum = parseFloat(parseFloat(inputCount) * parseFloat(inputPrice)).toFixed(2);
 							tr.find("span.productTotal").text(sum);
@@ -502,7 +535,7 @@ img.brandImage{
 					}
 					
 					//优惠卷选择
-					function couponSum(obj){
+				/* 	function couponSum(obj){
 						var selectedOption = $(obj).find("option:selected");
 						var type= selectedOption.attr("type");
 						var price = selectedOption.attr("price");
@@ -518,10 +551,10 @@ img.brandImage{
 						$("#couponSapnTotal").text(couponPrice);
 						$("#memberCouponId").val(selectedOption.val());
 						return couponPrice;
-					}
+					} */
 					
 					function totalSum(){
-						var couponTotal = $("#couponSapnTotal").text();
+						var couponTotal = "0";//$("#couponSapnTotal").text();
 						var sum = parseFloat(parseFloat(productSum()) + parseFloat(serviceSum()) - parseFloat(couponTotal)).toFixed(2);
 						$("#orderTotal").text(sum);
 					}
@@ -530,21 +563,21 @@ img.brandImage{
 				<div class="ma_buy_total0" style="border-top: none; margin-top: -20px; margin-bottom: 40px; ">
 					<div class="ma_buy_total_right">
 						<div>
-							<div class="ma_buy_1 ma_buy_111">共<i id="productCount">3</i>件 商品金额：</div>
-							<div class="ma_buy_2" >￥<span id="productSum">1360.00</span></div>
+							<div class="ma_buy_1 ma_buy_111">共<i id="productCount">0</i>件 商品金额：</div>
+							<div class="ma_buy_2" >￥<span id="productSum">0.00</span></div>
 						</div>
 						<div>
 							<div class="ma_buy_13"><label for="checkbox"><input type="checkbox" class="checkbox" id="serviceCheckbox" checked="checked" onclick="totalSum();"/>一动车保服务：</label></div>
 							<div class="ma_buy_2">￥<span id="serviceSum">0.00</span></div>
 						</div>
-						<div>
+						<%-- <div>
 							<div class="ma_buy_1 ma_buy_12" id="coupons">
 								<span>优惠券：</span>
 								<span class="selecet">
 									<select onchange="couponSum(this);">
 										<option value="" price="0" type="3">无</option>
-									<%-- 	<option value="" price="0.9" type="1">打折</option>
-										<option value="" price="10" type="2">减免</option> --%>
+										<option value="" price="0.9" type="1">打折</option>
+										<option value="" price="10" type="2">减免</option>
 										<c:forEach var="value" items="${coupons }">
 											<option value="${value.id }" price="${value.coupon.discount }" type="${value.coupon.type }">${value.coupon.name }</option>
 										</c:forEach>			
@@ -552,7 +585,7 @@ img.brandImage{
 								</span>
 							</div>
 							<div class="ma_buy_2" style="width: 120px; right: -40px; ">-￥<span id="couponSapnTotal">0.00</span></div>
-						</div>
+						</div> --%>
 					</div>
 				</div>
 				<div class="buy_total2">
@@ -563,9 +596,8 @@ img.brandImage{
 				</div>
 			</div>	
 			</div>
-			
-			<!--弹出层开始-->
-			
+		</div>
+		<!--弹出层开始-->
 			<div id="changeProduct" style="display: none;">
 				
 			</div>
@@ -599,7 +631,6 @@ img.brandImage{
 				};
 				
 			</script>
-		</div>
 	<!--中部结束-->
 	<!--底部开始-->
 	<jsp:include page="../web/footer.jsp" />

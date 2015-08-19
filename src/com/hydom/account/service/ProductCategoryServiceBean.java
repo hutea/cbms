@@ -8,6 +8,7 @@ import javax.persistence.FlushModeType;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.hydom.account.ebean.ProductCategory;
@@ -140,5 +141,48 @@ public class ProductCategoryServiceBean extends DAOSupport<ProductCategory>
 			productCategory.setTreePath(ProductCategory.TREE_PATH_SEPARATOR);
 		}
 		productCategory.setGrade(productCategory.getTreePaths().size());
+	}
+
+	@Override
+	public List<ProductCategory> findProductCategorybyName(String queryContent) {
+		
+		String sql = "from ProductCategory o where o.visible = true and o.name like '%"+queryContent+"%' order by o.order asc";
+		
+		return getListByHql(sql);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<ProductCategory> findProductCategoryByEntityIds(List<String> ids) {
+		if(ids.size() <= 0){
+			return null;
+		}
+		String jpql = "from ProductCategory o where o.visible = true and o.id in (:ids) order by o.order asc";
+		Query query = em.createQuery(jpql);
+		query.setParameter("ids", ids);
+		return sort(query.getResultList(), null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public ProductCategory getEntityByNameAndParentId(String name,
+			String parentId) {
+		
+		String jpql = "from ProductCategory o where o.visible = true and o.name=:name";
+		
+		if(StringUtils.isNotEmpty(parentId)){
+			jpql += " and o.parent.id = :parentId";
+		}
+		Query query = em.createQuery(jpql);
+		query.setParameter("name", name);
+		if(StringUtils.isNotEmpty(parentId)){
+			query.setParameter("parentId", parentId);
+		}
+		
+		List<ProductCategory> list = query.getResultList();
+		if(list.size() > 0){
+			return list.get(0);
+		}
+		return null;
 	}
 }

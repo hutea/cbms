@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -49,7 +50,8 @@ public class ServerOrder extends BaseEntity {
 	/**
 	 * 服务价格
 	 */
-	private float price;
+	@Column(columnDefinition = "decimal(20,2)")
+	private Float price;
 
 	/**
 	 * 订单
@@ -111,11 +113,11 @@ public class ServerOrder extends BaseEntity {
 		this.comment = comment;
 	}
 
-	public float getPrice() {
+	public Float getPrice() {
 		return price;
 	}
 
-	public void setPrice(float price) {
+	public void setPrice(Float price) {
 		this.price = price;
 	}
 }

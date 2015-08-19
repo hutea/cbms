@@ -87,8 +87,8 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				           		 <td>${entry.parent.name}</td>
 				           		 <td>${entry.carBrand.name}</td>
 
-				           		 <td><a href="${
-Context.request.contextPath}/manage/carType/edit?id=${entry.id}">修改</a></td>
+				           		<%--  <td><a href="${
+Context.request.contextPath}/manage/carType/edit?id=${entry.id}">修改</a></td> --%>
 
 				           		 <td><a href="${pageContext.request.contextPath}/manage/carType/edit?id=${entry.id}">修改</a>
 				           		 	<a href="javascript:void(0);" onclick="delEntity('${entry.id }',this);">删除</a>

@@ -17,12 +17,14 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -92,6 +94,13 @@ public class ProductBrand extends BaseEntity {
 	@OrderBy("order asc")
 	private List<ProductCategory> productCategorySet = new ArrayList<ProductCategory>();
 	
+	/**
+	 * 商品
+	 */
+	@OneToMany(fetch=FetchType.LAZY,mappedBy="productBrand")
+	@Where(clause="visible = 1")
+	private List<Product> productSet = new ArrayList<Product>();
+	
 	public String getName() {
 		return name;
 	}
@@ -154,6 +163,14 @@ public class ProductBrand extends BaseEntity {
 
 	public void setRemark(String remark) {
 		this.remark = remark;
+	}
+	
+	public List<Product> getProductSet() {
+		return productSet;
+	}
+
+	public void setProductSet(List<Product> productSet) {
+		this.productSet = productSet;
 	}
 
 	@Transient

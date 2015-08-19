@@ -71,6 +71,20 @@ function bindElement(){
 
 function saveOrder() {
 	
+	var carColor = $("input[name='carColor']").val();
+	if(carColor == ""){
+		alert("车辆颜色不能为空");
+		return;
+	}
+	
+	
+	//判断是否还有车牌号
+	var carNum = $("input[name='carNum']").val();
+	if(carNum == ""){
+		alert("车牌号不能为空");
+		return;
+	}
+	
 	if (!checkName()) {
 		alert("请填写联系人");
 		return;
@@ -86,6 +100,11 @@ function saveOrder() {
 	
 	var sum  = getSum();
 	$("#amount_money").val(sum);
+	
+	if($("input[name='payWay']:checked").length <= 0){
+		alert("请选择支付方式");
+		return;
+	}
 	
 	$("#formInput").submit();
 }
@@ -214,7 +233,7 @@ function saveOrder() {
 								</div>
 								<jsp:include page="map.jsp" />
 								<div>
-									[服务范围设定为贵阳市观山湖区、白云区、南明区、云岩区、小河、花溪区、乌当区，暂不支持息烽、开阳、清镇、修文。]
+									[${serviceContent }]
 								</div>
 							</div>
 							<input class="address mian_input" name="address" id="address" type="hidden"/>
@@ -242,27 +261,30 @@ function saveOrder() {
 							<ul>
 								<li>
 									<label>
-										<input type="radio" name="payWay" class="payInput" value="2" checked="checked" />支付宝
+										<input type="radio" name="payWay" class="payInput" value="2" />支付宝
 									</label>
 								</li>
 								<li>
 									<label>
-										<input type="radio" name="payWay" class="payInput" value="3" checked="checked" />银联
+										<input type="radio" name="payWay" class="payInput" value="3" />银联
 									</label>
 								</li>
 								<li>
 									<label>
-										<input type="radio" name="payWay" class="payInput" value="4" checked="checked" />微信
+										<input type="radio" name="payWay" class="payInput" value="4"/>微信
 									</label>
 								</li>
-								<li>
-									<label>
-										<input type="radio" name="payWay" class="payInput" value="1" checked="checked" />现金支付
-									</label>
-								</li>
+								<c:choose>
+									<c:when test="${!empty sessionScope.member_session }">
+										<li>
+											<label>
+												<input type="radio" name="payWay" class="payInput" value="1" checked="checked" />会员卡支付
+											</label>
+										</li>
+									</c:when>
+								</c:choose>
 							</ul>
 						</div>
-						
 						<!-- <div class="ma_buy_total_right"> -->
 							<div class="washBottom">
 								<div class="washBottomDiv">
@@ -274,13 +296,16 @@ function saveOrder() {
 									<div class="coupons" id="coupons">
 										<span class="">优惠券：</span>
 										<span class="selecet">
-											<select name="coupon.id" onchange="couponSum(this);">
-												<option value="" price="0" type="3">无</option>
+											<select name="memberCouponSelect" onchange="couponSum(this);">
+												<option value="" price="0" couponType="3">无</option>
 											<%-- 	<option value="" price="0.9" type="1">打折</option>
 												<option value="" price="10" type="2">减免</option> --%>
-												<c:forEach var="value" items="${coupons }">
-													<option value="${value.id }" price="${value.coupon.discount }" type="${value.coupon.type }">${value.coupon.name }</option>
-												</c:forEach>			
+												<c:forEach var="value" items="${memberCoupon }">
+													<option value="${value.id }" price="${value.discount }" couponType="${value.type }" rate="${value.rate }">${value.coupon.name }</option>
+												</c:forEach>
+												<c:if test="${!empty memberRank.scale }">
+													<option value="memberRank" price="" couponType="4" rate="${memberRank.scale }">${memberRank.name }</option>
+												</c:if>		
 											</select>
 										</span>
 									</div>
@@ -345,17 +370,22 @@ function saveOrder() {
 		//优惠卷选择
 		function couponSum(obj){
 			var selectedOption = $(obj).find("option:selected");
-			var type= selectedOption.attr("type");
+			var type= selectedOption.attr("couponType");
 			var price = selectedOption.attr("price");
+			var rate = selectedOption.attr("rate");
 			if(type == "1"){//满额打折
 				var sumPrice = getSum();//获取中和
-				var couponPrice = parseFloat( (1 - parseFloat(price)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
+				var couponPrice = parseFloat( (1 - parseFloat(rate)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
 				countSum(couponPrice);
 			}else if(type == "2"){//满额减免
 				var couponPrice = parseFloat(price).toFixed(2);//优惠金额
 				countSum(couponPrice);
 			}else if(type == "3"){//免额
 				var couponPrice = parseFloat(price).toFixed(2);//优惠金额
+				countSum(couponPrice);
+			}else if(type == "4"){//会员优惠
+				var sumPrice = getSum();//获取中和
+				var couponPrice = parseFloat( (1 - parseFloat(rate)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
 				countSum(couponPrice);
 			}
 		}

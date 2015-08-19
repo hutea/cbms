@@ -65,6 +65,12 @@ function saveOrder() {
 	var sum  = getSum();
 	$("#amount_money").val(sum);
 	
+	if($("input[name='payWay']:checked").length <= 0){
+		alert("请选择支付方式");
+		return;
+	}
+	
+	
 	$("#formInput").submit();
 }
 </script>
@@ -88,7 +94,7 @@ function saveOrder() {
 					<input name="carId" type="hidden" value="${carId}" />
 					<input name="userCarId" type="hidden" value="${userCarId}" />
 					<input name="content" type="hidden" value='${content }'/>
-					<input name="memberCouponId" type="hidden" value="${memberCouponId}" />
+					<%-- <input name="memberCouponId" type="hidden" value="${memberCouponId}" /> --%>
 					<input name="chooseServer" type="hidden" value="${chooseServer }" />
 					<input name="carColor" type="hidden" value="${carColor }"/>
 					<input name="carNum" type="hidden" value="${carNum }"/>
@@ -196,47 +202,6 @@ function saveOrder() {
 									
 								</c:forEach>
 							</c:forEach>	
-							<%-- <ul class="ma_buy_con">
-										<li class="ma_buy_con_li1">${subValue.name}</li>
-										<li class="ma_buy_con_li2"></li>
-										<li class="ma_buy_con_li3"><span>￥${subValue.price }</span></li>
-										<li class="ma_buy_con_li4">${subValue.count }</li>
-										<li class="ma_buy_con_li5"><span>￥${subValue.sum }</span></li>
-									</ul>	
-								<ul class="ma_buy_con">
-									<li class="ma_buy_con_li1">${value.serverName }服务费</li>
-									<li class="ma_buy_con_li2"></li>
-									<li class="ma_buy_con_li3"><span>￥${value.serverPrice }</span></li>
-									<li class="ma_buy_con_li4"></li>
-									<li class="ma_buy_con_li5"><span>￥${value.serverPrice }</span></li>
-								</ul>
-								<c:forEach var="subValue" items="${value.serverOrderProductBeans }">
-									<ul class="ma_buy_con">
-										<li class="ma_buy_con_li1">${subValue.name}</li>
-										<li class="ma_buy_con_li2"></li>
-										<li class="ma_buy_con_li3"><span>￥${subValue.price }</span></li>
-										<li class="ma_buy_con_li4">${subValue.count }</li>
-										<li class="ma_buy_con_li5"><span>￥${subValue.sum }</span></li>
-									</ul>
-								</c:forEach> --%>
-								
-							
-							<%-- <li class="lists">
-								<dl>
-									<dd class="dd11">马牌轮胎 ContiPremiumContact2 CPC2 225/55R17 101W TL XL Continental</dd>
-									<dd class="dd21">￥900.00</dd>
-									<dd class="dd21">1</dd>
-									<dd class="dd31">￥900.00</dd>
-								</dl>
-							</li>
-							<li class="lists">
-								<dl>
-									<dd class="dd11">Shell壳牌机油蓝喜力蓝壳HX7 5W-40 SN 4L半合成汽车机油润滑油</dd>
-									<dd class="dd21">￥230.00</dd>
-									<dd class="dd21">2</dd>
-									<dd class="dd31">￥460.00</dd>
-								</dl>
-							</li> --%>
 						</ul>
 					</div>
 					<div class="ma_buy_total0" style="position: relative;">
@@ -260,16 +225,25 @@ function saveOrder() {
 								</li>
 								<li>
 									<label>
-										<input type="radio" name="payWay" class="payInput" value="1" checked="checked" />现金支付
+										<input type="radio" name="payWay" class="payInput" value="5"/>现场支付
 									</label>
 								</li>
+								<c:choose>
+									<c:when test="${!empty sessionScope.member_session }">
+										<li>
+											<label>
+												<input type="radio" name="payWay" class="payInput" value="1" checked="checked" />会员卡支付
+											</label>
+										</li>
+									</c:when>
+								</c:choose>
 							</ul>
 						</div>
 						<div class="washBottom">
 							<div class="washBottomDiv">
 								<span class="serve">商品费用：</span>
 								<span class="priceDiv">￥<fmt:formatNumber value="${productSum }" pattern="0.00" /></span>
-								<input type="hidden" name="servicePrice" value="${productSum }" id="servicePrice"/>
+								<input type="hidden" name="productPrice" value="${productSum }" id="productPrice"/>
 							</div>
 							<div class="washBottomDiv">
 								<span class="serve">服务费用：</span>
@@ -280,13 +254,16 @@ function saveOrder() {
 								<div class="coupons" id="coupons">
 									<span class="">优惠券：</span>
 									<span class="selecet">
-										<select name="coupon.id" onchange="couponSum(this);">
-											<option value="" price="0" type="3">无</option>
+										<select name="memberCouponId" onchange="couponSum(this);">
+											<option value="" price="0" couponType="3">无</option>
 										<%-- 	<option value="" price="0.9" type="1">打折</option>
 											<option value="" price="10" type="2">减免</option> --%>
 											<c:forEach var="value" items="${memberCoupon }">
-												<option value="${value.id }" price="${value.coupon.discount }" type="${value.coupon.type }">${value.coupon.name }</option>
-											</c:forEach>			
+												<option value="${value.id }" price="${value.discount }" couponType="${value.type }" rate="${value.rate }">${value.coupon.name }</option>
+											</c:forEach>
+											<c:if test="${!empty memberRank.scale }">
+												<option value="memberRank" price="" couponType="4" rate="${memberRank.scale }">${memberRank.name }</option>
+											</c:if>
 										</select>
 									</span>
 								</div>
@@ -301,7 +278,7 @@ function saveOrder() {
 							<p>
 								合计金额：
 								<span>
-									￥${total }
+									￥<span id="total">${total }</span>
 								</span>
 							</p>
 							<button type="button" onclick="saveOrder();"></button>
@@ -350,11 +327,12 @@ function saveOrder() {
 		//优惠卷选择
 		function couponSum(obj){
 			var selectedOption = $(obj).find("option:selected");
-			var type= selectedOption.attr("type");
+			var type= selectedOption.attr("couponType");
 			var price = selectedOption.attr("price");
+			var rate = selectedOption.attr("rate");
 			if(type == "1"){//满额打折
 				var sumPrice = getSum();//获取中和
-				var couponPrice = parseFloat( (1 - parseFloat(price)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
+				var couponPrice = parseFloat( (1 - parseFloat(rate)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
 				countSum(couponPrice);
 			}else if(type == "2"){//满额减免
 				var couponPrice = parseFloat(price).toFixed(2);//优惠金额
@@ -362,19 +340,27 @@ function saveOrder() {
 			}else if(type == "3"){//免额
 				var couponPrice = parseFloat(price).toFixed(2);//优惠金额
 				countSum(couponPrice);
+			}else if(type == "4"){//会员等级优惠
+				var sumPrice = getSum();//获取中和
+				var couponPrice = parseFloat( (1 - parseFloat(rate)) * parseFloat(sumPrice)).toFixed(2);//优惠金额
+				countSum(couponPrice);
 			}
 		}
 		//获取总金额
 		function getSum(){
+			var product = $("#productPrice").val();
 			var servicePrice = $("#servicePrice").val();
-			return servicePrice;
+			return parseFloat(parseFloat(product) + parseFloat(servicePrice));
 		}
 		//计算总金额
 		function countSum(value){//value 金额
 			$("#coupon").text(value);
 			$("#amount_paid").val(value);
 			var sumPrice = getSum();//获取中和
-			var sum = parseFloat(parseFloat(sumPrice) - parseFloat(value)).toFixed(2);//优惠金额
+			var sum = "0";
+			if(parseFloat(sumPrice) >= parseFloat(value)){//优惠金额
+				sum = parseFloat(parseFloat(sumPrice) - parseFloat(value)).toFixed(2);
+			}
 			$("#total").text(sum);
 		}
 	</script>

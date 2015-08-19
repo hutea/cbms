@@ -17,7 +17,7 @@ public interface DAO<T> {
 	
 	public void delete(Serializable... ids);
 	
-	public void deleteBySql(Serializable... ids);
+	public void deleteBySql(String... ids);
 	
 	/**
 	 * 获取总的记录数
@@ -152,5 +152,7 @@ public interface DAO<T> {
 	
 	
 	public void refresh(T entity);
+
+	void removeById(String id);
 	
 }

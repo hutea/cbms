@@ -47,11 +47,11 @@ public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int
 	PageView<Technician> pageView = new PageView<Technician>(maxresult, page);
 	LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 	orderby.put("id", "desc");
-	String jpql = "o.visible = true ";
+	String jpql = "o.visible = 1 ";
 	Object[] params = new Object[]{};
 	if(queryContent!=null){
-		jpql+="and o.name like ?1 or o.account like ?1 or o.phonenumber ?1";
-		params = new Object[]{"%"+queryContent+"%"};
+		jpql+="and o.name like ?1 or o.account like ?2 or o.phonenumber like ?3";
+		params = new Object[]{"%"+queryContent+"%","%"+queryContent+"%","%"+queryContent+"%"};
 	}
 	pageView.setQueryResult(technicianService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
 	request.setAttribute("pageView", pageView);
@@ -111,7 +111,8 @@ public String delete(String[] ids){
 	
 	for(String id : ids){
 		Technician entity = technicianService.find(id);
-		technicianService.remove(entity);
+		entity.setVisible(false);
+		technicianService.update(entity);
 	}
 	return ajaxSuccess("成功", response);
 }

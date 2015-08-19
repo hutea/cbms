@@ -7,12 +7,25 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.Member;
+import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.ServiceType;
 import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.DAO;
 
 public interface OrderService extends DAO<Order> {
+
+	/**
+	 * 使用会员卡支付：需要在同一个事务中处理<br>
+	 * <1>扣用户余额<br>
+	 * <2>产生消费记录<br>
+	 * <3>保存订单
+	 * 
+	 * @param order
+	 * @param member
+	 */
+	public void memberCarPay(Order order, Member member);
 
 	/***
 	 * 为指定的技师分配一个订单，分配原则如下：<br>
@@ -80,9 +93,27 @@ public interface OrderService extends DAO<Order> {
 
 	/**
 	 * 根据订单号 获取订单
+	 * 
 	 * @param orderNum
 	 * @return
 	 */
 	public Order getOrderByOrderNum(String orderNum);
+
+	/**
+	 * 根据订单号 和 已支付属性 查找订单
+	 * 
+	 * @param confimId
+	 * @param b
+	 * @return
+	 */
+	public Order getOrderByOrderNumAndPay(String confimId, boolean b);
+
+	/**
+	 * 根据用户领取的优惠卷来获取优惠金额
+	 * 
+	 * @param memberCoupon
+	 * @return
+	 */
+	public String getCouponPrice(MemberCoupon memberCoupon, Float sum);
 
 }

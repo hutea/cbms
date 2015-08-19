@@ -66,24 +66,6 @@
         <script src="${pageContext.request.contextPath}/resource/chain/js/respond.min.js"></script>
         <![endif]-->
 	
-<script type="text/javascript">
-	function checkUsername() {
-		var username = $("#username").val();
-		$.post("${pageContext.request.contextPath}/manage/serviceType/checkUsername.action",
-		{
-			username : username
-		},
-		function(data) {
-			if (data == 0 && username != "" && username != null) {//表示 帐户存在
-				$("#username_error").html("用户名已经存在");
-				$("#repeat").val("");
-			} else {
-				$("#username_error").html("");
-				$("#repeat").val("success");
-			}
-		});
-	}
-</script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
@@ -155,12 +137,15 @@
 									<label class="col-sm-4 control-label">名称</label>
 									<div class="col-sm-8">
 										<input type="text" name="name" class="form-control" maxlength="200" value="${entity.name }"/>
+										<label id="labelName">
+											<span class='success'></span>
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
 									<label class="col-sm-4 control-label">上级分类</label>
 									<div class="col-sm-8" id="categoryDiv">
-										<select name="parent.id">
+										<select name="parent.id" id="parentId">
 											<option value="" <c:if test="${empty entity.parent}">selected="selected"</c:if> >顶级分类</option>
 											<c:forEach var="category" items="${categorys }">
 												<c:if test="${entity ne category && !fn:contains(children,category)}">
@@ -194,12 +179,6 @@
 													</option>
 												</c:forEach>
 											</c:if>
-											<%-- <option value="">无</option>
-											<c:forEach var="serviceType" items="${serviceTypes }">
-												<option value="${serviceType.id }" <c:if test="${serviceType.id eq entity.serviceType.id }">selected="selected"</c:if> >
-													${serviceType.name}
-												</option>
-											</c:forEach> --%>
 										</select>
 									</div>
 								</div>
@@ -262,14 +241,101 @@
 		<!-- mainwrapper -->
 	</section>
 	<script type="text/javascript">
+		
 		var base = "<%=basePath%>";
 		$('[data-toggle="tooltip"]').popover();
 		$(document).ready(function(){
 			
 		});
 		function saveForm(){
+			
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				alert("请输入名称");
+				return;
+			}
+			var brands = $("input[name='brands']:checked");
+			if(brands.length <= 0){
+				alert("请选择品牌");
+				return;
+			}
+			
 			$("#inputForm").submit();
 		}
+		
+		
+		function setErrorMessage(value,type){
+			if(type == 1){
+				var html = "<span style='color:red' class='error'>"+value+"</span>";
+				$("#labelName").html(html);
+			}else if (type == 2){
+				var html = "<span style='color:green' class='success'>"+value+"</span>";
+				$("#labelName").html(html);
+			}else{
+				
+			};
+		}
+		
+		var oldName = "${entity.name}";
+		function checkName() {
+			setErrorMessage("",2);
+			var name = $("input[name='name']").val();
+			var parentId = $("#parentId").val();
+			if(name == ""){
+				return;
+			}
+			
+			if(oldName == name){
+				return;
+			}
+			
+			var url = "<%=basePath%>manage/productCategory/checkName";
+			var data = {
+				name : name,
+				parentId:parentId
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					setErrorMessage(result.message,2);
+				}else{
+					setErrorMessage(result.message,1);
+				}
+			},"json");
+		};
+		
+		function saveForm(){
+			var name = $("input[name='name']").val();
+			if(name == ""){
+				alert("请输入名称");
+				return;
+			}
+			var brands = $("input[name='brands']:checked");
+			if(brands.length <= 0){
+				alert("请选择品牌");
+				return;
+			}
+			
+			if(oldName == name){
+				$("#inputForm").submit();
+				return;
+			}
+			
+			setErrorMessage("",2);
+			var parentId = $("#parentId").val();
+			var url = "<%=basePath%>manage/productCategory/checkName";
+			var data = {
+				name : name,
+				parentId:parentId
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					$("#inputForm").submit();
+				}else{
+					alert("此名称已存在，请重新输入");
+				}
+			},"json");
+		}
+		
 	</script>
 </body>
 </html>

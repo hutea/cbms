@@ -260,20 +260,20 @@ public class CommonUtil {
 	 * @return 两个参数的和
 	 */
 	public static float add(String... vs) {
-		BigDecimal fb = new BigDecimal(0).setScale(2, BigDecimal.ROUND_DOWN);
+		BigDecimal fb = new BigDecimal(0).setScale(2, BigDecimal.ROUND_UP);
 		for (String v : vs) {
 			if (StringUtils.isEmpty(v) || "null".equals(v)) {
 				v = "0";
 			}
 			BigDecimal b1 = new BigDecimal(v)
-					.setScale(2, BigDecimal.ROUND_DOWN);
+					.setScale(2, BigDecimal.ROUND_UP);
 			fb = fb.add(b1);
 		}
 		// BigDecimal b2 = new BigDecimal(v2).setScale(2,
 		// BigDecimal.ROUND_DOWN);
 		return fb.floatValue();
 	}
-
+	
 	/**
 	 * 提供精确的减法运算。
 	 * 
@@ -292,7 +292,7 @@ public class CommonUtil {
 		}
 		BigDecimal b1 = new BigDecimal(v1).setScale(2, BigDecimal.ROUND_DOWN);
 		BigDecimal b2 = new BigDecimal(v2).setScale(2, BigDecimal.ROUND_DOWN);
-		return b1.subtract(b2).floatValue();
+		return b1.subtract(b2).setScale(2, BigDecimal.ROUND_UP).floatValue();
 	}
 
 	/**
@@ -308,7 +308,7 @@ public class CommonUtil {
 	public static float mul(String v1, String v2) {
 		BigDecimal b1 = new BigDecimal(v1).setScale(2, BigDecimal.ROUND_DOWN);
 		BigDecimal b2 = new BigDecimal(v2).setScale(2, BigDecimal.ROUND_DOWN);
-		return b1.multiply(b2).floatValue();
+		return b1.multiply(b2).setScale(2, BigDecimal.ROUND_UP).floatValue();
 	}
 
 	/**
@@ -344,7 +344,7 @@ public class CommonUtil {
 		}
 		BigDecimal b1 = new BigDecimal(v1).setScale(2, BigDecimal.ROUND_DOWN);
 		BigDecimal b2 = new BigDecimal(v2).setScale(2, BigDecimal.ROUND_DOWN);
-		return b1.divide(b2, scale, BigDecimal.ROUND_HALF_UP).floatValue();
+		return b1.divide(b2, scale, BigDecimal.ROUND_UP).floatValue();
 	}
 
 	/**
@@ -361,10 +361,25 @@ public class CommonUtil {
 		if (StringUtils.isEmpty(v) || "null".equals(v)) {
 			v = "0";
 		}
-		BigDecimal b = new BigDecimal(v).setScale(scale, BigDecimal.ROUND_DOWN);
+		BigDecimal b = new BigDecimal(v).setScale(scale, BigDecimal.ROUND_UP);
 		return b.floatValue();
 	}
-
+	
+	/**
+	 * 两float类型比较   其差绝对值小于0.01认为是相等的
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	public static Boolean compareToFloat(String v1,String v2){
+		
+		if(Math.abs(subtract(v1,v2)) <= 0.01){
+			return true;
+		}
+		return false;
+	}
+	
+	
 	/**
 	 * 将中文单个字符转成拼音
 	 * 
@@ -412,5 +427,12 @@ public class CommonUtil {
 	public static void main(String[] args) {
 		String m = getStringPinYin("但");
 		System.out.println(m);
+		String m1 = "0.01225";
+		String m2 = "0.1556321";
+		add("0.01225","0.1556321");
+		double d = 0d;
+		//System.out.println(add(d+"","0"));
+		System.out.println(mul(m1,m2));
+		System.out.println(div(m1, m2));
 	}
 }

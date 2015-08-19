@@ -78,7 +78,7 @@ public class IndexAction extends BaseAction {
 			return ajaxError("无效的验证码", response);
 		}
 		
-		Member member = memberService.findByHql("select o from com.hydom.account.ebean.Member o where o.mobile='" + mobile+"'");
+		Member member = memberService.findByHql("select o from com.hydom.account.ebean.Member o where o.mobile='" + mobile+"' and o.visible = true");
 		if (member != null) {
 			if (code.equals(verifyCode.toString())) {
 				
@@ -116,7 +116,7 @@ public class IndexAction extends BaseAction {
 			HttpServletResponse response) {
 		
 		String code = IDGenerator.getRandomString(6, 1);
-		String str = "手机验证码:"+code;
+		String str = "【一动车保】您本次登录的验证码为：" + code + "，验证码5分钟内有效。";
 		boolean b = SendMessage.sendMessage(mobile, str);
 		if(b){
 			//发送成功,将当前的code 存入cached中
@@ -139,7 +139,7 @@ public class IndexAction extends BaseAction {
 	public String gotoMemberCenter(String mobile,HttpServletRequest request,ModelMap model){
 		MemberBean bean = getMemberBean(request);
 		model.addAttribute("bean", bean);
-		return "";
+		return "redirect:/user/order/list";
 	}
 	
 	/**

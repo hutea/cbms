@@ -42,7 +42,7 @@ public class PrivilegeServiceBean extends DAOSupport<Privilege> implements
 	@Override
 	public Privilege findByURL(String url) {
 		Query query = em.createQuery(
-				"select o from SystemPrivilege o where o.url=?1").setParameter(
+				"select o from Privilege o where o.url=?1").setParameter(
 				1, url);
 		try {
 			Privilege sp = (Privilege) query.getSingleResult();
@@ -55,7 +55,7 @@ public class PrivilegeServiceBean extends DAOSupport<Privilege> implements
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<Privilege> listBylevel(int level) {
-		return em.createQuery("select o from SystemPrivilege o where o.lv=?1")
+		return em.createQuery("select o from Privilege o where o.lv=?1")
 				.setParameter(1, level).getResultList();
 	}
 }

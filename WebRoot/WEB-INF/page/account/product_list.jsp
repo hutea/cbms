@@ -123,7 +123,12 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									${product.name}
 								</td>
 								<td>
-									<a href="${pageContext.request.contextPath}/${product.imgPath }" target="_blank">[查看]</a>
+									<c:if test="${!empty product.imgPath}">
+										<a href="${pageContext.request.contextPath}/${product.imgPath }" target="_blank">[查看]</a>
+									</c:if>
+									<c:if test="${empty product.imgPath }">
+										暂无
+									</c:if>
 								</td>
 								<td>
 									${product.productCategory.name }

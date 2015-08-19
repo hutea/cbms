@@ -1,5 +1,6 @@
 package com.hydom.account.service;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -13,19 +14,23 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.FeeRecord;
+import com.hydom.account.ebean.Member;
+import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
 import com.hydom.account.ebean.ServiceType;
 import com.hydom.account.ebean.Technician;
 import com.hydom.core.order.ebean.TechnicianBindRecord;
 import com.hydom.core.order.service.TechnicianBindRecordService;
 import com.hydom.core.server.ebean.CarTeam;
+import com.hydom.core.server.ebean.Coupon;
+import com.hydom.util.CommonUtil;
 import com.hydom.util.DateTimeHelper;
 import com.hydom.util.bean.DateMapBean;
 import com.hydom.util.dao.DAOSupport;
 
-@Service
+@Service("orderService")
 public class OrderServiceBean extends DAOSupport<Order> implements OrderService {
-
 	@Resource
 	private ServiceTypeService serviceTypeService;
 	@Resource
@@ -34,6 +39,24 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 	private TechnicianService technicianService;
 	@Resource
 	private TechnicianBindRecordService technicianBindRecordService;
+	@Resource
+	private MemberService memberService;
+	@Resource
+	private FeeRecordService feeRecordService;
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void memberCarPay(Order order, Member member) {
+		memberService.update(member);
+		this.save(order);
+		FeeRecord feeRecord = new FeeRecord();
+		feeRecord.setFee(order.getPrice());
+		feeRecord.setType(2);
+		feeRecord.setOrder(order);
+		feeRecord.setPayWay(order.getPayWay());
+		feeRecord.setPhone(member.getPhone());
+		feeRecordService.save(feeRecord);
+	}
 
 	@Override
 	@Transactional(propagation = Propagation.REQUIRED)
@@ -43,15 +66,17 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 			technician.setLatitude(lat);
 			technician.setLongitude(lng);
 			if (technician.isJobstatus()) {// 工作状态
-				Date todayEnd = DateTimeHelper.addDays(new Date(), 1);
-				Date todayStart = DateTimeHelper.addDays(todayEnd, -1);
-
+				Date now = new Date();
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				String todaySTR = sdf.format(now);
+				Date todayStart = sdf.parse(todaySTR);
+				Date todayEnd = DateTimeHelper.addDays(todayStart, 1);
 				Object[] objs = (Object[]) em
 						.createNativeQuery(
-								"SELECT t.id,dbo.fnGetDistance(?1,?2,lat,lng) AS distance FROM t_order t WHERE id NOT IN (SELECT order_id FROM t_technician_bindrecord where technician_id=?3 and createDate>?4 and createDate<?5) and distance<?6 and t.type=?7  ORDER BY distance")
+								"SELECT t.id,dbo.fnGetDistance(?1,?2,lat,lng) AS distance FROM t_order t WHERE id NOT IN (SELECT order_id FROM t_technician_bindrecord where technician_id=?3 and createDate>?4 and createDate<?5) and distance<?6 and t.type=?7  ORDER BY distance ASC")
 						.setParameter(1, lat).setParameter(2, lng)
-						.setParameter(3, techid).setParameter(4, todayEnd)
-						.setParameter(5, todayStart).setParameter(6, 5.0d)
+						.setParameter(3, techid).setParameter(4, todayStart)
+						.setParameter(5, todayEnd).setParameter(6, 5.0d)
 						.setParameter(7, 1).getSingleResult();
 				Order order = this.find(objs[0].toString()); // 确定分配的订单
 				order.setTechMember(technician); // 绑定新的技师
@@ -64,6 +89,7 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 				order.setDistance(Double.parseDouble(objs[1].toString()));
 				this.update(order);// 绑定技师及设置对应的距离
 				technician.setOrder(order);
+				technician.setStats(0);
 				technicianService.update(technician);
 				return order;
 			} else {
@@ -90,7 +116,7 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 			// AND t.stats=0 AND t.jobstatus=0 ORDER BY distance
 			Object[] objs = (Object[]) em
 					.createNativeQuery(
-							"SELECT t.id,dbo.fnGetDistance(?1,?2,latitude,longitude) AS distance FROM t_technician t WHERE id NOT IN (SELECT technician_id FROM t_technician_bindrecord where order_id=?3) AND t.visible=?4 AND t.stats=?5 AND t.jobstatus=?6 AND t.order_id is NULL ORDER BY distance")
+							"SELECT t.id,dbo.fnGetDistance(?1,?2,latitude,longitude) AS distance FROM t_technician t WHERE id NOT IN (SELECT technician_id FROM t_technician_bindrecord where order_id=?3) AND t.visible=?4 AND t.stats=?5 AND t.jobstatus=?6 AND t.order_id is NULL ORDER BY distance ASC")
 					.setParameter(1, order.getLat())
 					.setParameter(2, order.getLng()).setParameter(3, oid)
 					.setParameter(4, true).setParameter(5, 0)
@@ -285,15 +311,7 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 
 	@Override
 	public List<Order> getBindingOrder(Order order) {
-		
-		
-		
-		
-		
-		
-		
-		
-		
+
 		/*
 		 * Area area = order.getArea();
 		 * 
@@ -329,12 +347,47 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 		query.setParameter("num", orderNum);
 		query.setParameter("visible", true);
 		Order order = null;
-		try{
+		try {
 			order = (Order) query.getSingleResult();
-		}catch(Exception e){
-			
+		} catch (Exception e) {
+
 		}
 		return order;
+	}
+
+	@Override
+	public Order getOrderByOrderNumAndPay(String confimId, boolean b) {
+		String sql = "select o from Order o where o.num = :num and o.visible = :visible and o.isPay = :isPay";
+		Query query = em.createQuery(sql);
+		query.setParameter("num", confimId);
+		query.setParameter("visible", true);
+		query.setParameter("isPay", b);
+		Order order = null;
+		try {
+			order = (Order) query.getSingleResult();
+		} catch (Exception e) {
+
+		}
+		return order;
+	}
+
+	@Override
+	public String getCouponPrice(MemberCoupon memberCoupon, Float sum) {
+		String youhuiSum = "0";
+		if (memberCoupon == null) {
+			return youhuiSum;
+		}
+		Coupon coupon = memberCoupon.getCoupon();
+		if (coupon.getType() == 1) {// 满额打折
+			youhuiSum = CommonUtil.subtract(sum + "",
+					CommonUtil.mul(sum + "", memberCoupon.getRate() + "") + "")
+					+ "";
+		} else if (coupon.getType() == 2) {// 满额减免
+			youhuiSum = CommonUtil.mul(coupon.getDiscount() + "", "0") + "";
+		} else if (coupon.getType() == 3) {
+			youhuiSum = CommonUtil.mul(coupon.getDiscount() + "", "0") + "";
+		}
+		return youhuiSum;
 	}
 
 }

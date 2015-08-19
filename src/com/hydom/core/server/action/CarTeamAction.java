@@ -50,7 +50,7 @@ public class CarTeamAction extends BaseAction{
 	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
 		PageView<CarTeam> pageView = new PageView<CarTeam>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-		orderby.put("id", "desc");
+		orderby.put("createDate", "desc");
 		StringBuffer jpql = new StringBuffer("o.visible = 1");
 		Object[] params = new Object[]{};
 		if(queryContent!=null){//o.area.name like ?1 or o.area.name like ?1 or 

@@ -37,9 +37,9 @@ public class SessionFilter implements Filter {
 			// 用户超时或没有登陆时跳转到登陆页面
 			if (session.getAttribute(AdminBean.ADMIN_SESSION) == null || session.isNew()) {
 				response.sendRedirect(servletRequest.getServletContext().getContextPath()+"/account/login");
+				return;
 			}
 		}
-		
 		filterChain.doFilter(servletRequest, servletResponse);
 	}
 
@@ -62,6 +62,6 @@ public class SessionFilter implements Filter {
 			}
 		}
 		
-		return true;
+		return bFlg;
 	}
 }

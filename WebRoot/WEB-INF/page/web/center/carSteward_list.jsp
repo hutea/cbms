@@ -13,7 +13,6 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	<title>一动车保首页</title>
 	<link href="<%=basePath %>resource/page/css/carSteward/style.css" type="text/css" rel="stylesheet" />
 	<script type="text/javascript" src="<%=basePath %>resource/page/js/jquery.js"></script>
-	<script type="text/javascript" src="<%=basePath %>resource/page/js/carSteward/function.js"></script>
 	<style type="text/css">
 		/******form*******/
 		.divselectcon {clear: both; padding: 10px 0 20px; position: relative; }
@@ -38,18 +37,17 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				parent.location.reload();
 			},"json");
 		}
-		function del(userCarId,memberId){
-		alert(memberId);
+		function del(userCarId){
 			$("#cancel1").show();
 			$("#mabg2").show();
 			$("#stbg2").show();
 			$("#yes").click(function(){
 				var url ="<%=basePath%>/user/carSteward/del";
 				var data = {
-					userCarId : userCarId,
-					memberId : memberId
+					userCarId : userCarId
 				};
 				$.post(url,data,function(result){
+					alert(result.message);
 					parent.location.reload();
 				},"json");
 			});
@@ -76,13 +74,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myOrder">
-					<a href="#">我的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
 				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home active">
@@ -90,7 +88,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel on">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -98,16 +96,13 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
-				</li>
-				<li class="menu-item changePass">
-					<a href="#">修改密码</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
@@ -160,7 +155,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 											<c:if test="${userCar.defaultCar eq false }"><img src="<%=basePath %>resource/page/images/selec2.png" /></c:if>默认
 										</a></dd>
 										<dd><a href="<%=basePath %>user/carSteward/update?userCarId=${userCar.id }">修改</a></dd>
-										<dd><a href="javascript:del('${userCar.id }','${sessionScope.member_session.id }')">删除</a></dd>
+										<dd><a href="javascript:del('${userCar.id }')">删除</a></dd>
 									</dl>
 								</li>
 								</c:forEach>

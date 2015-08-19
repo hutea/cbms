@@ -1,4 +1,5 @@
 <%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@ include file="/WEB-INF/page/common/taglib.jsp" %>
 <%
 	String path = request.getContextPath();
 	String basePath = request.getScheme() + "://"
@@ -17,11 +18,13 @@
 	</head>
 
     <body>
-	    <h3>${advert.title}</h3>
-	    <img src="${advert.imgPath}">
-	    <div><fmt:formatDate value="${advert.createDate}" pattern="yyyy-MM-dd HH:mm:ss" /> </div>
-	    <div style="border-top: 1px dashed ddd;">
-	    	${advert.content}
-	    </div>
+    	<div style="padding: 5px 10px;"> 
+		    <h3>${advert.title}</h3>
+		    <img src="${advert.imgPath}" />
+		    <div><fmt:formatDate value="${advert.createDate}" pattern="yyyy-MM-dd HH:mm:ss" /> </div>
+		    <div style="border-top: 1px dashed ddd;">
+		    	${advert.content}
+		    </div>
+    	</div>
     </body>
 </html>

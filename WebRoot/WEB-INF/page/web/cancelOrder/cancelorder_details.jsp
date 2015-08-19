@@ -10,7 +10,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
   <head>
  	<meta http-equiv="content-type" content="text/html;charset=utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=8" />
-	<title>一动车保首页</title>
+	<title>取消订单详情</title>
 	<link href="${pageContext.request.contextPath}/resource/chain/css/style.css" type="text/css" rel="stylesheet" />	
 	<script type="text/javascript" src="${pageContext.request.contextPath}/resource/chain/js/jquery.js"></script>
 	<script type="text/javascript" src="${pageContext.request.contextPath}/resource/chain/js/function.js"></script>
@@ -48,14 +48,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				<h3>订单中心</h3>
 			</div>
 			<ul class="menu-list">
-				<li class="menu-item myOrder on">
-					<a href="#">我的订单</a>
+				<li class="menu-item myOrder">
+					<a href="${pageContext.request.contextPath}/user/order/list">我的订单</a>
 				</li>
-				<li class="menu-item cancelOrder">
-					<a href="#">已取消的订单</a>
+				<li class="menu-item cancelOrder on">
+					<a href="${pageContext.request.contextPath}/user/order/cancellist">已取消的订单</a>
 				</li>
 				<li class="menu-item myCoupon">
-					<a href="#">我的优惠券</a>
+					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-home">
@@ -63,7 +63,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item myCarModel">
-					<a href="#">我的车型库</a>
+					<a href="${pageContext.request.contextPath}/user/carSteward/list">我的车型库</a>
 				</li>
 			</ul>
 			<div class="menu-title menu-center">
@@ -71,16 +71,16 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			</div>
 			<ul class="menu-list">
 				<li class="menu-item accountBal">
-					<a href="#">账户余额</a>
+					<a href="${pageContext.request.contextPath}/user/balance/view">账户余额</a>
 				</li>
 				<li class="menu-item basicInfo">
-					<a href="#">基本信息</a>
+					<a href="${pageContext.request.contextPath}/user/information/info">基本信息</a>
 				</li>
-				<li class="menu-item changePass">
+				<!-- <li class="menu-item changePass">
 					<a href="#">修改密码</a>
-				</li>
+				</li> -->
 				<li class="menu-item feedBack">
-					<a href="#">意见反馈</a>
+					<a href="${pageContext.request.contextPath}/user/feedback/add">意见反馈</a>
 				</li>
 			</ul>
 		</div>
@@ -89,20 +89,25 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				<div class="orderDetails">
 					<div class="orderDetailsTop">
 						<div class="left">
-							<a href="#"><img src="${pageContext.request.contextPath}/resource/page/images/steward_4.png" /></a><span class="span1">|</span><span>订单详情</span>
+							<img src="${pageContext.request.contextPath}/resource/page/images/steward_4.png" /><span class="span1">|</span><span>订单详情</span>
 						</div>
 						<div class="right"><a href="${pageContext.request.contextPath}/user/order/cancellist?memberId=${order.member.id}">返回订单列表&gt;&gt;</a></div>
 					</div>
 					<div class="orderDetailsContent">
-						<div class="left"><a href="#"><img src="images/orderDetails1.png" /></a></div>
+						<div class="left">
+						<c:if test="${order.type==1 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder1.png" /></c:if>
+						<c:if test="${order.type==2 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" /></c:if>
+						<c:if test="${order.type==3 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" /></c:if>
+						</div>
 						<div class="right">
 							<ul>
-								<li><b>订单编号：</b>${order.id }</li>
-								<li><b>订单状态：</b><c:if test="${order.status==1 }">派单中</c:if>
-												<c:if test="${order.status==2 }">服务中</c:if>
-												<c:if test="${order.status==3 }">交易成功</c:if>
-												<c:if test="${order.status==4 }">退费订单</c:if>
-												<c:if test="${order.status==5 }">失败订单</c:if>
+								<li><b>订单编号：</b>${order.num }</li>
+								<li><b>订单状态：</b>
+												<c:if test="${order.status==31 }">待审核</c:if>
+												<c:if test="${order.status==32 }">审核中</c:if>
+												<c:if test="${order.status==33 }">退款中</c:if>
+												<c:if test="${order.status==34 }">已退款</c:if>
+												<c:if test="${order.status==35 }">未通过</c:if>
 												</li>
 								<li><b>下单时间：</b>${order.createDate }</li>
 							</ul>

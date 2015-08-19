@@ -44,17 +44,17 @@ public class Order2Action extends BaseAction{
 			@RequestParam(required = false, defaultValue="")String orderType) {
 		
 		MemberBean bean = getMemberBean(request);
-		/*String memberId = bean.getMember().getId();*/
+		String memberId = bean.getMember().getId();
 		
 		
-		String memberId = "92dea7a9-5ec7-4044-a73a-ba99b91a2af2";
+		/*String memberId = "92dea7a9-5ec7-4044-a73a-ba99b91a2af2";*/
 		
 		
 		
 		PageView<Order> pageView = new PageView<Order>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("id", "desc");
-		String jpql = "o.visible = 1 and o.member.id = ?1 and o.status < 30";
+		String jpql = "o.visible = 1 and o.member.id = ?1 and o.status < 30 and o.isPay = 1";
 		Object[] params = new Object[]{};
 		params = new Object[]{memberId};
 		
@@ -68,7 +68,7 @@ public class Order2Action extends BaseAction{
 		
 		request.setAttribute("pageView", pageView);
 		ModelAndView mav = new ModelAndView("/web/myOrder/myorder_list");
-		
+		mav.addObject("orderType", orderType);
 		mav.addObject("paveView", pageView);
 		
 		
@@ -161,7 +161,7 @@ public class Order2Action extends BaseAction{
 		PageView<Order> pageView = new PageView<Order>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("id", "desc");
-		String jpql = "o.visible = 1 and o.member.id = ?1";
+		String jpql = "o.visible = 1 and o.member.id = ?1 and o.status < 30";
 		Object[] params = new Object[]{};
 		params = new Object[]{memberId};
 		pageView.setQueryResult(orderService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
@@ -175,9 +175,9 @@ public class Order2Action extends BaseAction{
 	public ModelAndView cancelList(@RequestParam(required = false, defaultValue = "1") int page, 
 			@RequestParam(required = false, defaultValue="")String orderType) {
 		MemberBean bean = getMemberBean(request);
-		/*String memberId = bean.getMember().getId();*/
+		String memberId = bean.getMember().getId();
 		
-		String memberId = "92dea7a9-5ec7-4044-a73a-ba99b91a2af2";
+		/*String memberId = "92dea7a9-5ec7-4044-a73a-ba99b91a2af2";*/
 		
 		
 		
@@ -195,6 +195,7 @@ public class Order2Action extends BaseAction{
 		request.setAttribute("pageView", pageView);
 		ModelAndView mav = new ModelAndView("/web/cancelOrder/mycancelorder_list");
 		mav.addObject("paveView", pageView);
+		mav.addObject("orderType", orderType);
 		return mav;
 }
 	/**已取消订单的详情*/

@@ -16,42 +16,43 @@
 		</c:forEach>
 	</div>
 </div> --%>
-
-<button type="button" onclick="addSpecificationValue();"
-		style="margin-bottom: 10px;">添加规格值</button>
-
-<div class="panel-body nopadding">
-	<div class="table-responsive">
-		<table id="addSpecificationListTable" class="table table-info">
-			<tr>
-				<c:forEach var="value" items="${specifications}">
-					<th class="${value.id }">${value.name }</th>
-				</c:forEach>
-				<th>操作</th>
-			</tr>
-			<tr class="specification_value specification_default" style="display: none;">
-				<c:forEach var="value" items="${specifications}">
-					<td class="${value.id }"><select class="${value.id }">
-							<c:forEach var="subValue" items="${value.specificationValues }">
-								<option value="${subValue.id }">${subValue.name }</option>
-							</c:forEach>
-					</select></td>
-				</c:forEach>
-				<td class="">
-					<div class="file_div">
-						<a href="javascript:void(0);" onclick="deletSpecification(this);">[删除]</a> 
-					</div>
-					<input name="specificationValueIds" type="hidden" value="" />
-				</td>
-			</tr>
-			<tr>
-				<c:forEach var="value" items="${product.specificationValues }">
-					<td class="${value.specification.id }">${value.id }</td>
-				</c:forEach>
-			</tr>
-		</table>
+<c:if test="${specifications.size()>0 }">
+	<button type="button" onclick="addSpecificationValue();"
+			style="margin-bottom: 10px;">添加规格值</button>
+	
+	<div class="panel-body nopadding">
+		<div class="table-responsive">
+			<table id="addSpecificationListTable" class="table table-info">
+				<tr>
+					<c:forEach var="value" items="${specifications}">
+						<th class="${value.id }">${value.name }</th>
+					</c:forEach>
+					<th>操作</th>
+				</tr>
+				<tr class="specification_value specification_default" style="display: none;">
+					<c:forEach var="value" items="${specifications}">
+						<td class="${value.id }"><select class="${value.id }">
+								<c:forEach var="subValue" items="${value.specificationValues }">
+									<option value="${subValue.id }">${subValue.name }</option>
+								</c:forEach>
+						</select></td>
+					</c:forEach>
+					<td class="">
+						<div class="file_div">
+							<a href="javascript:void(0);" onclick="deletSpecification(this);">[删除]</a> 
+						</div>
+						<input name="specificationValueIds" type="hidden" value="" />
+					</td>
+				</tr>
+				<tr>
+					<c:forEach var="value" items="${product.specificationValues }">
+						<td class="${value.specification.id }">${value.id }</td>
+					</c:forEach>
+				</tr>
+			</table>
+		</div>
 	</div>
-</div>
+</c:if>
 <script type="text/javascript">
 
 	var productSpecification = '${productSpecification}';

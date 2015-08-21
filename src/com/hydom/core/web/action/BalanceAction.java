@@ -88,6 +88,12 @@ public class BalanceAction extends BaseAction {
 		return ajaxError("充值失败", response);
 	}
 	
+	/**
+	 * 充值消费列表
+	 * @param model
+	 * @param page
+	 * @return
+	 */
 	@RequestMapping("/list")
 	public String list(ModelMap model,@RequestParam(defaultValue="1",required=false) Integer page){
 		MemberBean bean = getMemberBean(request);
@@ -109,4 +115,6 @@ public class BalanceAction extends BaseAction {
 		
 		return "/web/balance/balance_list";
 	}
+	
+	
 }

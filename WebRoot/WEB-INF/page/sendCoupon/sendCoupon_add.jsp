@@ -85,7 +85,18 @@
 				}
 			});
 			if(flag){
-				$("#inputForm").submit();
+				var url ="${pageContext.request.contextPath}/manage/sendCoupon/save";
+				var data = {
+					mobile : $("#mobile").val(),
+					type : $("#type").val(),
+					num : $("#num").val()
+				};
+				$.post(url,data,function(result){
+					alert(result.message);
+					if(result.status=="success"){
+						$("#mobile").val("");
+					}
+				},"json");
 			}
 		});
 	}
@@ -121,24 +132,21 @@
 	}
 	
 	function numChange(){
-		var reg =/^[\d]$/;
+		var reg =/^[0-9]*$/;
 		var v = $("#num").val();
-		if(!reg.test(v) || v<1){
+		if(!reg.test(v)){
 		    $("#num").val("");
 		}
 	}
-	
-	$(function(){
-		if("${flag}"=="1"){
-			alert("发放成功！");
-		}
-	});
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
 	width: 49%;
 	padding: 5px 10px;
 	border-top: 0px dotted #d3d7db;
+}
+.selects {
+	padding: 10px;
 }
 </STYLE>
 </head>
@@ -171,7 +179,7 @@
 							<h4 class="panel-title">优惠券发放</h4>
 						</div>
 						<form class="form-horizontal form-bordered" id="inputForm"
-							action="<%=basePath%>/manage/sendCoupon/save" method="POST">
+							action="" method="POST">
 							<div class="panel-body nopadding">
 
 								<div class="form-group">

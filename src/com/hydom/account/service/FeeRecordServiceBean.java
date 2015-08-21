@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import com.hydom.account.ebean.FeeRecord;
 import com.hydom.util.dao.DAOSupport;
 
-@Service
+@Service("feeRecordService")
 public class FeeRecordServiceBean extends DAOSupport<FeeRecord> implements
 		FeeRecordService {
 
@@ -20,6 +20,21 @@ public class FeeRecordServiceBean extends DAOSupport<FeeRecord> implements
 		Query query = em.createQuery(sql);
 		query.setParameter("rechargeNo", tradeNum);
 		query.setParameter("visible", false);
+		List<FeeRecord> list = query.getResultList();
+		if(list.size() > 0){
+			return list.get(0);
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public FeeRecord findByNumAndOrderConfirmId(String tradeNum, String confimId) {
+		String sql = "select o from FeeRecord o where o.tradeNo=:tradeNo and o.order.num=:num";
+		Query query = em.createQuery(sql);
+		query.setParameter("tradeNo", tradeNum);
+		//query.setParameter("visible", false);
+		query.setParameter("num", confimId);
 		List<FeeRecord> list = query.getResultList();
 		if(list.size() > 0){
 			return list.get(0);

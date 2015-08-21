@@ -44,9 +44,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	</script>
 	<style type="text/css">
 		.div_feed{width:1153px;
-				height:69px;	
+				min-height: 69px;	
 }
-
+.contentpanel{width: 100%;}
 	</style>
 </head>
 
@@ -93,13 +93,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<div class="div_feed">
 									<div class="content"><p>${feedback.content }</p></div>
 									
-									<div style="float: left;width:450px;"><span>用户名:${feedback.member.nickname }</span></div>
+									<div style="float: left;width:45%;"><span>用户名:${feedback.member.nickname }</span></div>
 									
-									<div style="float: left;width:600px;"><span>评论时间:<fmt:formatDate value="${feedback.createDate }" type="both"/></span></div>
+									<div style="float: left;width:52%;"><span>评论时间:<fmt:formatDate value="${feedback.createDate }" type="both"/></span></div>
 									
 									<span><a href="${pageContext.request.contextPath}/manage/feedback/delete?id=${feedback.id}">删除</a></span>
 									</div>
-									<div style="background-color: #BDBDBD;width:1153px;height: 1px"></div>
+									<div style="background-color: #BDBDBD;width:100%;height: 1px"></div>
 								</td>
 							</tr>
 						  </c:forEach>

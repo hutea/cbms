@@ -11,5 +11,13 @@ public interface FeeRecordService extends DAO<FeeRecord> {
 	 * @return
 	 */
 	FeeRecord findByRechargeNum(String tradeNum);
+	
+	/**
+	 * 充值编号  订单号
+	 * @param tradeNum
+	 * @param confimId
+	 * @return
+	 */
+	FeeRecord findByNumAndOrderConfirmId(String tradeNum, String confimId);
 
 }

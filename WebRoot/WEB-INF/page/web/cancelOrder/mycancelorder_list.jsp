@@ -134,7 +134,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 								
 								
 											
-								<div class="orderTitleRight"><a href="${pageContext.request.contextPath}/user/order/delcancelorder?id=${order.id}"><img src="${pageContext.request.contextPath}/resource/page/images/del.png" /></a></div>
+								<%-- <div class="orderTitleRight"><a href="${pageContext.request.contextPath}/user/order/delcancelorder?id=${order.id}"><img src="${pageContext.request.contextPath}/resource/page/images/del.png" /></a></div> --%>
 							</li>
 							
 							<c:forEach items="${order.serverOrder }" var="serverOrder">

@@ -188,14 +188,14 @@
 			</div>
 			<ul class="ul0">
 				<li class="hot">热门搜索:</li>
-				<li><a href="#">别克</a></li>
-				<li><a href="#">本田</a></li>
-				<li><a href="#">大众</a></li>
-				<li><a href="#">丰田</a></li>
-				<li><a href="#">福特</a></li>
-				<li><a href="#">起亚</a></li>
-				<li><a href="#">现代</a></li>
-				<li><a href="#">雪铁龙</a></li>
+				<li><a href="javascript:getCarBrand('别克');">别克</a></li>
+				<li><a href="javascript:getCarBrand('本田');">本田</a></li>
+				<li><a href="javascript:getCarBrand('大众');">大众</a></li>
+				<li><a href="javascript:getCarBrand('丰田');">丰田</a></li>
+				<li><a href="javascript:getCarBrand('福特');">福特</a></li>
+				<li><a href="javascript:getCarBrand('起亚');">起亚</a></li>
+				<li><a href="javascript:getCarBrand('现代');">现代</a></li>
+				<li><a href="javascript:getCarBrand('雪铁龙');">雪铁龙</a></li>
 			</ul>
 			<script type="text/javascript">
 			function getValue(e){
@@ -286,7 +286,7 @@
 			<div class="divselectcon">
 				<div class="divselect">
 					<div style="width: 32%;display: inline-block;">
-						<input type="text" placeholder="选择品牌" class="carSelectInput carBrand"
+						<input type="text" placeholder="选择品牌" class="carSelectInput carBrand" autocomplete="off"
 							id="carBrandInput" onkeyup="getValue(this);" onclick="inputFocus(this)" />
 						<div class="input_search_result">
 							<ul id="carBrand"></ul>
@@ -294,7 +294,7 @@
 						<input type="hidden" id="carBrandId"/>
 					</div>
 					<div style="width: 32%;display: inline-block;">
-						<input type="text" placeholder="选择车系" class="carSelectInput carType"
+						<input type="text" placeholder="选择车系" class="carSelectInput carType" autocomplete="off"
 						id="carTypeInput" onkeyup="getValue(this);" onclick="inputFocus(this)" />
 						<div class="input_search_result">
 							<ul id="carType"></ul>
@@ -302,7 +302,7 @@
 						<input type="hidden" id="carTypeId"/>
 					</div>
 					<div style="width: 32%;display: inline-block;">
-						<input type="text" placeholder="选择车型" class="carSelectInput car" 
+						<input type="text" placeholder="选择车型" class="carSelectInput car" autocomplete="off"
 						id="carInput" readonly="readonly" onclick="inputFocus(this)" />
 						<div class="input_search_result">
 							<ul id="car"></ul>

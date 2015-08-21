@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.hydom.account.ebean.Member;
 import com.hydom.util.dao.DAOSupport;
 
-@Service
+@Service("memberService")
 public class MemberServiceBean extends DAOSupport<Member> implements
 		MemberService {
 

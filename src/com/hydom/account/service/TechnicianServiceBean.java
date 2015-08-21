@@ -102,9 +102,7 @@ public class TechnicianServiceBean extends DAOSupport<Technician> implements
 					+ " "
 					+ CommonAttributes.getInstance().getSystemBean()
 							.getEndDate());
-			System.out.println(serverStartTime);
-			System.out.println(serverEndTime);
-			if (count >= 0 && serverStartTime.getTime() < now.getTime()
+			if (count > 0 && serverStartTime.getTime() < now.getTime()
 					&& serverEndTime.getTime() > now.getTime()) { // 技师人数大于零；并且当前时间在后台设定的工作时间范围内
 				return true;
 			}

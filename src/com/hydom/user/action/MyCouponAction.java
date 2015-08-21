@@ -83,10 +83,21 @@ public class MyCouponAction extends BaseAction{
 				if(amount==null) amount = (float) 0;
 				if(point <= amount){
 					MemberCoupon memberCoupon = new MemberCoupon();
-					memberCoupon.setReceiveDate(new Date());
+					memberCoupon.setName(coupon.getName());
+					memberCoupon.setBeginDate(coupon.getBeginDate());
+					memberCoupon.setEndDate(coupon.getEndDate());
+					memberCoupon.setIntroduction(coupon.getIntroduction());
+					memberCoupon.setType(coupon.getType());
+					memberCoupon.setUseType(coupon.getUseType());
+					memberCoupon.setDiscount(coupon.getDiscount());
+					memberCoupon.setRate(coupon.getRate());
+					memberCoupon.setMinPrice(coupon.getMinPrice());
+					memberCoupon.setImgPath(coupon.getImgPath());
+					memberCoupon.setGainWay(1);
+					memberCoupon.setPoint(0);
 					memberCoupon.setMember(member);
 					memberCoupon.setCoupon(coupon);
-					memberCoupon.setUseType(coupon.getUseType());
+					memberCoupon.setReceiveDate(new Date());
 					memberCouponService.save(memberCoupon);
 					member.setAmount(amount-point);
 					memberService.update(member);
@@ -104,7 +115,7 @@ public class MyCouponAction extends BaseAction{
 	public @ResponseBody ModelAndView history(@RequestParam(defaultValue="1") Integer page) {
 		
 		MemberBean bean = getMemberBean(request);
-		if(bean.getMember().getId()!=null){
+		if(bean!=null && bean.getMember().getId()!=null){
 			String memberId = bean.getMember().getId();
 			
 			PageView<MemberCoupon> pageView = new PageView<MemberCoupon>(maxresult, page);

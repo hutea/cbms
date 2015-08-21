@@ -11,7 +11,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
     <base href="<%=basePath%>">
       
     <title>新闻查看</title>
-    
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 		<link href="${pageContext.request.contextPath}/resource/chain/css/bootstrap.min.css" rel="stylesheet">
 		<script src="${pageContext.request.contextPath}/resource/chain/js/jquery-1.11.1.min.js"></script>
         <script src="${pageContext.request.contextPath}/resource/chain/js/bootstrap.min.js"></script>
@@ -45,7 +45,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	    <div style="border-top: 1px dashed ddd;">
 	    	${news.content}
 	    </div>
-	    <p class="container text-center" style="width:200px;" >
+	    <p class="container text-center" style="width:100px;padding: 10px;" >
 	    	<c:if test="${star!=null}" > 
 	    			<img class="img-responsive" src="${pageContext.request.contextPath}/resource/image/app_news_like_after.png" />
 	    	</c:if>

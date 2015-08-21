@@ -100,7 +100,7 @@
 	function saveType(){
 		$(function(){
 			check($("#headMember"));
-			check($("#headPhone"));
+// 			check($("#headPhone"));
 			checkArea();
 			var flag = true;
 			$(".repeat").each(function(){
@@ -175,6 +175,23 @@
 	function delArea(e){
 		$(e).parent().parent().remove();
 	}
+	
+	//输入框限制
+	function inputRestrict(e){
+		var v=$(e).val();
+		var r = /^([1]{1}[0-9]{10})?$/;
+		if(!r.test(v)){
+			$(e).val("");
+			$("#headPhone_error").html("请输入正确格式的手机号码");
+			$(e).next().val("");
+		}else if(v==""){
+			$("#headPhone_error").html("手机号码不能为空");
+			$(e).next().val("");
+		}else{
+			$("#headPhone_error").html("");
+			$(e).next().val("success");
+		}
+	}
 </script>
 <STYLE type="text/css">
 .form-bordered div.form-group {
@@ -237,10 +254,10 @@
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">负责人电话</label>
+									<label class="col-sm-4 control-label">负责人手机号码</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name="headPhone" CHname="电话" 
-											onBlur="check(this)" placeholder="请填写负责人电话" id="headPhone">
+										<input type="text" class="form-control" name="headPhone" CHname="手机号码"
+											onBlur="inputRestrict(this);" placeholder="请填写负责人手机号码" id="headPhone" maxlength="11">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="headPhone_error"></span>
 									</div>

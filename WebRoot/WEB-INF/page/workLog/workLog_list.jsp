@@ -100,7 +100,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				           		 	<c:if test="${false eq entry.jobstatus}">下班</c:if>
 				           		 </td>
 				           		 <td>${entry.technician.phonenumber}</td>
-				           		 <td>${entry.createDate}</td>
+				           		 <td><fmt:formatDate value="${entry.createDate}" pattern="yyyy-MM-dd HH:mm:ss"/></td>
 			           	  	</tr>
 			           	  </c:forEach>
 			          </tbody>

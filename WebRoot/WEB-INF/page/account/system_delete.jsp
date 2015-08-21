@@ -167,7 +167,9 @@
 			}
 			$.post(url,data,function(result){
 				if(result.status == "success"){
-					alert("保存成功");
+					alert("删除成功");
+				}else{
+					alert("删除失败");
 				}
 			},"json");
 		}

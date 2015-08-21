@@ -52,6 +52,9 @@ public class MemberCoupon extends BaseEntity {
 	@Column(name = "introduction")
 	private String introduction;
 
+	/** 优惠券获取方法：1=积分兑换；2=系统发放；3=充值赠送 */
+	private Integer gainWay;
+
 	/** 优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
 	private Integer type = 1;
 
@@ -96,6 +99,18 @@ public class MemberCoupon extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "coupon_id")
 	private Coupon coupon;
+
+	/** 积分兑换数 */
+	@Column(name = "point")
+	private Integer point = 0;
+
+	public Integer getPoint() {
+		return point;
+	}
+
+	public void setPoint(Integer point) {
+		this.point = point;
+	}
 
 	private Boolean visible = true;
 
@@ -225,6 +240,14 @@ public class MemberCoupon extends BaseEntity {
 
 	public void setRate(Double rate) {
 		this.rate = rate;
+	}
+
+	public Integer getGainWay() {
+		return gainWay;
+	}
+
+	public void setGainWay(Integer gainWay) {
+		this.gainWay = gainWay;
 	}
 
 }

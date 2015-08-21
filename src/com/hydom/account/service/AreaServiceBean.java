@@ -1,9 +1,7 @@
 package com.hydom.account.service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.persistence.Query;
 
@@ -11,11 +9,21 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.hydom.account.ebean.Area;
-import com.hydom.account.ebean.ProductCategory;
 import com.hydom.util.dao.DAOSupport;
 
 @Service
 public class AreaServiceBean extends DAOSupport<Area> implements AreaService {
+
+	public String fullAreaName(String aid) {
+		Area area = this.find(aid);
+		Area parentArea = area.getParent();
+		StringBuffer fullname = new StringBuffer(area.getName());
+		while (parentArea != null) {
+			fullname.insert(0, parentArea.getName());
+			parentArea = parentArea.getParent();
+		}
+		return fullname.toString();
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -29,23 +37,24 @@ public class AreaServiceBean extends DAOSupport<Area> implements AreaService {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Area getEntitybyNameAndPrantId(String parentId, String content) {
-		String hql = "select o from Area o where o.visible=:visible and o.name = '"+content+"' ";
-		if(StringUtils.isEmpty(parentId)){
+		String hql = "select o from Area o where o.visible=:visible and o.name = '"
+				+ content + "' ";
+		if (StringUtils.isEmpty(parentId)) {
 			hql += "and o.parent is null";
-		}else{
-			hql += "and o.parent = '"+parentId+"'";
+		} else {
+			hql += "and o.parent = '" + parentId + "'";
 		}
-		try{
+		try {
 			Query query = em.createQuery(hql);
 			query.setParameter("visible", true);
-			
+
 			List<Area> areas = query.getResultList();
-			if(areas.size() > 0){
+			if (areas.size() > 0) {
 				return areas.get(0);
-			}else{
+			} else {
 				return null;
 			}
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
@@ -53,20 +62,20 @@ public class AreaServiceBean extends DAOSupport<Area> implements AreaService {
 
 	@Override
 	public List<Area> getAreaByParentId(Area area) {
-		
-		List<Area> list = getSubArea(area,new ArrayList<Area>());
-		
+
+		List<Area> list = getSubArea(area, new ArrayList<Area>());
+
 		return list;
 	}
-	
-	public List<Area> getSubArea(Area area,List<Area> result){
-		if(area.getChildren().size() > 0){
-			for(Area sbArea : area.getChildren()){
-				getSubArea(sbArea,result);
+
+	public List<Area> getSubArea(Area area, List<Area> result) {
+		if (area.getChildren().size() > 0) {
+			for (Area sbArea : area.getChildren()) {
+				getSubArea(sbArea, result);
 			}
 		}
 		result.add(area);
 		return result;
-	} 
-	
+	}
+
 }

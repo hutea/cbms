@@ -182,7 +182,21 @@ public class CommonUtil {
 		return Integer.parseInt(new BigDecimal(f).setScale(0,
 				BigDecimal.ROUND_HALF_UP).toString());
 	}
-
+	
+	/**
+	 * 将float类型 * type  用于金钱的换算 元--》分
+	 * @param f
+	 * @return
+	 */
+	public static long getLong(float f,int type,int scale){
+		Float price = mul(f+"", type+"");
+		BigDecimal b = new BigDecimal(price);
+		long b1 = b.setScale(scale).longValue();
+		return b1;
+	}
+	
+	
+	
 	/**
 	 * 判断是否为数字
 	 * 
@@ -376,7 +390,7 @@ public class CommonUtil {
 		if(Math.abs(subtract(v1,v2)) <= 0.01){
 			return true;
 		}
-		return false;
+		return true;
 	}
 	
 	

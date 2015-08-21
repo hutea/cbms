@@ -399,7 +399,10 @@ function saveOrder() {
 			$("#coupon").text(value);
 			$("#amount_paid").val(value);
 			var sumPrice = getSum();//获取中和
-			var sum = parseFloat(parseFloat(sumPrice) - parseFloat(value)).toFixed(2);//优惠金额
+			var sum = "0";
+			if(parseFloat(sumPrice) >= parseFloat(value)){//优惠金额
+				sum = parseFloat(parseFloat(sumPrice) - parseFloat(value)).toFixed(2);
+			}
 			$("#total").text(sum);
 		}
 	</script>

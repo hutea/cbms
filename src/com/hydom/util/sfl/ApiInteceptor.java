@@ -53,11 +53,12 @@ public class ApiInteceptor extends HandlerInterceptorAdapter {
 				if (!validToken) {// token失效
 					PrintWriter out = response.getWriter();
 					out.print("{\"result\":\"102\"}");
+					return false;
 				}
 			} catch (Exception e) {
 				PrintWriter out = response.getWriter();
 				out.print("{\"result\":\"102\"}");
-
+				return false;
 			}
 		}
 		return super.preHandle(request, response, handler);

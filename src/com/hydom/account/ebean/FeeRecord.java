@@ -28,7 +28,7 @@ public class FeeRecord extends BaseEntity {
 	private Integer type;
 
 	/** 充值或消费金额 */
-	@Column(columnDefinition = "decimal(20,2)",nullable=false)
+	@Column(nullable = false)
 	private Float fee;
 
 	/** 支付编号 用来退款等 */
@@ -37,7 +37,7 @@ public class FeeRecord extends BaseEntity {
 
 	/** 充值编号 */
 	private String rechargeNo;
-
+	
 	/**
 	 * 消费订单
 	 */
@@ -67,6 +67,10 @@ public class FeeRecord extends BaseEntity {
 	 */
 	private Integer isRefund;
 	
+	/**
+	 * 退费商家交易码
+	 */
+	private String refundNo;
 	
 	public Integer getType() {
 		return type;
@@ -146,6 +150,14 @@ public class FeeRecord extends BaseEntity {
 
 	public void setIsRefund(Integer isRefund) {
 		this.isRefund = isRefund;
+	}
+
+	public String getRefundNo() {
+		return refundNo;
+	}
+
+	public void setRefundNo(String refundNo) {
+		this.refundNo = refundNo;
 	}
 
 }

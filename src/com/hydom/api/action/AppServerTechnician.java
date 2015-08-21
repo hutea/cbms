@@ -225,6 +225,7 @@ public class AppServerTechnician {
 			if (jobStatus && order != null) {
 				obj.put("result", "001");
 				obj.put("hasOrder", true);
+				obj.put("stats", tech.getStats());// 技师工作状态
 				obj.put("orderId", order.getId());// 订单id
 				obj.put("orderNum", order.getNum());// 订单编号
 				obj.put("contact", order.getContact());// 联系人
@@ -240,6 +241,7 @@ public class AppServerTechnician {
 			} else {
 				obj.put("result", "001");
 				obj.put("hasOrder", false);
+				obj.put("stats", 0);// 技师工作状态
 				obj.put("orderId", "");// 订单id
 				obj.put("orderNum", "");// 订单编号
 				obj.put("contact", "");// 联系人
@@ -301,12 +303,12 @@ public class AppServerTechnician {
 			log.info("App【技师接受订单】：" + "技师id=" + techId + " 订单id=" + orderId
 					+ " 技师经度=" + tlng + " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
+			Order order = orderService.find(orderId);
+//			if((tech.getStats()!=0 || tech.getOrder()==null) && order.getStatus()!=1) return "{\"result\":\"000\"}";
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
 			tech.setStats(1);
 			technicianService.update(tech);
-
-			Order order = orderService.find(orderId);
 
 			// 计算两点间的距离
 			double radLat1 = rad(tlat);
@@ -359,10 +361,11 @@ public class AppServerTechnician {
 					+ " 技师纬度=" + tlat + "原因=" + refuseCause);
 			JSONObject obj = new JSONObject();
 			Technician tech = technicianService.find(techId);
+			Order order = tech.getOrder();
+//			if((tech.getStats()!=0 || tech.getOrder()==null) && order.getStatus()!=1) return "{\"result\":\"000\"}";
+
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
-
-			Order order = tech.getOrder();
 
 			// 计算两点间的距离
 			double radLat1 = rad(tlat);
@@ -467,20 +470,22 @@ public class AppServerTechnician {
 	public @ResponseBody
 	String serviceStart(String techId, String[] imageUrl) {
 		try {
-			log.info("App【服务开始】：" + "技师id=" + techId + "imageUrl="
-					+ imageUrl.toString());
+			log.info("App【服务开始】：" + "技师id=" + techId);
 			Technician tech = technicianService.find(techId);
-			for (String img : imageUrl) {
-				ServiceImage serviceImage = new ServiceImage();
-				serviceImage.setOrder(tech.getOrder());
-				serviceImage.setImg(img);
-				serviceImage.setProperty(1);
-				serviceImageService.save(serviceImage);
+			Order order = orderService.find(tech.getOrder().getId());
+//			if((tech.getStats()!=1 || tech.getOrder()==null) && order.getStatus()!=2) return "{\"result\":\"000\"}";
+			if(imageUrl!=null){
+				for (String img : imageUrl) {
+					ServiceImage serviceImage = new ServiceImage();
+					serviceImage.setOrder(tech.getOrder());
+					serviceImage.setImg(img);
+					serviceImage.setProperty(1);
+					serviceImageService.save(serviceImage);
+				}
 			}
 
 			tech.setStats(2);
 			technicianService.update(tech);
-			Order order = orderService.find(tech.getOrder().getId());
 			order.setStartDate(new Date());
 			order.setStatus(3);
 			orderService.update(order);
@@ -514,6 +519,8 @@ public class AppServerTechnician {
 			log.info("App【服务结束】：" + "技师id=" + techId + " 技师经度=" + tlng
 					+ " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
+			Order order = orderService.find(tech.getOrder().getId());
+//			if((tech.getStats()!=2 || tech.getOrder()==null) && order.getStatus()!=3) return "{\"result\":\"000\"}";
 			JSONObject obj = new JSONObject();
 			for (String img : imageUrl) {
 				ServiceImage serviceImage = new ServiceImage();
@@ -524,7 +531,6 @@ public class AppServerTechnician {
 			}
 
 			// 更改订单状态为完成
-			Order order = orderService.find(tech.getOrder().getId());
 			order.setStartDate(new Date());
 			order.setStatus(0);
 			orderService.update(order);

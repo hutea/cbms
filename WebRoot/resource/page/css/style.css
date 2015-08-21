@@ -99,7 +99,7 @@ textarea {outline: 0px; resize: none; }
 
 
 /*****************************************************newslist1.css**************************************************************************/
-/*濡亞鍤�/
+/*濡亞鍤*/
 
 .top_right .second a {color: #ffae00;}
 .top_right li b.b33 {background: url(../images/3-3.png) 0 0 no-repeat;}
@@ -137,7 +137,7 @@ textarea {outline: 0px; resize: none; }
 .top_right li b.b3 {background: url(../images/3.png) 0 0 no-repeat;}
 .service {height: auto; margin-bottom: 35px; margin-top: -36px;  }
 .service_left {float: left; width: 180px; height: 238px; background: url(../images/ser_nav_bg.png) 0 0 no-repeat; padding-top: 8px; text-align: center; }
-.service_left li.hover a {color: #925901; }  /* 鏉╂瑩鍣烽弰顖濐洣閺�懓褰夐惃鍕剁磼閿涗緤绱�/
+.service_left li.hover a {color: #925901; }  /* 鏉╂瑩鍣烽弰顖濐洣閺�懓褰夐惃鍕剁磼閿涗緤绱*/
 .service_left li a {font-size: 16px; line-height: 40px; color: #fff3d7; cursor: pointer; }
 .service_left li a:hover {color: #925901; }
 .service_right {float: right; width: 790px; /* height: 850px; */ height: auto; overflow: hidden; margin-bottom: 20px; }
@@ -350,7 +350,7 @@ textarea {outline: 0px; resize: none; }
 
 /**************************************app.css**********************************************************************/
 ..span4_1 {width: 100%; height: auto; overflow: hidden; position: relative; } /*閸ュ墽澧栧Ο顏勬倻閹峰鍑�/
-.span4_1 img.aap_bg {width: 100%;  }  /*閸ュ墽澧栧Ο顏勬倻閹峰鍑�/
+.span4_1 img.aap_bg {width: 100%;  }  /*閸ュ墽澧栧Ο顏勬倻閹峰鍑*/
 .app_right { position: absolute; right: 220px; top: 270px; background: url(../images/app_right_2.png) 0 0 no-repeat; width: 480px; height: 255px; }
 .app_right_left {float: left; padding: 15px; }
 .app_right_right {float: right; }
@@ -643,7 +643,7 @@ button.button_yuyue {border: none; background: url(../images/yuyue.png) 0 0 no-r
 .myOrderDetail .orderListsContent .titleTop {border: 1px solid #ddd; font-size: 14px; color: #4e4e4e; line-height: 38px; height: 38px; margin-bottom: 10px; background-color: #f8f8f8; }
 .myOrderDetail .orderListsContent .titleTop li {float: left; padding: 0 20px; }
 .myOrderDetail .orderListsContent .titleTop li.first {padding: 0 175px; }
-.myOrderDetail .orderListsContent .orderLists {border: 1px solid #ddd; margin-bottom: 10px; overflow: hidden; /*ul 妤傛ê瀹抽懛顏堬拷鎼达拷/}
+.myOrderDetail .orderListsContent .orderLists {border: 1px solid #ddd; margin-bottom: 10px; overflow: hidden; /*ul 妤傛ê瀹抽懛顏堬拷鎼达拷*/}
 
 .myOrderDetail .orderListsContent .orderLists li {position: relative;}
 .orderListsContent .orderLists li.orderTitle {width: 790px; height: 38px; background-color: #f8f8f8; padding: 2px; }

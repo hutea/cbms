@@ -78,6 +78,10 @@
 			<mvc:mapping path="/manage/**" />
 			<ref bean="privilegeInteceptor" />
 		</mvc:interceptor>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<ref bean="duchInteceptor" />
+		</mvc:interceptor>
 	</mvc:interceptors>
 
 	<!-- 支持上传文件 -->

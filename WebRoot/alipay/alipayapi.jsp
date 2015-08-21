@@ -50,7 +50,7 @@
 		String notify_url = network_address+":"+network_port+"/"+network_name+"/web/pay/alipay_return";
 		//需http://格式的完整路径，不能加?id=123这类自定义参数
 
-		//页面跳转同步通知页面路径
+		//页面跳转同步通知页面路径  
 		//String return_url = "http://www.xxx.com/create_direct_pay_by_user-JAVA-UTF-8/return_url.jsp";
 		//需http://格式的完整路径，不能加?id=123这类自定义参数，不能写成http://localhost/
 
@@ -82,6 +82,10 @@
 		//商品展示地址
 		//String show_url = new String(request.getParameter("WIDshow_url").getBytes("ISO-8859-1"),"UTF-8");
 		
+		String address = request.getParameter("address");
+		
+		notify_url = network_address+":"+network_port+"/"+network_name+"/web/pay/"+address;
+		//out.println(notify_url);
 		//必填
 
 		//订单描述

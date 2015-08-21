@@ -67,40 +67,45 @@ public class SendCouponAction extends BaseAction{
 	 * 保存
 	 */
 	@RequestMapping("/save")
-	public ModelAndView save(String type, String mobile, @RequestParam(defaultValue = "1") Integer num) {
-		if(mobile!=null){
-			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-			orderby.put("createDate", "desc");
-			String jpql = "o.mobile=?1";
-			Object[] params = new Object[]{mobile};
-			Member member = memberService.getScrollData(-1, -1, jpql, params, orderby).getResultList().get(0);
-			if(member!=null){
-				for(int i=0;i<num;i++){
-					Coupon coupon = couponService.find(type);
-					MemberCoupon memberCoupon = new MemberCoupon();
-					memberCoupon.setName(coupon.getName());
-					memberCoupon.setBeginDate(coupon.getBeginDate());
-					memberCoupon.setEndDate(coupon.getEndDate());
-					memberCoupon.setIntroduction(coupon.getIntroduction());
-					memberCoupon.setType(coupon.getType());
-					memberCoupon.setUseType(coupon.getUseType());
-					memberCoupon.setDiscount(coupon.getDiscount());
-					memberCoupon.setRate(coupon.getRate());
-					memberCoupon.setMinPrice(coupon.getMinPrice());
-					memberCoupon.setImgPath(coupon.getImgPath());
-					memberCoupon.setMember(member);
-					memberCoupon.setCoupon(coupon);
-					memberCoupon.setReceiveDate(new Date());
-					memberCouponService.save(memberCoupon);
+	public @ResponseBody String save(String type, String mobile, @RequestParam(defaultValue = "1") Integer num) {
+		try {
+			if(mobile!=null){
+				LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
+				orderby.put("createDate", "desc");
+				String jpql = "o.mobile=?1";
+				Object[] params = new Object[]{mobile};
+				List<Member> mlist = memberService.getScrollData(-1, -1, jpql, params, orderby).getResultList();
+				Member member = null;
+				if(mlist.size()!=0) member = mlist.get(0);
+				if(member!=null){
+					for(int i=0;i<num;i++){
+						Coupon coupon = couponService.find(type);
+						MemberCoupon memberCoupon = new MemberCoupon();
+						memberCoupon.setName(coupon.getName());
+						memberCoupon.setBeginDate(coupon.getBeginDate());
+						memberCoupon.setEndDate(coupon.getEndDate());
+						memberCoupon.setIntroduction(coupon.getIntroduction());
+						memberCoupon.setType(coupon.getType());
+						memberCoupon.setUseType(coupon.getUseType());
+						memberCoupon.setDiscount(coupon.getDiscount());
+						memberCoupon.setRate(coupon.getRate());
+						memberCoupon.setMinPrice(coupon.getMinPrice());
+						memberCoupon.setImgPath(coupon.getImgPath());
+						memberCoupon.setGainWay(2);
+						memberCoupon.setPoint(0);
+						memberCoupon.setMember(member);
+						memberCoupon.setCoupon(coupon);
+						memberCoupon.setReceiveDate(new Date());
+						memberCouponService.save(memberCoupon);
+					}
+					return ajaxSuccess("发放成功！", response);
 				}
-				ModelAndView mav = new ModelAndView("redirect:add");
-				mav.addObject("m", 9);
-				mav.addObject("flag", 1);
-				return mav;
 			}
-			
+			return ajaxError("发放失败！", response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ajaxError("发放失败！", response);
 		}
-		return null;
 		
 	}
 	

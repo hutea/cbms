@@ -43,6 +43,8 @@ public final class CommonAttributes {
 	
 	private static SystemBean systemBean;
 	
+	private String payURL;
+	
 	/**
 	 * 不可实例化
 	 */
@@ -128,6 +130,12 @@ public final class CommonAttributes {
 		this.systemId = systemId;
 	}
 
-	
+	public String getPayURL() {
+		return payURL;
+	}
+
+	public void setPayURL(String payURL) {
+		this.payURL = payURL;
+	}
 	
 }

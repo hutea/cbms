@@ -188,7 +188,7 @@
 	}
 	
 	function alipay(){
-		var url ="<%=basePath%>/web/pay/payOrder";
+		var url ="<%=basePath%>/web/payOrder";
 		var data = {
 			confimId:confirmId	
 		};

@@ -53,7 +53,8 @@ public class WorkLogAction extends BaseAction{
 			jpql="convert(varchar(10),o.createDate,120) = ?1 and (o.technician.phonenumber like ?2 or o.technician.name like ?3)";
 			params = new Object[]{queryDate,"%"+queryContent+"%","%"+queryContent+"%"};
 		}else if(queryDate!=null && queryContent==null){
-			jpql="convert(varchar(10),o.createDate,120) = ?1";
+//			jpql="convert(varchar(10),o.createDate,120) = ?1";
+			jpql="o.createDate between ?1 and ?1";
 			params = new Object[]{queryDate};
 		}
 		pageView.setQueryResult(workLogService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));

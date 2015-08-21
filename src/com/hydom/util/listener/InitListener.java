@@ -63,7 +63,9 @@ public class InitListener implements ServletContextAware, ApplicationListener<Co
 		}
 		CommonAttributes.getInstance().setCleanCar(pro.getProperty("server.cleancar"));
 		CommonAttributes.getInstance().setSystemId(pro.getProperty("server.systemId"));
+		CommonAttributes.getInstance().setPayURL(pro.getProperty("system.network_address"));
 		CommonAttributes.getInstance().setSystemParam();
+		
 	}
 	
 	/**

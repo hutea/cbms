@@ -455,7 +455,7 @@ public class Index2Action extends BaseAction{
 					if(member.getMemberRank() == null){
 						youhuiSum = CommonUtil.mul(sum+"", "1")+"";
 					}else{
-						youhuiSum = CommonUtil.mul(sum+"", memberRank.getScale()+"")+"";
+						youhuiSum = CommonUtil.subtract(sum+"", CommonUtil.mul(sum+"", memberRank.getScale()+"")+"")+"";
 					}
 				}else {
 					MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
@@ -679,6 +679,21 @@ public class Index2Action extends BaseAction{
 		
 		model.addAttribute("member", getMemberBean(request));
 		
+		
+		Float price = serviceType.getPrice();
+		if(memberBean != null){
+			List<MemberCoupon> coupons = memberCouponService.canUseList(price, memberBean.getId(), null, 1,2);
+			model.addAttribute("memberCoupon", coupons);
+			
+			//会员等级
+			Member member = memberService.find(memberBean.getId());
+			MemberRank memberRank = member.getMemberRank();
+			if(memberRank != null){
+				model.put("memberRank", memberRank);
+			}
+			
+		}
+		
 		return base+"/cleanCar_addOrder";
 	}
 	
@@ -759,14 +774,13 @@ public class Index2Action extends BaseAction{
 					if(member.getMemberRank() == null){
 						youhuiSum = CommonUtil.mul(sum+"", "1")+"";
 					}else{
-						youhuiSum = CommonUtil.mul(sum+"", memberRank.getScale()+"")+"";
+						youhuiSum = CommonUtil.subtract(sum+"", CommonUtil.mul(sum+"", memberRank.getScale()+"")+"")+"";
 					}
 				}else{//优惠卷
 					MemberCoupon memberCoupon = memberCouponService.find(memberCouponSelect);
 					order.setMemberCoupon(memberCoupon);
 					youhuiSum = orderService.getCouponPrice(memberCoupon,sum);
 				}
-				
 				
 			}
 			
@@ -809,7 +823,6 @@ public class Index2Action extends BaseAction{
 			String orderCachedId = order.getNum();//IDGenerator.getRandomString(32, 0);
 			
 			//CachedManager.putObjectCached("order", orderCachedId, order);
-			
 			return "redirect:gotoConfirm?confimId="+orderCachedId;
 			
 		} catch (Exception e) {
@@ -1094,5 +1107,27 @@ public class Index2Action extends BaseAction{
 		}
 		
 		return ajaxSuccess(jsonArray, response);
+	}
+	
+	/**
+	 * 订单生成 支付
+	 */
+	@RequestMapping("/payOrder")
+	@ResponseBody
+	public String payOrder(String confimId) {
+		// 生成订单中获取order
+		Order order = orderService.getOrderByOrderNum(confimId);
+
+		// 将该订单加入到payOrder中
+		// CachedManager.putObjectCached("payOrder", order.getNum(), order);
+		if (order != null) {
+			JSONObject obj = new JSONObject();
+			obj.put("orderNum", order.getNum());
+			obj.put("orderName", "一动车保服务");
+			obj.put("orderPrice", order.getPrice());
+			return ajaxSuccess(obj, response);
+		}
+
+		return ajaxError("该订单已过期，请重新添加", response);
 	}
 }

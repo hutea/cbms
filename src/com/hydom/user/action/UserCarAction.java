@@ -1,7 +1,6 @@
 package com.hydom.user.action;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -54,7 +53,8 @@ public class UserCarAction extends BaseAction{
 	public @ResponseBody ModelAndView save(UserCar userCar, String carId) {
 		MemberBean bean = getMemberBean(request);
 		if(bean!=null && bean.getMember().getId()!=null){
-			if(StringUtils.isEmpty(userCar.getId())){
+			String s = userCar.getId();
+			if(null==userCar.getId() || "".equals(userCar.getId())){
 				userCar.setCar(carService.find(carId));
 				userCar.setMember(bean.getMember());
 				
@@ -62,6 +62,8 @@ public class UserCarAction extends BaseAction{
 				Object[] params = new Object[]{bean.getMember().getId()};
 				if(0==userCarService.getScrollData(-1, -1, jpql, params).getResultList().size()){
 					userCar.setDefaultCar(true);
+				}else{
+					userCar.setDefaultCar(false);
 				}
 				
 				userCarService.save(userCar);

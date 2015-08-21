@@ -239,7 +239,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				<div class="orderDetails" style="border: none; ">
 					<div class="orderDetailsTop">
 						<div class="left">
-							<a href="#"><img src="<%=basePath %>resource/page/images/steward_4.png" /></a><span class="span1">|</span><span>爱车基本信息</span>
+							<a><img src="<%=basePath %>resource/page/images/steward_4.png" /></a><span class="span1">|</span><span>爱车基本信息</span>
 						</div>
 					</div>
 					<div class="orderDetailsContent">
@@ -251,9 +251,10 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						<div class="orderDetailsContentRight">
 							<form id="inputForm" action="<%=basePath %>user/carSteward/save" method="post">
 								<input type="hidden" name="id" value="${userCar.id }">
-								<input type="hidden" name="memberId" value="${sessionScope.member_session.id }">
+								<input type="hidden" name="defaultCar" value="${userCar.defaultCar }">
 								<div style="display: inline-block;">
-									品&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;牌：<input type="text" placeholder="选择品牌" class="carSelectInput carBrand selectBrand selectInput"
+									品&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;牌：<input type="text" placeholder="选择品牌" 
+									autocomplete="off" class="carSelectInput carBrand selectBrand selectInput"
 										id="carBrandInput" onkeyup="getValue(this);" onclick="inputFocus(this)" value="${userCar.car.carBrand.name }"/>
 									<div class="input_search_result">
 										<ul id="carBrand" style="overflow-y: auto; height: 250px;"></ul>
@@ -261,7 +262,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 									<input type="hidden" id="carBrandId" value="${userCar.car.carBrand.id }"/>
 								</div>
 								<div style="display: inline-block;">
-									车&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;系：<input type="text" placeholder="选择车系" class="carSelectInput carType selectCars selectInput"
+									车&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;系：<input type="text" placeholder="选择车系" 
+									autocomplete="off" class="carSelectInput carType selectCars selectInput"
 									id="carTypeInput" onkeyup="getValue(this);" onclick="inputFocus(this);getValue(this)" value="${userCar.car.carType.name }" />
 									<div class="input_search_result">
 										<ul id="carType" style="overflow-y: auto; height: 250px;"></ul>
@@ -270,7 +272,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 								</div>
 								<div style="display: inline-block;">
 									车&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;型：<input type="text" placeholder="选择车型" class="carSelectInput car selectType selectInput" 
-									id="carInput" readonly="readonly" onclick="inputFocus(this);getValue(this)"  value="${userCar.car.name }"/>
+									id="carInput" readonly="readonly" onclick="inputFocus(this);getValue(this)"  value="${userCar.car.name }" autocomplete="off" />
 									<div class="input_search_result">
 										<ul id="car" style="overflow-y: auto; height: 250px;"></ul>
 									</div>

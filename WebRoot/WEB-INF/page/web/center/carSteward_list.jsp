@@ -107,9 +107,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</ul>
 		</div>
 		<div class="steward1-detail" id="steward1-detail">
-			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; ">0000000000000000000</div>
-			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail">111111111111111111111111</div>
-			<div id="myCouponContent" class="myCouponContent myOrderDetail">22222222222222222222222222</div>
+			<div id="myOrderContent" class="myOrderContent myOrderDetail" style="border: none; "></div>
+			<div id="cancelOrderContent" class="cancelOrderContent myOrderDetail"></div>
+			<div id="myCouponContent" class="myCouponContent myOrderDetail"></div>
 			<div id="myCarModelContent" class="myCarModelContent myOrderDetail">
 				<div class="orderDetails" style="border: none; ">
 					<div class="orderDetailsTop">
@@ -175,10 +175,10 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 					<div class="cancelBottom"><a href="javascript:hide()" class="cancelBottomno"><img src="<%=basePath %>resource/page/images/myOrder6.png" /></a><a id="yes"><img src="<%=basePath %>resource/page/images/myOrder7.png" /></a></div>
 				</div>
 			</div>
-			<div id="accountBalContent" class="accountBalContent myOrderDetail">444444444444444444444444444-1-1-1-1--1-1-1-1-1</div>
-			<div id="basicInfoContent" class="basicInfoContent myOrderDetail">55555555555555555555555555555555555555555555555444444444444</div>
-			<div id="changePassContent" class="changePassContent myOrderDetail">66666666666666666666666666666666666666666666665555555555555555555555555555555555555555555555</div>
-			<div id="feedBackContent" class="feedBackContent myOrderDetail">777777777777777777777777777777777777777777777-2-2-2-2-2-2-2--2-2-2-2</div>
+			<div id="accountBalContent" class="accountBalContent myOrderDetail"></div>
+			<div id="basicInfoContent" class="basicInfoContent myOrderDetail"></div>
+			<div id="changePassContent" class="changePassContent myOrderDetail"></div>
+			<div id="feedBackContent" class="feedBackContent myOrderDetail"></div>
 		</div>
 	</div>
 	

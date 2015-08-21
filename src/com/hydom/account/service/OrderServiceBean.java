@@ -18,6 +18,9 @@ import com.hydom.account.ebean.FeeRecord;
 import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
+import com.hydom.account.ebean.Product;
+import com.hydom.account.ebean.ServerOrder;
+import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.ebean.ServiceType;
 import com.hydom.account.ebean.Technician;
 import com.hydom.core.order.ebean.TechnicianBindRecord;
@@ -43,6 +46,10 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 	private MemberService memberService;
 	@Resource
 	private FeeRecordService feeRecordService;
+	@Resource
+	private ProductService productService;
+	@Resource
+	private MemberCouponService memberCouponService;
 
 	@Override
 	@Transactional(propagation = Propagation.REQUIRED)
@@ -55,7 +62,29 @@ public class OrderServiceBean extends DAOSupport<Order> implements OrderService 
 		feeRecord.setOrder(order);
 		feeRecord.setPayWay(order.getPayWay());
 		feeRecord.setPhone(member.getPhone());
+		feeRecord.setMember(member);
 		feeRecordService.save(feeRecord);
+		if (order.getType() == 2) {// 保养订单
+			for (ServerOrder so : order.getServerOrder()) {
+				for (ServerOrderDetail sod : so.getServerOrderDetail()) {
+					Product product = sod.getProduct();
+					product.setBuyProductCount(product.getBuyProductCount() + 1);
+					productService.update(product);
+				}
+			}
+		} else if (order.getType() == 3) {// 商品订单
+			for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+				Product product = sod.getProduct();
+				product.setBuyProductCount(product.getBuyProductCount() + 1);
+				productService.update(product);
+			}
+		}
+		/** 更改用户优惠券状态 为已使用 */
+		MemberCoupon mc = order.getMemberCoupon();
+		if (mc != null) {
+			mc.setStatus(1);
+			memberCouponService.update(mc);
+		}
 	}
 
 	@Override

@@ -159,7 +159,8 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<p>
 									<a href="${pageContext.request.contextPath}/user/order/details?orderId=${order.id }">订单编号：${order.num }</a>
 									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									&nbsp;
 									<c:if test="${order.status==1||order.status==11||order.status==21 }">
 									<button type="button" onclick="cencal('${order.id}')">取消订单</button></c:if>
 									</p>
@@ -175,7 +176,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				
 								
 											
-								<div class="orderTitleRight"><a href="${pageContext.request.contextPath}/user/order/del?id=${order.id}"><img src="${pageContext.request.contextPath}/resource/page/images/del.png" /></a></div>
+								<%-- <div class="orderTitleRight"><a href="${pageContext.request.contextPath}/user/order/del?id=${order.id}"><img src="${pageContext.request.contextPath}/resource/page/images/del.png" /></a></div> --%>
 							</li>
 							
 							<c:forEach items="${order.serverOrder }" var="serverOrder">
@@ -252,9 +253,19 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 							<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
 							</c:if>
 							<li class="lihover"><a href="javascript:topage(1)">1</a></li>
+							
+							<%-- <c:if test="${pageView.pageIndex.startindex>2}" >
+								<li> <a href='#' >...</a> </li> 
+							</c:if> --%>
+							
 							<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex+1}" var="per">
 							<li class="lihover"><a href='javascript:topage(${per})'>${per}</a></li>
 							</c:forEach>
+							
+							<%-- <c:if test="${pageView.pageIndex.endindex<pageView.totalPage-1}" >
+								<li> <a href='#' >...</a> </li>
+							</c:if> --%>
+			
 							<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
 							<li class="next"><a>&gt;&gt;下一页</a></li>
 							</c:if>

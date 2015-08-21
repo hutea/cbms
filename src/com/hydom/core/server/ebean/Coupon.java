@@ -57,7 +57,7 @@ public class Coupon extends BaseEntity {
 
 	/** 积分兑换数 */
 	@Column(name = "point")
-	private Integer point;
+	private Integer point = 0;
 
 	/** 折扣额 */
 	@Column(name = "discount", columnDefinition = "decimal(20,2)")

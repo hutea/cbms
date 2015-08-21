@@ -18,7 +18,7 @@ import com.hydom.core.server.service.CouponService;
 import com.hydom.util.bean.MemberBean;
 import com.hydom.util.dao.DAOSupport;
 
-@Service
+@Service("memberCouponService")
 public class MemberCouponServiceBean extends DAOSupport<MemberCoupon> implements
 		MemberCouponService {
 	@Resource
@@ -147,12 +147,14 @@ public class MemberCouponServiceBean extends DAOSupport<MemberCoupon> implements
 				memberCoupon.setImgPath(coupon.getImgPath());
 				memberCoupon.setMember(member);
 				memberCoupon.setCoupon(coupon);
+				memberCoupon.setPoint(coupon.getPoint());
+				memberCoupon.setGainWay(1); // 积分兑换
 				memberCoupon.setReceiveDate(new Date());
 				this.save(memberCoupon);
 				member.setAmount(member.getAmount() - requireScore);
 				memberService.update(member);
 				return 1;
-			} else {// 积分不足
+			} else {// 积分不足、或优惠券不支持积分兑换
 				return 0;
 			}
 		} catch (Exception e) {

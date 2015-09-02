@@ -99,6 +99,9 @@
 				<td:permission privilegeValue="manage/order/cancel_list">
 					<li><a href='${pageContext.request.contextPath}/manage/order/cancel_list'>退款成功列表</a></li>
 				</td:permission>
+				<td:permission privilegeValue="manage/comment/list">
+					<li><a href='${pageContext.request.contextPath}/manage/comment/list'>订单评论列表</a></li>
+				</td:permission>
 			</ul>
 		</li>
 		
@@ -136,8 +139,11 @@
 				<td:permission privilegeValue="manage/coupon/list">
 					<li><a href='${pageContext.request.contextPath}/manage/coupon/list'>优惠券管理</a></li>
 				</td:permission>
-				<td:permission privilegeValue="manage/coupon/list">
+				<td:permission privilegeValue="manage/sendCoupon/add">
 					<li><a href='${pageContext.request.contextPath}/manage/sendCoupon/add'>优惠券发放</a></li>
+				</td:permission>
+				<td:permission privilegeValue="manage/rechargebenefits/list">
+					<li><a href='${pageContext.request.contextPath}/manage/rechargebenefits/list'>充值返现/送优惠券</a></li>
 				</td:permission>
 			</ul>
 		</li>
@@ -164,8 +170,7 @@
 				<td:permission privilegeValue="manage/news/add">
 					<li><a href='${pageContext.request.contextPath}/manage/news/add'>新增新闻</a></li>
 				</td:permission>
-				<%-- <li><a href='${pageContext.request.contextPath}/user/order/list?memberId=92dea7a9-5ec7-4044-a73a-ba99b91a2af2'>订单</a></li> --%>
-				<%-- <li><a href='${pageContext.request.contextPath}/web/order/list?memberId=92dea7a9-5ec7-4044-a73a-ba99b91a2af2'>订单</a></li> --%>
+				
 			</ul>
 		</li>
 		<li class="<c:if test="${param.m==13||m==13}">active</c:if> parent" >

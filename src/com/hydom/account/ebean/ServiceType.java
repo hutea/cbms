@@ -20,6 +20,8 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.Where;
+
 import com.hydom.util.dao.BaseEntity;
 
 
@@ -106,6 +108,7 @@ public class ServiceType extends BaseEntity {
 	 */
 	@OneToMany(mappedBy="serviceType",fetch=FetchType.LAZY)
 	@OrderBy("order asc")
+	@Where(clause="visible = 1")
 	private List<ProductCategory> productCategory = new ArrayList<ProductCategory>();
 	
 	/**

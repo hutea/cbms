@@ -14,7 +14,7 @@
 	content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="description" content="">
 
-<title>地区添加</title>
+<title>系统参数</title>
 <link
 	href="${pageContext.request.contextPath}/resource/chain/css/style.default.css"
 	rel="stylesheet">
@@ -117,6 +117,14 @@
 										<input type="text" name="content" class="form-control" maxlength="200" value="${entity.content }" id="content"/>
 									</div>
 								</div>
+								<div class="panel-heading" style="border-top: 1px solid #ddd;">
+									<h4 class="panel-title">app版本号</h4>
+								</div>
+								<div class="form-group">
+									<div class="col-sm-8">
+										<input type="text" name="version" class="form-control" maxlength="200" value="${entity.version }" id="version"/>
+									</div>
+								</div>
 								<div class="panel-footer">
 									<div class="row">
 										<div class="col-sm-9 col-sm-offset-3">
@@ -158,10 +166,12 @@
 			var startDate = $("#timepicker1").val();
 			var endDate = $("#timepicker2").val();
 			var content = $("#content").val();
+			var version = $("#version").val();
 			var data = {
 				startDate:startDate,
 				endDate:endDate,
-				content:content
+				content:content,
+				version:version
 			}
 			$.post(url,data,function(result){
 				if(result.status == "success"){

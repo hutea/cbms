@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.hydom.account.ebean.Member;
 import com.hydom.account.service.MemberService;
 import com.hydom.core.server.service.CarService;
 import com.hydom.user.ebean.UserCar;
@@ -72,6 +73,10 @@ public class UserCarAction extends BaseAction{
 				userCar.setMember(bean.getMember());
 				userCarService.update(userCar);
 			}
+			//刷新session数据
+			Member member = memberService.find(bean.getId());
+			request.getSession().setAttribute(MemberBean.MEMBER_SESSION, MemberBean.convert2MemberBean(member));
+			
 			ModelAndView mav = new ModelAndView("redirect:list");
 			return  mav;
 		}
@@ -109,6 +114,10 @@ public class UserCarAction extends BaseAction{
 			MemberBean bean = getMemberBean(request);
 			if(bean!=null && bean.getMember().getId()!=null){
 				userCarService.resetDefaultCar(bean.getMember().getId(), userCarId);
+				//刷新session数据
+				Member member = memberService.find(bean.getId());
+				request.getSession().setAttribute(MemberBean.MEMBER_SESSION, MemberBean.convert2MemberBean(member));
+				
 				return ajaxSuccess("设置成功！", response);
 			}
 			return ajaxError("删除失败！", response);

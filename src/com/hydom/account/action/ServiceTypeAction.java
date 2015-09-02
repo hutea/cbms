@@ -57,10 +57,10 @@ public class ServiceTypeAction extends BaseAction{
 		
 		List<ServiceType> serviceTypes = serviceTypeService.getList(jpql.toString(), params.toArray(), orderby);
 		
-		pageView.setJpql(jpql.toString());
+		/*pageView.setJpql(jpql.toString());
 		pageView.setParams(params.toArray());
 		pageView.setOrderby(orderby);
-		pageView = serviceTypeService.getPage(pageView);
+		pageView = serviceTypeService.getPage(pageView);*/
 	
 	//	ModelAndView mav = new ModelAndView(basePath+"/service_type_list");
 		model.addAttribute("pageView", serviceTypes);

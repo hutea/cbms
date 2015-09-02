@@ -7,6 +7,8 @@ package com.hydom.util;
 
 import java.util.LinkedHashMap;
 
+import org.apache.commons.lang.StringUtils;
+
 import net.sf.json.JSONObject;
 
 import com.hydom.account.ebean.SystemParam;
@@ -88,10 +90,17 @@ public final class CommonAttributes {
 			}else{
 				systemBean.setContent("只支持贵阳地区");
 			}
+			
 		}catch(Exception e){
 			systemBean.setStartDate("9:00");
 			systemBean.setEndDate("18:00");
 			systemBean.setContent("只支持贵阳地区");
+		}
+		
+		if(StringUtils.isEmpty(param.getVersion())){
+			systemBean.setVersion("0.66");
+		}else{
+			systemBean.setVersion(param.getVersion());
 		}
 		return systemBean;
 	}

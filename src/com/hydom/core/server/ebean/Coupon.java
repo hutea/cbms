@@ -49,7 +49,7 @@ public class Coupon extends BaseEntity {
 
 	/** 是否允许积分兑换 */
 	@Column(name = "is_exchange", nullable = false)
-	private Boolean isExchange = true;
+	private Boolean isExchange = false;
 
 	/** 优惠券类型 1满额打折 (minPrice,rate) 2满额优惠(minPrice,discount) 3减免(discount) */
 	@Column(name = "type", nullable = false, length = 1)

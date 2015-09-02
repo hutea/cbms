@@ -11,7 +11,7 @@ import com.hydom.account.ebean.Product;
 import com.hydom.util.dao.DAOSupport;
 import com.hydom.util.dao.PageView;
 
-@Service
+@Service("productService")
 public class ProductServiceBean extends DAOSupport<Product> implements
 		ProductService {
 
@@ -154,5 +154,65 @@ public class ProductServiceBean extends DAOSupport<Product> implements
 		}
 		query.setParameter("visible", true);
 		return query.getResultList();
+	}
+
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public PageView<Product> getPage(PageView<Product> pageView,
+			String productCategoryId, String productName, String productNum) {
+		
+		String baseHQL = "from Product o left join o.productCategory op left join o.productBrand ob where o.visible=:visible ";
+		
+		if(StringUtils.isNotEmpty(productCategoryId)){
+			baseHQL += "and op.id = :productCategoryId ";
+		}
+		
+		if(StringUtils.isNotEmpty(productName)){
+			baseHQL += "and o.name like :productName ";
+		}
+		
+		if(StringUtils.isNotEmpty(productNum)){
+			baseHQL += "and ob.id = :productNum ";
+		}
+		
+		String sql = "select o "+ baseHQL + " order by o.createDate desc";
+		
+		Query query = em.createQuery(sql);
+		query.setParameter("visible", true);
+		if(StringUtils.isNotEmpty(productCategoryId)){
+			query.setParameter("productCategoryId", productCategoryId);
+		}
+		
+		if(StringUtils.isNotEmpty(productName)){
+			query.setParameter("productName", "%"+productName+"%");
+		}
+		
+		if(StringUtils.isNotEmpty(productNum)){
+			query.setParameter("productNum", productNum);
+		}
+		
+		query.setFirstResult(pageView.getFirstResult());
+		query.setMaxResults(pageView.getMaxresult());
+		pageView.setRecords(query.getResultList());
+		
+		//查找总条数
+		String countSql = "select count(o.id) " + baseHQL;
+		Query countQuery = em.createQuery(countSql);
+		countQuery.setParameter("visible", true);
+		if(StringUtils.isNotEmpty(productCategoryId)){
+			countQuery.setParameter("productCategoryId", productCategoryId);
+		}
+		
+		if(StringUtils.isNotEmpty(productName)){
+			countQuery.setParameter("productName", "%"+productName+"%");
+		}
+		
+		if(StringUtils.isNotEmpty(productNum)){
+			countQuery.setParameter("productNum", productNum);
+		}
+		pageView.setTotalrecord((Long) countQuery.getSingleResult());
+		
+		return pageView;
 	}
 }

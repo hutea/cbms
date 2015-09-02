@@ -1,5 +1,7 @@
 package com.hydom.account.ebean;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,14 +29,15 @@ public class RechargeBenefits extends BaseEntity {
 
 	/**金额 */
 	@Column(columnDefinition = "decimal(20,2)")
-	private Float money;
+	private BigDecimal money;
 
 	/** 返现比例：小于1 */
 	@Column(columnDefinition = "decimal(20,2)")
 	private Float scale;
 
 	/** 是否启用 */
-	private Boolean enable = true;
+	//默认禁用
+	private Boolean enable = false;
 
 	/** 赠送的优惠券 */
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -54,11 +57,11 @@ public class RechargeBenefits extends BaseEntity {
 		this.type = type;
 	}
 
-	public Float getMoney() {
+	public BigDecimal getMoney() {
 		return money;
 	}
 
-	public void setMoney(Float money) {
+	public void setMoney(BigDecimal money) {
 		this.money = money;
 	}
 

@@ -95,9 +95,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 					</div>
 					<div class="orderDetailsContent">
 						<div class="left">
-						<c:if test="${order.type==1 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder1.png" /></c:if>
-						<c:if test="${order.type==2 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" /></c:if>
-						<c:if test="${order.type==3 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" /></c:if>
+						<c:if test="${order.type==1 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder1.png" height="165" width="165" /></c:if>
+						<c:if test="${order.type==2 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" height="165" width="165" /></c:if>
+						<c:if test="${order.type==3 }"><img src="${pageContext.request.contextPath}/resource/page/images/myOrder3.png" height="165" width="165" /></c:if>
 						</div>
 						<div class="right">
 							<ul>

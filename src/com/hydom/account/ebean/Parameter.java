@@ -5,6 +5,7 @@
  */
 package com.hydom.account.ebean;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -41,13 +42,14 @@ public class Parameter extends BaseEntity {
 	private String name;
 
 	/** 参数组 */
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE,CascadeType.PERSIST})
 	@JoinColumn(name="parameter_group_id",nullable = false)
 	private ParameterGroup parameterGroup;
-
 	
 	@Column(name="orders")
 	private Integer order;
+	
+	private Boolean visible = true;
 	
 	public String getName() {
 		return name;
@@ -71,6 +73,14 @@ public class Parameter extends BaseEntity {
 
 	public void setOrder(Integer order) {
 		this.order = order;
+	}
+
+	public Boolean getVisible() {
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
 	}
 	
 }

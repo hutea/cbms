@@ -19,6 +19,7 @@ public class SystemBean implements Serializable{
 	private String startDate;
 	private String endDate;
 	private String content;
+	private String version;
 	public String getStartDate() {
 		return startDate;
 	}
@@ -37,6 +38,10 @@ public class SystemBean implements Serializable{
 	public void setContent(String content) {
 		this.content = content;
 	}
-	
-	
+	public String getVersion() {
+		return version;
+	}
+	public void setVersion(String version) {
+		this.version = version;
+	}
 }

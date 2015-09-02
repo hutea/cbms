@@ -15,21 +15,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-
-
-
-
-
-import com.hydom.account.ebean.ProductLabel;
 import com.hydom.account.ebean.Technician;
+import com.hydom.account.service.OrderService;
 import com.hydom.account.service.TechnicianService;
 import com.hydom.util.BaseAction;
+import com.hydom.util.DateTimeHelper;
 import com.hydom.util.dao.PageView;
 @Controller
 @RequestMapping("/manage/technician")
 public class TechnicianAction extends BaseAction{
 @Resource
 private TechnicianService technicianService;
+@Resource
+private OrderService orderService;
 @Autowired
 private HttpServletRequest request;
 @Autowired
@@ -46,12 +44,12 @@ private final static int mark = 10;
 public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent) {
 	PageView<Technician> pageView = new PageView<Technician>(maxresult, page);
 	LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-	orderby.put("id", "desc");
-	String jpql = "o.visible = 1 ";
+	orderby.put("name", "desc");
+	String jpql = "o.visible = 1";
 	Object[] params = new Object[]{};
 	if(queryContent!=null){
-		jpql+="and o.name like ?1 or o.account like ?2 or o.phonenumber like ?3";
-		params = new Object[]{"%"+queryContent+"%","%"+queryContent+"%","%"+queryContent+"%"};
+		jpql+=" and (o.name like ?1 or o.account like ?2 or o.phonenumber like ?3)";
+		params = new Object[]{"%"+queryContent+"%",queryContent+"%",queryContent+"%"};
 	}
 	pageView.setQueryResult(technicianService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
 	request.setAttribute("pageView", pageView);
@@ -111,7 +109,18 @@ public String delete(String[] ids){
 	
 	for(String id : ids){
 		Technician entity = technicianService.find(id);
+		String deleteExtraName = DateTimeHelper.formatDateTimetoString(
+				new Date(), "yyyyMMddHHmmss-");
+		entity.setAccount(entity.getAccount() + "-DEL-" + deleteExtraName);
+		entity.setJobstatus(false);
+		entity.setPushId("0");
+		entity.setPhonenumber(entity.getPhonenumber() + "-DEL-" + deleteExtraName);
 		entity.setVisible(false);
+		if(entity.getOrder()!=null){
+			entity.getOrder().setTechMember(null);
+			entity.getOrder().setStatus(1);
+		}
+		entity.setOrder(null);
 		technicianService.update(entity);
 	}
 	return ajaxSuccess("成功", response);

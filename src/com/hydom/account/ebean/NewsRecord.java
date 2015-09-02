@@ -23,7 +23,7 @@ public class NewsRecord extends BaseEntity {
 	@JoinColumn(name = "member_id")
 	private Member member;
 
-	@ManyToOne(cascade = { CascadeType.REFRESH, }, optional = false)
+	@ManyToOne(cascade = { CascadeType.REFRESH,CascadeType.REMOVE }, optional = false)
 	@JoinColumn(name = "news_id")
 	private News news;
 

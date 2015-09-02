@@ -41,8 +41,8 @@ public class TechnicianServiceBean extends DAOSupport<Technician> implements
 		try {
 			return (Technician) em
 					.createQuery(
-							"select o from Technician o where o.account=?1 and o.password=?2")
-					.setParameter(1, account).setParameter(2, password)
+							"select o from Technician o where o.visible=?3 and o.account=?1 and o.password=?2")
+					.setParameter(1, account).setParameter(2, password).setParameter(3, true)
 					.getSingleResult();
 		} catch (NoResultException e) {
 			System.out.println("账户名或密码错误");

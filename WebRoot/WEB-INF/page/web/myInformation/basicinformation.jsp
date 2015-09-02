@@ -84,7 +84,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 					</div>
 					<div class="basicDetailsContent">
 						<div class="basicInfoAccount">
-							<div class="basicInfoPic"><img src="<%=basePath%>${member.photo }" /></div>
+							<div class="basicInfoPic"><img src="<%=basePath%>${member.photo }" height="111" width="111" /></div>
 							<div class="basicInfoPerson">
 								<p>名&nbsp;&nbsp;称：<b>${member.nickname }</b></p>
 								<p>手机号码：<b>${member.mobile }</b></p>

@@ -23,6 +23,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="${pageContext.request.contextPath}/resource/chain/js/retina.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery.cookies.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/custom.js"></script>
+	
+	<script src="${pageContext.request.contextPath}/resource/chain/js/laydate/laydate.js"></script>
+	
 	<script src="${pageContext.request.contextPath}/resource/js/myform.js" type="text/javascript"></script>
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
 	<!--[if lt IE 9]>
@@ -30,16 +33,14 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
 	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
+		function initPicker(obj){
+			var pricker = {
+				elem : '#'+obj,
+				format : 'YYYY-MM-DD',
+				istime : true,
+				istoday : false
+			};
+			laydate(pricker);
 		}
 	</script>
 	<style type="text/css">
@@ -69,18 +70,51 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		    	<input type="hidden" name="searchProp" value="${searchProp }"/>
 			    <div class="contentpanel">
 			      <div class="search-header">
+			      	
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">订单编号</label>
+						<div class="col-sm-8">
+							<input type="text" name="orderNum" class="form-control" maxlength="200" value="${orderNum }"/>
+						</div>
+					</div>
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">收货人电话</label>
+						<div class="col-sm-8">
+							<input type="text" name="orderPhone" class="form-control" maxlength="200" value="${orderPhone }"/>
+						</div>
+					</div>
+					<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">开始时间</label>
+						<div class="col-sm-8">
+							<div class="input-group">
+                               <input type="text" class="form-control" placeholder="开始时间" id="datepicker" onclick="initPicker('datepicker');" name="startDate" value="${startDate }">
+                               <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                           </div>
+						</div>
+					</div>
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">结束时间</label>
+						<div class="col-sm-8">
+							<div class="input-group">
+	                           <input type="text" class="form-control" placeholder="结束时间" id="datepicker1" onclick="initPicker('datepicker1');" name="endDate" value="${endDate }">
+	                           <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                           </div>
+						</div>
+					</div>
+			      	
 			        <div class="btn-list">
-			          <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/order" disabled>删除</button>
+			         <%--  <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/order" disabled>删除</button> --%>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
+			          <button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
 					 <%--  <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/order">添加</button> --%>
-			          <div style="float: right;max-width: 340px;height: 37px;">
+			         <%--  <div style="float: right;max-width: 340px;height: 37px;">
 			            <div class="input-group" style="float: left;max-width: 240px;">
 			              <input id="searchValue" placeholder="关键字查询" name="queryContent" value="${queryContent}" type="text" class="form-control" maxlength="50" style="height: 37px">
 			            </div>
 			            <div style="float: right">
 			            	<button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
 			            </div>
-			          </div>
+			          </div> --%>
 			        </div>
 			      </div>
 			
@@ -88,11 +122,17 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			        <table id="listTable" class="table table-info" >
 			        	<thead>
 							<tr>
-								<th class="check">
+								<!-- <th class="check">
 									<input type="checkbox" id="selectAll"/>
+								</th> -->
+								<th>
+									订单编号
 								</th>
 								<th>
-									收货人
+									客户名称
+								</th>
+								<th>
+									客户电话
 								</th>
 								<th>
 									订单金额
@@ -122,11 +162,17 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						</thead>
 						<c:forEach items="${pageView.records}" var="order">  
 							<tr>
-								<td>
+								<%-- <td>
 									<input type="checkbox" name="ids" value="${order.id}" />
+								</td> --%>
+								<td>
+									<a href="<%=base %>/manage/order/detail?id=${order.id}" title="详情">${order.num }</a>
 								</td>
 								<td>
 									${order.contact }
+								</td>
+								<td>
+									${order.phone }
 								</td>
 								<td>
 									${order.price }
@@ -159,7 +205,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<span><fmt:formatDate value="${order.createDate}" pattern="yyyy-MM-dd"/></span>
 								</td>
 								<td>
-									
+									<c:if test="${order.status ne 34}">
+										<a href="javascript:showModal('${order.id}');">[再次退款]</a>
+									</c:if>
 								</td>
 							</tr>
 						  </c:forEach>
@@ -171,5 +219,66 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		  </div>       
     </div> <!-- mainwrapper -->
     </section>
+    <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button aria-hidden="true" data-dismiss="modal" class="close" type="button">×</button>
+                  <h4 class="modal-title">请输入退款理由</h4>
+              </div>
+         	  <input type="hidden" name="orderId" id="orderId"/>
+              <div class="modal-body" id="chooseTeamContent">
+              		<input type="text" value="" name="content"/>
+              </div>
+              <div class="modal-footer">
+             		<button data-dismiss="modal" type="button" aria-hidden="true" class="btn btn-dark">关闭</button>
+              		<button type="button" onclick="agreeOrder();" class="btn btn-primary mr5">确定</button>
+              </div>
+          </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    var base = "<%=base%>";
+   	 function showModal(obj){
+			$("#orderId").val(obj);
+			$(".bs-example-modal-lg").modal();
+		}
+		
+		//完结订单
+		function agreeOrder(){
+			var obj = $("#orderId").val();
+			var content = $("input[name='content']").val();
+			if(content == ""){
+				alert("请输入退费理由");
+				return;
+			}
+			var url = base + "manage/order/financeAgree";
+			var data = {
+				orderId:obj,
+				content:content
+			};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					refundWay(result.message);
+					window.location.reload(true);
+				}else{
+					alert(result.message);
+				}
+			},"json");
+		}
+		
+		//1 会员卡 2 支付宝 3 银联 4 微信 5 现金
+		function refundWay(result){
+			if(result.payWay == 1){
+				alert("操作成功");
+			}else if(result.payWay == 2){
+				var trade_no = result.trade_num;//支付宝唯一交易流水号
+				var price = result.price;//支付金额
+				var content = result.content;//理由
+				var openUrl = "<%=base%>alipay/alipayrefund.jsp?orderTradeNum="+trade_no+"&orderPrice="+price+"&orderContent="+content;
+				window.open(openUrl);	
+			}
+		}
+    </script>
 </body>
 </html>

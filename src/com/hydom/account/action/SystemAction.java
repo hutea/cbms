@@ -36,7 +36,7 @@ import com.hydom.util.bean.SystemBean;
 public class SystemAction extends BaseAction {
 	
 	private static String base = "/account";
-	
+	private static String mark = "12";
 	@Resource
 	private SystemParamService systemParamService;
 	
@@ -44,6 +44,7 @@ public class SystemAction extends BaseAction {
 	public String getSystemView(ModelMap model){
 		SystemBean bean = CommonAttributes.getInstance().getSystemBean();
 		model.addAttribute("entity", bean);
+		model.addAttribute("m", mark);
 		return base + "/system_view";
 	}
 	
@@ -56,7 +57,7 @@ public class SystemAction extends BaseAction {
 	 */
 	@RequestMapping("/update")
 	@ResponseBody
-	public String getUpdate(@RequestParam String startDate,@RequestParam String endDate,String content,HttpServletResponse response){
+	public String getUpdate(@RequestParam String startDate,@RequestParam String endDate,String content,String version,HttpServletResponse response){
 		try{
 			JSONObject obj = new JSONObject();
 			obj.put("startDate", startDate);
@@ -65,6 +66,7 @@ public class SystemAction extends BaseAction {
 			
 			SystemParam systemParam = systemParamService.find(CommonAttributes.getInstance().getSystemId());
 			systemParam.setContent(obj.toString());
+			systemParam.setVersion(version);
 			systemParamService.update(systemParam);
 			
 			CommonAttributes.getInstance().setSystemParam();
@@ -83,7 +85,7 @@ public class SystemAction extends BaseAction {
 	 */
 	@RequestMapping("/deleteView")
 	public String deleteView(ModelMap model){
-		
+		model.addAttribute("m", mark);
 		return base + "/system_delete";
 	}
 	

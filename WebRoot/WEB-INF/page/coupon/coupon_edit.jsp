@@ -147,7 +147,7 @@
 	
 	function rateInputRestrict(e){
 		var v=$(e).val();
-		var r = /^\d(\.\d)?$/;
+		var r = /^[1-9](\.[0-9])?$/;
 		if(!r.test(v)){
 			$(e).val("");
 		}
@@ -366,8 +366,8 @@
 								<div class="form-group" id="rateDiv">
 									<label class="col-sm-4 control-label">折扣率（折）</label>
 									<div class="col-sm-8">
-										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写小于10的折扣率,如：8.5" 
-										CHname="折扣率" onBlur="check(this);rateInputRestrict(this);" value="${coupon.rate }">
+										<input type="text" class="form-control" name="rate" id="rate" placeholder="请填写小于10且大于1的折扣率,如：8.5" 
+										CHname="折扣率" onBlur="check(this);rateInputRestrict(this);" value="${coupon.rate*10 }">
 										<input type="hidden" class="repeat"/>
 										<span class="errorStyle" id="rate_error"></span>
 									</div>

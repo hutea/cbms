@@ -34,8 +34,17 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		function getLaydate(obj){
 			var option = {
 				elem : '#'+obj,
-				format : 'YYYY-MM-DD',
-				istime : false,
+				format : 'YYYY-MM-DD hh:mm:ss',
+				istime : true,
+				istoday : true
+			};
+			laydate(option);
+		}
+		function getLaydate2(obj){
+			var option = {
+				elem : '#'+obj,
+				format : 'YYYY-MM-DD hh:mm:ss',
+				istime : true,
 				istoday : true
 			};
 			laydate(option);
@@ -66,10 +75,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			          <%-- <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/carBrand" disabled>删除</button> --%>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
 			          
-			          <div style="float: right;max-width: 500px;height: 37px;">
-			            <div class="input-group" style="float: left;max-width: 420px;">
-				            <input style="height: 37px;" type="text" class="form-control hasDatepicker" placeholder="按时间查询" id="queryDate" name="queryDate" onclick="getLaydate('queryDate')" 
-				            value="${queryDate}">
+			          <div style="float: right;max-width: 700px;height: 37px;">
+			            <div class="input-group" style="float: left;max-width: 620px;">
+			            	<input style="height: 37px;" type="text" class="form-control hasDatepicker" placeholder="请输入开始时间" id="opDate" name="opDate" onclick="getLaydate('opDate')" 
+				            value="<fmt:formatDate value='${opDate}' pattern='yyyy-MM-dd HH:mm:ss'/>">
+				            <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+				            <input style="height: 37px;" type="text" class="form-control hasDatepicker" placeholder="请输入结束时间" id="edDate" name="edDate" onclick="getLaydate2('edDate')" 
+				            value="<fmt:formatDate value='${edDate}' pattern='yyyy-MM-dd HH:mm:ss'/>">
 							<span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
 			             	<input id="searchValue" placeholder="关键字查询" name="queryContent" value="${queryContent}" type="text" class="form-control" maxlength="50" style="height: 37px">
 			            </div>

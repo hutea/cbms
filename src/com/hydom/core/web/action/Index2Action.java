@@ -365,6 +365,12 @@ public class Index2Action extends BaseAction{
 			order.setCarColor(carColor);
 			order.setCarNum(carNum);
 			
+			if(StringUtils.isNotEmpty(userCarId)){
+				UserCar userCar = userCarService.find(userCarId);
+				if(userCar!=null){
+					order.setDrange(userCar.getDrange());
+				}
+			}
 			
 			/*if(StringUtils.isNotEmpty(memberCouponId)){
 				MemberCoupon memberCoupon = memberCouponService.find(memberCouponId);
@@ -484,6 +490,18 @@ public class Index2Action extends BaseAction{
 			order.setPrice(totail);
 			
 			orderService.update(order);
+			
+			//生成一条消费记录
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo(null);
+			feeRecord.setFee(order.getPrice());
+			feeRecord.setVisible(false);
+			feeRecordService.save(feeRecord);
+			
 			
 			String orderCachedId = order.getNum();//IDGenerator.getRandomString(32, 0);
 			//CachedManager.putObjectCached("order", orderCachedId, order);
@@ -612,14 +630,14 @@ public class Index2Action extends BaseAction{
 			}
 			
 			//保存一条消费记录
-			FeeRecord feeRecord = new FeeRecord();
+			FeeRecord feeRecord = order.getFeeRecord();
 			feeRecord.setType(2);
 			feeRecord.setOrder(order);
 			feeRecord.setPayWay(order.getPayWay());
 			feeRecord.setPhone(order.getPhone());
 			feeRecord.setTradeNo("");
 			feeRecord.setFee(order.getPrice());
-			feeRecordService.save(feeRecord);
+			feeRecordService.update(feeRecord);
 			
 			order.setIsPay(true);
 			orderService.update(order);
@@ -751,12 +769,19 @@ public class Index2Action extends BaseAction{
 	 * @return
 	 */
 	@RequestMapping("/existOrder")
-	public String existOrder(Order order,String memberCouponSelect){
+	public String existOrder(Order order,String memberCouponSelect,String userCarId){
 		
 		try {
 			//保存订单
 			Car car = carService.find(order.getCar().getId());
 			order.setCar(car);
+			
+			if(StringUtils.isNotEmpty(userCarId)){
+				UserCar userCar = userCarService.find(userCarId);
+				if(userCar!=null){
+					order.setDrange(userCar.getDrange());
+				}
+			}
 			
 			//ServiceType serviceType = serviceTypeService.find(order.getServiceType().getId());
 			//order.setType(serviceType.getType());
@@ -788,7 +813,13 @@ public class Index2Action extends BaseAction{
 		//amount_paid 优惠价     amount_money 原价    price 实际价格
 			order.setAmount_money(sum);//原价
 			order.setAmount_paid(Float.parseFloat(youhuiSum));//优惠价
-			order.setPrice(totail);//实际价格
+			
+			if(totail >= 0f){
+				order.setPrice(totail);//实际价格
+			}else{
+				order.setPrice(0f);
+			}
+			
 			
 			/*if(StringUtils.isNotEmpty(memberCouponId)){
 				MemberBean bean = getMemberBean(request);
@@ -809,12 +840,22 @@ public class Index2Action extends BaseAction{
 			
 			//保存服务订单
 			ServerOrder serverOrder = new ServerOrder();
-			
 			serverOrder.setServiceType(serviceType);
 			serverOrder.setName(serviceType.getName());
 			serverOrder.setPrice(serviceType.getPrice());
 			serverOrder.setOrder(order);
 			serverOrderService.save(serverOrder);
+			
+			//生成一条消费记录
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo(null);
+			feeRecord.setFee(order.getPrice());
+			feeRecord.setVisible(false);
+			feeRecordService.save(feeRecord);
 			
 			//serverOrderSet.add(serverOrder);
 			////将Order放入缓存
@@ -885,13 +926,13 @@ public class Index2Action extends BaseAction{
 	}
 	
 	/**
-	 * 生成订单 ====》 保存数据库
+	 * 洗车订单支付
 	 * @param confimId
 	 * @return
 	 */
 	@RequestMapping("/saveCleanCarOrder")
 	@ResponseBody
-	public String save(String confimId){
+	public String saveCleanCarOrder(String confimId){
 		
 		try {
 			Order order = orderService.getOrderByOrderNum(confimId);
@@ -920,54 +961,36 @@ public class Index2Action extends BaseAction{
 			}
 			
 			//保存一条消费记录
-			FeeRecord feeRecord = new FeeRecord();
+			FeeRecord feeRecord = order.getFeeRecord();
 			feeRecord.setType(2);
 			feeRecord.setOrder(order);
 			feeRecord.setPayWay(order.getPayWay());
 			feeRecord.setPhone(order.getPhone());
 			feeRecord.setTradeNo("");
 			feeRecord.setFee(order.getPrice());
-			feeRecordService.save(feeRecord);
+			feeRecord.setVisible(true);
+			feeRecordService.update(feeRecord);
 			
 			order.setIsPay(true);
 			orderService.update(order);
 			
-			//推送技师
-			pushTechnician(order.getId());
+			//判断该订单电话号码是否存在
+			/*Member member = memberService.findByMobile(order.getPhone());
+			if(member == null){
+				member = new Member();
+				member.setMobile(order.getPhone());
+				memberService.save(member);
+			}*/
 			
+			//推送技师
+			//pushTechnician(order.getId());
+			PushUtil.pushTechnician(order.getId());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		return ajaxSuccess("成功", response);
-	}
-		
-	
-	public Boolean pushTechnician(String orderId){
-		boolean bindResult = orderService.bindTechnician(orderId); // 分配技师
-		if (bindResult) {// 执行推送
-			Order order = orderService.find(orderId);
-			Map<String, String> dataMap = new LinkedHashMap<String, String>();
-			dataMap.put("orderId", order.getId());
-			dataMap.put("orderNum", order.getNum());
-			dataMap.put("contact", order.getContact());
-			dataMap.put("phone", order.getPhone());
-			dataMap.put("car", order.getCar().getName());
-			dataMap.put("carNum", order.getCarNum());
-			dataMap.put("carColor", order.getCarColor());
-			dataMap.put("cleanType", order.getCleanType() + "");
-			dataMap.put("mlng", order.getLng() + "");
-			dataMap.put("mlat", order.getLat() + "");
-			try {// 保留时长根据 “几分钟用户不响应重新分配订单”来设定
-				PushUtil.push("一动车保", "您有一个新的订单，请查收.", 86400, dataMap,
-						order.getTechMember().getPushId());
-				System.out.println("推送成功");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		return bindResult;
 	}
 	
 	
@@ -999,9 +1022,9 @@ public class Index2Action extends BaseAction{
 	@ResponseBody
 	public String getFreeTechnicain(String confimId){
 		try {
-			Order order = (Order) CachedManager.getObjectCached("order", confimId);
-			//technicianService.isFree()
-			if(true){
+			//Order order = (Order) CachedManager.getObjectCached("order", confimId);
+			boolean b = technicianService.isFree();
+			if(b){
 				return ajaxSuccess("成功", response);
 			}
 		} catch (Exception e) {

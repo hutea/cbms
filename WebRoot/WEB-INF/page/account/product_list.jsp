@@ -14,11 +14,13 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<title>一动车保</title>
 	<link href="${pageContext.request.contextPath}/resource/chain/css/style.default.css" rel="stylesheet">
 	<link href="${pageContext.request.contextPath}/resource/css/manage.common.css" rel="stylesheet">
-	
+		<link href="${pageContext.request.contextPath}/resource/chain/css/select2.css" rel="stylesheet">
+		
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery-1.11.1.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery-migrate-1.2.1.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/bootstrap.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/modernizr.min.js"></script>
+		<script src="${pageContext.request.contextPath}/resource/chain/js/select2.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/pace.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/retina.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery.cookies.js"></script>
@@ -30,17 +32,10 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="js/respond.min.js"></script>
 	<![endif]-->
 	<script type="text/javascript">
-	  	function del(accid){
-		if (confirm('您确定要禁用吗')) {
-			var url = "${pageContext.request.contextPath}/manage/account/delete";
-			var data = {ids:accid};
-			$.get(url,data,function(data) {
-		      	if(data.status=="success"){
-		      		$("#td_"+accid).html("禁用");
-		       	}
-			   },"json");
-			}
-		}
+	  	$(document).ready(function(){
+	  		$("#productCategorys").select2();
+	  		$("#productBrandId").select2();
+	  	});
 	</script>
 </head>
 
@@ -60,21 +55,63 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		        </div>
 		      </div><!-- media -->
 		    </div>
-		    <form id="pageList" action="${pageContext.request.contextPath}/manage/product/list" method="post">
+		    <form id="pageList" action="${pageContext.request.contextPath}/manage/product/list" method="post" class="form-horizontal form-bordered">
 			    <div class="contentpanel">
 			      <div class="search-header">
+			      <div class="form-group" style="border-top: 0px dotted #d3d7db;width: 33%;display: inline-block;">
+						<label class="col-sm-3 control-label">商品分类</label>
+						<div class="col-sm-8">
+							<select name="productCategoryId" id="productCategorys" style="width: 100%;">
+								<option value="">选择分类</option>
+								<c:forEach var="category" items="${productCategorys }">
+									<option value="${category.id }" 
+										<c:if test="${productCategoryId eq category.id}">selected="selected"</c:if>
+									>
+										<c:if test="${category.grade gt 0}">
+											<c:forEach begin="1" end="${category.grade }">
+												&nbsp;&nbsp;
+											</c:forEach>
+										</c:if>
+										${category.name}
+									</option>
+								</c:forEach>
+							</select>
+						</div>
+					</div>
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 33%;display: inline-block;">
+						<label class="col-sm-3 control-label">商品品牌</label>
+						<div class="col-sm-8">
+							<select name="productNum" id="productBrandId" style="width: 100%;">
+								<option value="">选择品牌</option>
+								<c:forEach var="value" items="${productBrands }">
+									<option value="${value.id }" 
+										<c:if test="${productNum eq value.id}">selected="selected"</c:if>
+									>
+										${value.name}
+									</option>
+								</c:forEach>
+							</select>
+						</div>
+					</div>
+					 <div class="form-group" style="border-top: 0px dotted #d3d7db;width: 33%;display: inline-block;">
+						<label class="col-sm-3 control-label">商品名称</label>
+						<div class="col-sm-8">
+							<input type="text" name="productName" class="form-control" maxlength="200" value="${productName }"/>
+						</div>
+					</div>
 			        <div class="btn-list">
 			          <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/product" disabled>删除</button>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
 					  <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/product">添加</button>
-			          <div style="float: right;max-width: 340px;height: 37px;">
+					  <button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
+			         <%--  <div style="float: right;max-width: 340px;height: 37px;">
 			            <div class="input-group" style="float: left;max-width: 240px;">
 			              <input id="searchValue" placeholder="关键字查询" name="queryContent" value="${queryContent}" type="text" class="form-control" maxlength="50" style="height: 37px">
 			            </div>
 			            <div style="float: right">
 			            	<button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
 			            </div>
-			          </div>
+			          </div> --%>
 			        </div>
 			      </div>
 			

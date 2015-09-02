@@ -1,12 +1,15 @@
 package com.hydom.account.ebean;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -14,8 +17,8 @@ import com.hydom.util.dao.BaseEntity;
 
 @Entity
 @Table(name = "t_comment")
-public class Comment extends BaseEntity {
 
+public class Comment extends BaseEntity {
 	/**
 	 * 
 	 */
@@ -30,11 +33,11 @@ public class Comment extends BaseEntity {
 	private Member member;
 
 	/** 订单中的服务 */
-	@OneToOne(mappedBy = "comment")
+	@OneToOne(mappedBy = "comment",fetch=FetchType.LAZY)
 	private ServerOrder serverOrder;
 
 	/** 订单中包含的商品 */
-	@OneToOne(mappedBy = "comment")
+	@OneToOne(mappedBy = "comment",fetch=FetchType.LAZY)
 	private ServerOrderDetail serverOrderDetail;
 
 	/** 评论星级 */
@@ -59,6 +62,9 @@ public class Comment extends BaseEntity {
 
 	private Boolean visible = true;
 
+	@OneToMany(fetch=FetchType.LAZY,mappedBy="comment")
+	private Set<CommentImg> imgs = new HashSet<CommentImg>();
+	
 	public Member getMember() {
 		return member;
 	}
@@ -131,4 +137,12 @@ public class Comment extends BaseEntity {
 		this.visible = visible;
 	}
 
+	public Set<CommentImg> getImgs() {
+		return imgs;
+	}
+
+	public void setImgs(Set<CommentImg> imgs) {
+		this.imgs = imgs;
+	}
+	
 }

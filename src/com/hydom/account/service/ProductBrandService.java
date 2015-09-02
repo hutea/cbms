@@ -1,5 +1,7 @@
 package com.hydom.account.service;
 
+import java.util.List;
+
 import com.hydom.account.ebean.ProductBrand;
 import com.hydom.util.dao.DAO;
 
@@ -17,5 +19,11 @@ public interface ProductBrandService extends DAO<ProductBrand> {
 	 * @return
 	 */
 	public ProductBrand findbyName(String name);
+	
+	/**
+	 * 获取所有品牌
+	 * @return
+	 */
+	public List<ProductBrand> getAllProductBrand();
 
 }

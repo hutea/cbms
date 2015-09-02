@@ -47,7 +47,7 @@
 		String payment_type = "1";
 		//必填，不能修改
 		//服务器异步通知页面路径
-		String notify_url = network_address+":"+network_port+"/"+network_name+"/web/pay/alipay_return";
+		String notify_url = network_address+"/web/pay/alipay_return";
 		//需http://格式的完整路径，不能加?id=123这类自定义参数
 
 		//页面跳转同步通知页面路径  
@@ -75,7 +75,8 @@
 		//String payMoney = request.getParameter("money");
 		String total_fee = request.getParameter("orderPrice");
 		//必填
-
+		
+		String returnAddress = request.getParameter("returnAddress");
 		//订单描述
 	//	String orderContent = request.getParameter("content");
 		String body = request.getParameter("content");
@@ -84,10 +85,10 @@
 		
 		String address = request.getParameter("address");
 		
-		notify_url = network_address+":"+network_port+"/"+network_name+"/web/pay/"+address;
+		notify_url = network_address+"/web/pay/"+address;
 		//out.println(notify_url);
 		//必填
-
+		String return_url = network_address+"/web/"+returnAddress+"?confimId="+out_trade_no;
 		//订单描述
 		//需以http://开头的完整路径，例如：http://www.xxx.com/myorder.html
 
@@ -109,7 +110,7 @@
         sParaTemp.put("_input_charset", AlipayConfig.input_charset);
 		sParaTemp.put("payment_type", payment_type);
 		sParaTemp.put("notify_url", notify_url);
-		//sParaTemp.put("return_url", return_url);
+		sParaTemp.put("return_url", return_url);
 		sParaTemp.put("seller_email", email);
 		sParaTemp.put("out_trade_no", out_trade_no);
 		sParaTemp.put("subject", subject);

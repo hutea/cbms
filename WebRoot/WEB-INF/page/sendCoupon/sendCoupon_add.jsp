@@ -204,7 +204,7 @@
 								</div>
 
 								<div class="form-group">
-									<label class="col-sm-4 control-label">优惠券类型</label>
+									<label class="col-sm-4 control-label">优惠券名称</label>
 									<div class="col-sm-8">
 										<select id="type" name="type" class="selects">
 											<c:forEach items="${coupons }" var="coupon" >

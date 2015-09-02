@@ -98,6 +98,15 @@ public class AppServerTechnician {
 				String json = mapper.writeValueAsString(dataMap);
 				return json;
 			}
+			StringBuffer jpql = new StringBuffer("o.visible = ?1 and o.pushId = ?2");
+			Object[] params = new Object[]{true,pushId};
+			QueryResult<Technician> tech = technicianService.getScrollData(-1, -1, jpql.toString(), params);
+			List<Technician> list = tech.getResultList();
+			for(Technician t : list){
+				t.setPushId("0");
+				technicianService.update(t);
+			}
+			
 			technician.setPushId(pushId);
 			technicianService.update(technician);
 			dataMap.put("result", "001");
@@ -286,14 +295,10 @@ public class AppServerTechnician {
 	/**
 	 * 技师接受订单
 	 * 
-	 * @param techId
-	 *            技师id
-	 * @param orderId
-	 *            订单id
-	 * @param tlng
-	 *            技师经度
-	 * @param tlat
-	 *            技师纬度
+	 * @param techId 技师id
+	 * @param orderId 订单id
+	 * @param tlng 技师经度
+	 * @param tlat 技师纬度
 	 * @return
 	 */
 	@RequestMapping(value = "acceptOrder", produces = "text/html;charset=UTF-8")
@@ -304,7 +309,15 @@ public class AppServerTechnician {
 					+ " 技师经度=" + tlng + " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
 			Order order = orderService.find(orderId);
-//			if((tech.getStats()!=0 || tech.getOrder()==null) && order.getStatus()!=1) return "{\"result\":\"000\"}";
+			if(order.getStatus()>=31 && order.getStatus()<=39){
+				tech.setOrder(null);
+				order.setTechMember(null);
+				technicianService.update(tech);
+				orderService.update(order);
+				return "{\"result\":\"1002\"}";
+			}
+			if(tech.getOrder()==null || order.getStatus()!=1) return "{\"result\":\"1003\"}";
+			if(tlng==0 && tlat==0) return "{\"result\":\"1001\"}";
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
 			tech.setStats(1);
@@ -320,10 +333,11 @@ public class AppServerTechnician {
 					* Math.pow(Math.sin(b / 2), 2)));
 			s = s * EARTH_RADIUS;
 			s = Math.round(s * 10000) / 10000;
-			order.setDistance(s);
+			order.setDistance(s/1000);
 
 			order.setStatus(2);
 			order.getTechnicianBindRecord().setState(2);
+			order.setOrdersDate(new Date());
 			orderService.update(order);
 
 			JSONObject obj = new JSONObject();
@@ -362,8 +376,16 @@ public class AppServerTechnician {
 			JSONObject obj = new JSONObject();
 			Technician tech = technicianService.find(techId);
 			Order order = tech.getOrder();
-//			if((tech.getStats()!=0 || tech.getOrder()==null) && order.getStatus()!=1) return "{\"result\":\"000\"}";
-
+			if(order.getStatus()>=31 && order.getStatus()<=39){
+				tech.setOrder(null);
+				order.setTechMember(null);
+				technicianService.update(tech);
+				orderService.update(order);
+				return "{\"result\":\"1002\"}";
+			}
+			if(order==null || order.getStatus()!=1) return "{\"result\":\"1003\"}";
+			if(tlng==0 || tlat==0) return "{\"result\":\"1001\"}";
+			
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
 
@@ -382,6 +404,7 @@ public class AppServerTechnician {
 			order.getTechnicianBindRecord().setRefuseDate(new Date());
 			order.getTechnicianBindRecord().setRefuseCause(refuseCause);
 			order.getTechnicianBindRecord().setState(3);
+			order.setTechMember(null); 
 			orderService.update(order);
 
 			// 查找未绑定技师的订单
@@ -472,10 +495,11 @@ public class AppServerTechnician {
 		try {
 			log.info("App【服务开始】：" + "技师id=" + techId);
 			Technician tech = technicianService.find(techId);
-			Order order = orderService.find(tech.getOrder().getId());
-//			if((tech.getStats()!=1 || tech.getOrder()==null) && order.getStatus()!=2) return "{\"result\":\"000\"}";
+			Order order = tech.getOrder();
+			if(order==null || order.getStatus()!=2) return "{\"result\":\"1003\"}";
 			if(imageUrl!=null){
 				for (String img : imageUrl) {
+					if(imageUrl==null || imageUrl.equals("null")) continue;
 					ServiceImage serviceImage = new ServiceImage();
 					serviceImage.setOrder(tech.getOrder());
 					serviceImage.setImg(img);
@@ -486,7 +510,7 @@ public class AppServerTechnician {
 
 			tech.setStats(2);
 			technicianService.update(tech);
-			order.setStartDate(new Date());
+			order.setMakeStartDate(new Date());
 			order.setStatus(3);
 			orderService.update(order);
 			JSONObject obj = new JSONObject();
@@ -519,10 +543,11 @@ public class AppServerTechnician {
 			log.info("App【服务结束】：" + "技师id=" + techId + " 技师经度=" + tlng
 					+ " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
-			Order order = orderService.find(tech.getOrder().getId());
-//			if((tech.getStats()!=2 || tech.getOrder()==null) && order.getStatus()!=3) return "{\"result\":\"000\"}";
+			Order order = tech.getOrder();
+			if(order==null || order.getStatus()!=3) return "{\"result\":\"1003\"}";
 			JSONObject obj = new JSONObject();
 			for (String img : imageUrl) {
+				if(imageUrl==null || imageUrl.equals("null")) continue;
 				ServiceImage serviceImage = new ServiceImage();
 				serviceImage.setOrder(tech.getOrder());
 				serviceImage.setImg(img);
@@ -531,7 +556,7 @@ public class AppServerTechnician {
 			}
 
 			// 更改订单状态为完成
-			order.setStartDate(new Date());
+			order.setMakeEndDate(new Date());
 			order.setStatus(0);
 			orderService.update(order);
 
@@ -600,15 +625,23 @@ public class AppServerTechnician {
 	 */
 	@RequestMapping(value = "setLngAndLat", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String setLngAndLat(String techId, Double tlng, Double tlat) {
+	String setLngAndLat(String techId, Double tlng, Double tlat, String area) {
 		try {
 			log.info("App【技师经纬度更新】：" + "技师id=" + techId + " 技师经度=" + tlng
-					+ " 技师纬度=" + tlat);
+					+ " 技师纬度=" + tlat + " 所在地=" + area);
 			Technician technician = technicianService.find(techId);
+			if((tlat==0||tlat==null) && (tlng==0||tlng==null)) return "{\"result\":\"1001\"}";
 			technician.setLongitude(tlng);
 			technician.setLatitude(tlat);
+			if(StringUtils.isEmpty(area)) area="获得地区失败";
+			technician.setArea(area);
 			technicianService.update(technician);
 			JSONObject obj = new JSONObject();
+			
+//			Date d2=new Date();
+//			System.out.println("经纬度更新接口调用时间间隔（s）："+(Double.parseDouble((d2.getTime()-d1.getTime())+"")/1000));
+//			d1=new Date();
+			
 			obj.put("result", "001");
 			obj.put("jobStatus", technicianService.find(techId).isJobstatus());
 			return obj.toString();
@@ -617,6 +650,8 @@ public class AppServerTechnician {
 			return "{\"result\":\"000\"}";
 		}
 	}
+	
+//	static private Date d1=new Date();
 
 	/**
 	 * 原密码验证与修改密码
@@ -711,7 +746,7 @@ public class AppServerTechnician {
 																	// 1内部清洗
 																	// 2内外清洗
 				sdf = new SimpleDateFormat("yyyy-MM-dd");
-				Date date = tbr.getOrder().getStartDate();
+				Date date = tbr.getOrder().getMakeStartDate();
 				if (date != null) {
 					obj.put("startDate", sdf.format(date));// 服务时间
 				} else {
@@ -743,7 +778,7 @@ public class AppServerTechnician {
 	 */
 	@RequestMapping(value = "getOrderInfo", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String getOrderInfo(String orderId) {
+	String getOrderInfo(String orderId, String techId) {
 		try {
 			log.info("App【获得订单详情】" + "订单id=" + orderId);
 			Order order = orderService.find(orderId);
@@ -761,7 +796,7 @@ public class AppServerTechnician {
 			obj.put("mlat", order.getLng());// 用户纬度
 			obj.put("distance", order.getDistance());// 距离
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			Date date = order.getStartDate();
+			Date date = order.getMakeStartDate();
 			if (date != null) {
 				obj.put("startDate", sdf.format(date));// 服务时间
 			} else {
@@ -772,7 +807,11 @@ public class AppServerTechnician {
 					.getAfterImageByOrderId(orderId);
 			for (int i = 0; i < 3; i++) {
 				if (i < imgUrl.size()) {
-					imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
+					if(imgUrl.get(i).getImg().equals("null") || imgUrl.get(i).getImg()==null){
+						imgs.put("imgUrl" + i, "");
+					}else{
+						imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
+					}
 				} else {
 					imgs.put("imgUrl" + i, "");
 				}
@@ -782,7 +821,11 @@ public class AppServerTechnician {
 			imgUrl = serviceImageService.getBeforeImageByOrderId(orderId);
 			for (int i = 0; i < 3; i++) {
 				if (i < imgUrl.size()) {
-					imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
+					if(imgUrl.get(i).getImg().equals("null") || imgUrl.get(i).getImg()==null){
+						imgs.put("imgUrl" + i, "");
+					}else{
+						imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
+					}
 				} else {
 					imgs.put("imgUrl" + i, "");
 				}
@@ -826,21 +869,21 @@ public class AppServerTechnician {
 	 * 
 	 * @param techid
 	 *            技师ID
-	 * @param oid
+	 * @param oId
 	 *            订单ID
 	 * @return
 	 */
 	@RequestMapping(value = "/order/status", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String orderStatus(String techid, String oid) {
+	String orderStatus(String techId, String oId) {
 		try {
-			log.info("App【订单状态判断】" + " techid=" + techid + " oid=" + oid);
+			log.info("App【订单状态判断】" + " techId=" + techId + " oId=" + oId);
 			JSONObject obj = new JSONObject();
-			Order order = orderService.find(oid);
+			Order order = orderService.find(oId);
 			obj.put("result", "001");
 
 			if (order.getTechMember() != null
-					&& techid.equals(order.getTechMember().getId())
+					&& techId.equals(order.getTechMember().getId())
 					&& order.getStatus() == 1) { // 当前订单属于该技师、并且订单状态为派单中
 				obj.put("ostatus", 1);
 			} else {

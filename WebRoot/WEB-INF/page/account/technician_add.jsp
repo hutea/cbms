@@ -112,8 +112,9 @@ function checkLevel() {
 		$("#level").next().val("success");
 	}
 }
+
 function checkPhoneNumber() {
-	var reg = /^(1[3|5|8])[\d]{9}$/;
+	var reg = /^1\d{10}$/;
 	var phoneNumber = $("#phonenumber").val();
 	$
 			.post(

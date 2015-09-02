@@ -184,18 +184,16 @@ public class CommonUtil {
 	}
 	
 	/**
-	 * 将float类型 * type  用于金钱的换算 元--》分
+	 * 将float 变成 long 扩大倍数 type 精度 scale 
 	 * @param f
 	 * @return
 	 */
 	public static long getLong(float f,int type,int scale){
 		Float price = mul(f+"", type+"");
 		BigDecimal b = new BigDecimal(price);
-		long b1 = b.setScale(scale).longValue();
+		long b1 = b.setScale(scale, BigDecimal.ROUND_UP).longValue();
 		return b1;
 	}
-	
-	
 	
 	/**
 	 * 判断是否为数字
@@ -320,6 +318,12 @@ public class CommonUtil {
 	 */
 
 	public static float mul(String v1, String v2) {
+		if (StringUtils.isEmpty(v1) || "null".equals(v1)) {
+			v1 = "0";
+		}
+		if (StringUtils.isEmpty(v2) || "null".equals(v2)) {
+			v2 = "0";
+		}
 		BigDecimal b1 = new BigDecimal(v1).setScale(2, BigDecimal.ROUND_DOWN);
 		BigDecimal b2 = new BigDecimal(v2).setScale(2, BigDecimal.ROUND_DOWN);
 		return b1.multiply(b2).setScale(2, BigDecimal.ROUND_UP).floatValue();
@@ -371,7 +375,7 @@ public class CommonUtil {
 	 * @return 保留相应位数的float数字
 	 */
 	public static float scale2Number(String v, Integer scale) {
-		System.out.println(StringUtils.isEmpty(v));
+		/*System.out.println(StringUtils.isEmpty(v));*/
 		if (StringUtils.isEmpty(v) || "null".equals(v)) {
 			v = "0";
 		}
@@ -448,5 +452,7 @@ public class CommonUtil {
 		//System.out.println(add(d+"","0"));
 		System.out.println(mul(m1,m2));
 		System.out.println(div(m1, m2));
+		long mm = getLong(0.01f, 1, 0);
+		System.out.println(mm);
 	}
 }

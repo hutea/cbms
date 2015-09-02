@@ -261,11 +261,12 @@ img.brandImage{
 								
 								var serviceId = $(this).attr("serviceId");
 								$("."+serviceId).remove();
-								
+								totalSum();
 							}else{//勾选
 								li.addClass("selectMaintainDoor");
 								b.addClass("gouimg2");
 								var serviceId = $(this).attr("serviceId");
+								var carId = $("#carHiddenId").val();
 								//var typeInt = $(this).attr("typeInt");
 								//var money = $(this).attr("money");
 								//var name = $(this).attr("name");
@@ -308,8 +309,9 @@ img.brandImage{
 					
 					//请求总方法
 					function doPost(url,data){
-						var carId = "${carServer.car.id}";
+						var carId = "${cleanCar.car.id}";
 						data.carId = carId;
+						console.log(data);
 						$.post(url,data,function(result){
 							if(result.status == "success"){
 								addProductDetailTabel(result.message);

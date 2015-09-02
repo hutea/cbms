@@ -131,8 +131,8 @@ public class Member extends BaseEntity {
 	private Set<MemberCoupon> couponSet = new HashSet<MemberCoupon>();
 
 	@Transient
-	private String getMemberNamePhone() {
-		String phone = this.phone;
+	public String getMemberNamePhone() {
+		String phone = this.mobile;
 		String codePhone = phone.replaceAll("(\\d{3})\\d{4}(\\d{4})",
 				"$1****$2");
 		return codePhone;

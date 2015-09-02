@@ -45,7 +45,7 @@
 <script
 	src="${pageContext.request.contextPath}/resource/chain/js/custom.js"></script>
 	<script type="text/javascript" charset="utf-8" src="<%=basePath %>resource/ueditor/ueditor.config.js"></script>
-	<script type="text/javascript" charset="utf-8" src="<%=basePath %>resource/ueditor/ueditor.all.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="<%=basePath %>resource/ueditor/ueditor.all.js"></script>
 	
 <!-- 公共JS -->
 <script type="text/javascript"
@@ -57,7 +57,7 @@
         <![endif]-->
 <STYLE type="text/css">
 .form-bordered div.form-group {
-	width: 49%;
+	/* width: 49%; */
 	padding: 5px 10px;
 	border-top: 0px dotted #d3d7db;
 }
@@ -110,14 +110,14 @@
 							action="<%=basePath%>manage/news/save" method="POST">
 							<div class="panel-body nopadding">
 								<div class="form-group">
-									<label class="col-sm-4 control-label">新闻标题</label>
+									<label class="col-sm-2 control-label">新闻标题</label>
 									<div class="col-sm-8">
 										<input type="text" class="form-control" name="title"  value="${news.title}" id="name">
 									</div>
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">缩略图</label>
+									<label class="col-sm-2 control-label">缩略图</label>
 									<div class="col-sm-8">
 										<div class="img_div">
 											<img alt="" src="
@@ -132,16 +132,15 @@
 								</div>
 								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">新闻简介</label>
+									<label class="col-sm-2 control-label">新闻简介</label>
 									<div class="col-sm-8">
 										<textarea name="memo">${news.memo}</textarea>
 									</div>
 								</div>
-								
 								<div class="form-group">
-									<label class="col-sm-4 control-label">新闻内容</label>
+									<label class="col-sm-2 control-label">新闻内容</label>
 									<div class="col-sm-8">
-										<script id="editor" type="text/plain" style="width:600px;height:400px;"></script>
+										<script id="editor" type="text/plain" style="width:100%;height:400px;"></script>
     									<textarea style="display:none;" id="content" name="content" >${news.content}</textarea>
 									</div>
 								</div>
@@ -172,12 +171,12 @@
 	</script>
 	<script type="text/javascript">
 		jQuery(document).ready(function() {
-		 jQuery("#inputForm").validate({
+		/*  jQuery("#inputForm").validate({
   				 errorLabelContainer: jQuery("#inputForm div.errorForm")
-			});
-		 jQuery(".fruits").select2({
+			}); */
+		/*  jQuery(".fruits").select2({
 				minimumResultsForSearch : -1
-			});
+			}); */
 		});
 		function submitForm(){
 	 		var html = ue.getContent();

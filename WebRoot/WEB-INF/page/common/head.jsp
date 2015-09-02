@@ -1,4 +1,8 @@
 <%@ page language="java" pageEncoding="UTF-8"%>
+
+<script src="${pageContext.request.contextPath}resource/chain/js/html5shiv.min.js"></script>
+<script src="${pageContext.request.contextPath}resource/chain/js/respond.min.js"></script>
+
 <header>
 <div class="headerwrapper">
 	<div class="header-left">

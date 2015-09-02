@@ -154,6 +154,12 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 	.payRemindersBottom div a {color: #fff;}
 	.payRemindersBottom .left {margin-left: 100px; margin-right: 70px;  background-color: #c9c9c9;}
 	.payRemindersBottom .right {background-color: #ffae00;}
+	.weixinBody .bodyTable {
+		display: inline-block;
+		margin-left: 145px;
+		margin-bottom: 10px;
+		margin-top: 10px;
+	}
 </style>
 <script
 	src="${pageContext.request.contextPath}/resource/chain/js/jquery-1.11.1.min.js"></script>
@@ -173,6 +179,9 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 	src="${pageContext.request.contextPath}/resource/chain/js/custom.js"></script>
 <script src="${pageContext.request.contextPath}/resource/js/myform.js"
 	type="text/javascript"></script>
+<!-- 微信二维码生成 -->
+<script type="text/javascript" src="${pageContext.request.contextPath}/weixin/qrcode/jquery.qrcode.js"></script>
+<script type="text/javascript" src="${pageContext.request.contextPath}/weixin/qrcode/qrcode.js"></script>
 </head>
 
 <body>
@@ -269,7 +278,7 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 				<ul>
 					<li><label class="zhifubao payLabel" >支付宝</label></li>
 					<li><label class="yinlian payLabel">银联</label></li>
-					<li><label class="weixin payLabel">微信</label></li>
+					<%-- <li><label class="weixin payLabel">微信</label></li> --%>
 				</ul>
 			</div>
 		</div>
@@ -278,7 +287,7 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 		<div class="payReminders">
 			<div class="payRemindersTitle">
 				<span>网上支付提示</span>
-				<a href="javascript:closeDiv();" class="closePayRem"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
+				<a href="javascript:closePayDiv();" class="closePayRem"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
 			</div>
 			<div class="payRemindersCon">
 				<p>充值完成前，请不要关闭此支付验证窗口。</p>
@@ -287,7 +296,24 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 			</div>
 			<div class="payRemindersBottom">
 				<div class="left"><a href="#">充值遇到问题</a></div>
-				<div class="right "><a href="javascript:orderSuccess();">支付完成</a></div>
+				<div class="right "><a href="javascript:orderSuccess();">充值完成</a></div>
+			</div>
+		</div>
+	</div>
+	<div class="weixinPay" style="display: none;">
+		<!-- <div id="mabg9"></div> -->
+		<div class="payReminders" style="height: auto;">
+			<div class="payRemindersTitle">
+				<span>微信充值提示</span>
+				<a href="javascript:closePayDiv();" class="closePayRem"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
+			</div>
+			<div class="weixinBody">
+				<p style="text-align: center;margin-top: 5px;">请用微信扫描二维码</p>
+				<div id="qrcodeTable" class="bodyTable"></div>
+			</div>
+			<div class="payRemindersBottom" style="margin-bottom: 10px;">
+				<div class="left"><a href="#">充值遇到问题</a></div>
+				<div class="right "><a href="javascript:orderSuccess();">充值完成</a></div>
 			</div>
 		</div>
 	</div>
@@ -305,9 +331,10 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 				if(element.hasClass("zhifubao")){//支付宝
 					alipay();
 				}else if(element.hasClass("yinlian")){
-					
+					alert("该支付方式不可用,请选择其他充值方式");
+					//unionPay();
 				}else if(element.hasClass("weixin")){
-					
+					weixinPay();
 				}
 			});
 		}
@@ -321,36 +348,37 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 			$("#mg1").hide();
 			$(".zhifu").hide();
 			$(".pay").hide();
+			$(".weixinPay").hide();
 		}
 		
 		function orderSuccess(){
 			window.location.reload(true);
 		}
 		
-		function forcheck22(ss){
-			 var type="^d+(.d+)?$"; 
-			 var re = new RegExp(type); 
-			 if(ss.match(re)==null){ 
-				 return false;
+		function checkScale(value){
+			var v = parseFloat(value);
+			if(v > 0){
+				return true;
 			}
-			 return true;
+			return false;
 		}
 		
 		function alipay(){
-			var url ="<%=base%>/user/balance/pay";
+			var url ="<%=base%>/user/balance/pay/alipay";
 			var priceAccount = $("input[name='priceAccount']").val();
 			
-			if(!priceAccount){
+			if(!checkScale(priceAccount)){
 				alert("请填写大于0的数");
 				return;
 			}
 			
 			var data = {
-				price: priceAccount
+				price: priceAccount,
+				type:2
 			}
 			
 			$(".zhifu").hide();
-			$(".pay").show();
+			//$(".pay").show();
 			
 			$.post(url,data,function(result){
 				if(result.status == "success"){
@@ -359,131 +387,62 @@ box-shadow: 0 0 0 10px rgba(28, 28, 28, 0.3);
 					var orderPrice = value.orderPrice;
 					var orderName = value.orderName;
 					var address = "alipay_recharge_return";
-					//var returnAddress = "<%=base%>user/balance/view";
-					var openUrl = "<%=base%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address;
-					window.open(openUrl);					
+					var returnAddress = "<%=base%>user/balance/view";
+					var openUrl = "<%=base%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address+"&returnAddress="+returnAddress;
+					window.location.href=openUrl;
+					//window.open(openUrl);					
 				}else{
 					alert(result.message);
 					$(".pay").hide();
 					$("#mg1").hide();
+					$(".weixinPay").show();
 				}
 			},"json");
 		}
 		
+		//微信支付
+		function weixinPay(){
+			var url = "<%=base%>/user/balance/pay/weixinpay";
+			var priceAccount = $("input[name='priceAccount']").val();
+			if(!checkScale(priceAccount)){
+				alert("请填写大于0的数");
+				return;
+			}
+			var data = {
+				price: priceAccount,
+				type:4
+			}
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					var erwei = result.message;
+					initQrcode(erwei);
+					$(".zhifu").hide();
+					$(".weixinPay").show();
+					$("#mg1").show();
+				}
+			},"json");
+		}
+		//微信二维码生成
+		function initQrcode(value){
+			$("#qrcodeTable").html("");
+			jQuery('#qrcodeTable').qrcode({
+				render : "table",
+				text : value
+			});
+		}
+		
+		//银联支付
+		function unionPay(){
+			var url = "<%=base%>/user/balance/pay/unionpay";
+			var priceAccount = $("input[name='priceAccount']").val();
+			if(!checkScale(priceAccount)){
+				alert("请填写大于0的数");
+				return;
+			}
+			var html = url + "?price="+priceAccount+"&type=3";
+			window.location.href= url + "?price="+priceAccount;			
+		}
 		
 	</script>
-	
-	
-	<!-- <script>
-		$(function() {
-			function tabs(tabTit, on, active, tabCon) {
-				$(tabCon).each(function() {
-					$(this).children().eq(4).show();
-				});
-				$(tabTit).each(function() {
-					//$(this).children().eq(4).addClass(on);
-				});
-				$(tabTit).children().click(function() {
-					$(this).addClass(on).siblings().removeClass(on);
-					var index = $(tabTit).children().index(this);
-					$(tabCon).children().eq(index).show().siblings().hide();
-					$(this).siblings().addClass(on);
-					$(this).siblings().removeClass(on);
-					$(this).parent().siblings().children().removeClass(on);
-
-					$(this).parent().siblings().removeClass(active);
-					$(this).parent().prev().addClass(active);
-				});
-			}
-			tabs(".menu-list", "on", "active", "#steward1-detail");
-		})
-
-		$(function() {
-			function tabs(tabTit, liSelected, tabCon) {
-				$(tabCon).each(function() {
-					$(this).children().eq(0).show();
-				});
-				$(tabTit).each(function() {
-					//$(this).children().eq(0).addClass(liSelected);
-				});
-				$(tabTit).children().click(
-						function() {
-							$(this).addClass(liSelected).siblings()
-									.removeClass(liSelected);
-							var index = $(tabTit).children().index(this);
-							$(tabCon).children().eq(index).show().siblings()
-									.hide();
-							$(this).siblings().addClass(liSelected);
-							$(this).siblings().removeClass(liSelected);
-							$(this).parent().siblings().children().removeClass(
-									liSelected);
-						});
-			}
-			tabs(".totalTitle", "liSelected", ".orderListsContent");
-		})
-
-		$(document).ready(function() {
-			$(".selectInput").focus(function() {
-				$(this).addClass("selected");
-			});
-			$(".selectInput").blur(function() {
-				$(this).removeClass("selected");
-			});
-		});
-
-		$(function() {
-
-					//判断浏览器是否支持placeholder属性
-					supportPlaceholder = 'placeholder' in document
-							.createElement('input'),
-
-					placeholder = function(input) {
-
-						var text = input.attr('placeholder'), defaultValue = input.defaultValue;
-
-						if (!defaultValue) {
-
-							input.val(text).addClass("phcolor");
-						}
-
-						input.focus(function() {
-
-							if (input.val() == text) {
-
-								$(this).val("");
-							}
-						});
-
-						input.blur(function() {
-
-							if (input.val() == "") {
-
-								$(this).val(text).addClass("phcolor");
-							}
-						});
-
-						//输入的字符不为灰色
-						input.keydown(function() {
-
-							$(this).removeClass("phcolor");
-						});
-					};
-
-			//当浏览器不支持placeholder属性时，调用placeholder函数
-			if (!supportPlaceholder) {
-
-				$('input').each(function() {
-
-					text = $(this).attr("placeholder");
-
-					if ($(this).attr("type") == "text") {
-
-						placeholder($(this));
-					}
-				});
-			}
-
-		});
-	</script> -->
 </body>
 </html>

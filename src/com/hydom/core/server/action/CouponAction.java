@@ -112,6 +112,7 @@ public class CouponAction extends BaseAction {
 	public ModelAndView edit(@ModelAttribute Coupon coupon) {
 		Coupon entity = couponService.find(coupon.getId());
 		coupon.setCreateDate(entity.getCreateDate());
+		if(coupon.getType()==1) coupon.setRate(coupon.getRate() / 10);
 		if (coupon.getBeginDate() == null) {
 			coupon.setBeginDate(new Date());
 		}

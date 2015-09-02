@@ -22,7 +22,7 @@ public class Technician extends BaseEntity{
 	private static final long serialVersionUID = 7969987728818977496L;
 	
 	/**帐号*/
-	@Column(name="account",nullable=false)
+	@Column(name="account",nullable=false,unique=true)
 	private String account;
 	/**密码*/
 	@Column(name="password",nullable=false)
@@ -51,12 +51,6 @@ public class Technician extends BaseEntity{
 	@JoinColumn(name = "order_id")
 	private Order order;
 	
-	public boolean isJobstatus() {
-		return jobstatus;
-	}
-	public void setJobstatus(boolean jobstatus) {
-		this.jobstatus = jobstatus;
-	}
 	/**经度*/
 	@Column(name="longitude")
 	private Double longitude;
@@ -69,17 +63,31 @@ public class Technician extends BaseEntity{
 	@Column(name="visible")
 	private Boolean visible = true;
 
-	
 	/**技师星级*/
-	
 	@Column(name="level")
 	private Double level;
 	
 	/**头像*/
 	@Column(name="ico")
 	private String imgPath;
+	
+	/**当前所在地*/
+	@Column(name="area")
+	private String area;
 
 	
+	public String getArea() {
+		return area;
+	}
+	public void setArea(String area) {
+		this.area = area;
+	}
+	public boolean isJobstatus() {
+		return jobstatus;
+	}
+	public void setJobstatus(boolean jobstatus) {
+		this.jobstatus = jobstatus;
+	}
 	public String getPushId() {
 		return pushId;
 	}

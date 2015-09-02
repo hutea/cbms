@@ -14,12 +14,12 @@
 					<td>
 						<div>
 							<p>
-								评价：<span>${value.pcontent }</span>
+								评价：<span>${value.content }</span>
 							</p>
-							<c:if test="${!empty value.customComment }">
+							<c:if test="${!empty value.account }">
 								<p>
-									回复：<span>${value.customComment.pcontent }</span>
-								</p>	
+									回复：<span>${value.reply }</span>
+								</p>
 							</c:if>
 							<b><fmt:formatDate value="${value.createDate }" pattern="yyyy-MM-dd"/></b>
 						</div>
@@ -37,3 +37,13 @@
 <div style="position:relative;height: 58px;">
 	<jsp:include page="comment_fenye.jsp" />
 </div>
+<script type="text/javascript">
+	$(document).ready(function(){
+		var commentTotal = "${pageView.totalrecord}";
+		$("#commentTotalSpan").text(commentTotal);
+		
+		var hasImgComent = "${count}";
+		$("#commentHasImg").text(hasImgComent);		
+	});
+
+</script>

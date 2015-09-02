@@ -182,7 +182,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 							<c:forEach items="${order.serverOrder }" var="serverOrder">
 							<li class="orderContent">
 								<dl>
-									<dt><img src="<%=base%>${serverOrder.serviceType.imgPath}" /><b>${serverOrder.serviceType.name }</b></dt>
+									<dt><img src="<%=base%>${serverOrder.serviceType.imgPath}" height="79" width="79"/><b>${serverOrder.serviceType.name }</b></dt>
 									<dd>
 										<ul>
 											<li class="li1">￥${serverOrder.serviceType.price }</li>
@@ -216,7 +216,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 							<c:forEach items="${order.serverOrderDetail }" var="serverOrderDetail">
 								<li class="orderContent">
 								<dl>
-									<dt><img src="<%=base%>${serverOrderDetail.product.imgPath }" /><b>${serverOrderDetail.product.fullName }</b></dt>
+									<dt><img src="<%=base%>${serverOrderDetail.product.imgPath }"  height="79" width="79"/><b>${serverOrderDetail.product.fullName }</b></dt>
 									<dd>
 										<ul>
 											<li class="li1">￥${serverOrderDetail.product.price }</li>
@@ -247,31 +247,30 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						<c:if test="${pageView.totalrecord > 0}">
 						<ul class="comment2 ste">
 						<c:if test="${(pageView.currentPage-1)<1}" >
-							<li class="pre"><a>&lt;&lt;上一页</a></li>
-							</c:if>
-							<c:if test="${(pageView.currentPage-1)>=1}" >
-							<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
-							</c:if>
-							<li class="lihover"><a href="javascript:topage(1)">1</a></li>
-							
-							<%-- <c:if test="${pageView.pageIndex.startindex>2}" >
-								<li> <a href='#' >...</a> </li> 
-							</c:if> --%>
-							
-							<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex+1}" var="per">
-							<li class="lihover"><a href='javascript:topage(${per})'>${per}</a></li>
-							</c:forEach>
-							
-							<%-- <c:if test="${pageView.pageIndex.endindex<pageView.totalPage-1}" >
-								<li> <a href='#' >...</a> </li>
-							</c:if> --%>
-			
-							<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
-							<li class="next"><a>&gt;&gt;下一页</a></li>
-							</c:if>
-							<c:if test="${(pageView.currentPage+1)<=pageView.totalPage}" >
-							<li class="next"><a href="javascript:topage(${pageView.currentPage+1})">&gt;&gt;下一页</a></li>
-							</c:if>
+						<li class="pre"><a>&lt;&lt;上一页</a></li>
+					</c:if>
+					<c:if test="${(pageView.currentPage-1)>=1}" >
+						<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
+					</c:if>
+					<li class="lihover"><a href="javascript:topage(1)">1</a></li>
+					<c:if test="${pageView.pageIndex.startindex>2}" >
+						<li class="lihover"> <a>...</a> </li> 
+					</c:if>
+					<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex}" var="per">
+						<li class="lihover"><a href="javascript:topage(${per})">${per}</a></li>
+					</c:forEach>
+					<c:if test="${pageView.pageIndex.endindex<pageView.totalPage-1}" >
+						<li> <a>...</a> </li>
+					</c:if>
+					<c:if test="${pageView.totalPage>=2}">
+						<li> <a href='javascript:topage(${pageView.totalPage})' >${pageView.totalPage}</a> </li>
+					</c:if>
+					<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
+						<li class="next"><a>&gt;&gt;下一页</a></li>
+					</c:if>
+					<c:if test="${(pageView.currentPage+1)<=pageView.totalPage}" >
+						<li class="next"><a href="javascript:topage(${pageView.currentPage+1})">&gt;&gt;下一页</a></li>
+					</c:if>
 							
 						</ul>
 						</c:if>

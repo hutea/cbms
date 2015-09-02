@@ -92,7 +92,7 @@ public class SelectCarAction extends BaseAction{
 			Object[] params = new Object[]{cb};
 			
 			if(StringUtils.isNotEmpty(keyWord)){
-				jpql.append(" and o.qp like ?2 or o.name like ?3 or o.jp like ?4");
+				jpql.append(" and (o.qp like ?2 or o.name like ?3 or o.jp like ?4)");
 				params = new Object[]{cb,keyWord+"%","%"+keyWord+"%",keyWord+"%"};
 			}
 			QueryResult<CarType> carTypes = carTypeService.getScrollData(-1, -1, jpql.toString(), params, orderby);

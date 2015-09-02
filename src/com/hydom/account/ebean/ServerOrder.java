@@ -16,6 +16,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Where;
@@ -40,6 +41,7 @@ public class ServerOrder extends BaseEntity {
 	 */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "service_type_id")
+	@OrderBy("order asc")
 	private ServiceType serviceType;
 
 	/**
@@ -70,7 +72,7 @@ public class ServerOrder extends BaseEntity {
 	/**
 	 * 商品订单详情
 	 */
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "serverOrder",cascade=CascadeType.PERSIST)
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "serverOrder", cascade = CascadeType.PERSIST)
 	private Set<ServerOrderDetail> serverOrderDetail = new HashSet<ServerOrderDetail>();
 
 	public ServiceType getServiceType() {

@@ -3,6 +3,7 @@ package com.hydom.api.action;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -100,7 +101,15 @@ import com.hydom.util.PushUtil;
 import com.hydom.util.UploadImageUtil;
 import com.hydom.util.WebUtil;
 import com.hydom.util.dao.PageView;
+import com.hydom.util.payUtil.PayCommonUtil;
+import com.hydom.util.payUtil.UnionPayUtil;
+import com.hydom.util.payUtil.Util;
 import com.hydom.util.payUtil.WeChatPayUtil;
+import com.hydom.util.payUtil.common.Configure;
+import com.hydom.util.payUtil.common.MD5;
+import com.hydom.util.payUtil.common.RandomStringGenerator;
+import com.hydom.util.payUtil.common.Signature;
+import com.hydom.util.payUtil.common.XMLParser;
 
 @RequestMapping("/api")
 @Controller
@@ -1281,7 +1290,7 @@ public class AppServer {
 			log.info("App【商品评论 列表】：" + "uid=" + uid + " token=" + token
 					+ " page=" + page + " maxresult=" + maxresult);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
-
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 			/** 数据获取 **/
 			List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 
@@ -1302,11 +1311,15 @@ public class AppServer {
 				map.put("cid", comt.getId());
 				map.put("cphoto", comt.getMember().getPhoto());
 				map.put("cperson", comt.getMember().getNickname());
-				map.put("cmname", comt.getServerOrderDetail().getOrder()
-						.getCar().getName());
+				try {
+					map.put("cmname", comt.getServerOrderDetail().getOrder()
+							.getCar().getName());
+				} catch (Exception e) {
+					map.put("cmname", "");
+				}
 				map.put("star", comt.getStar() + "");
-				map.put("ctime", comt.getServerOrder()); // 1小时前
-				map.put("content", 200);
+				map.put("ctime", sdf.format(comt.getCreateDate())); // 1小时前
+				map.put("content", comt.getContent());
 				List<Map<String, String>> imglist = new ArrayList<Map<String, String>>();
 				for (CommentImg img : commentImgService.listForTheComment(comt
 						.getId())) {
@@ -1314,7 +1327,7 @@ public class AppServer {
 					imap.put("img", img.getImgPath());
 					imglist.add(imap);
 				}
-				map.put("imglist", 200);
+				map.put("imglist", imglist);
 				list.add(map);
 			}
 			dataMap.put("result", "001");
@@ -1631,6 +1644,17 @@ public class AppServer {
 					+ lng + " address=" + address + " cleanType=" + cleanType
 					+ " payWay=" + payWay + " cpid=" + cpid);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+
+			// 经纬度判断
+			if (lat == 0 || lng == 0) {
+				dataMap.put("result", "504"); // 经纬度不能为零
+				dataMap.put("oid", "");
+				dataMap.put("onum", "");
+				dataMap.put("payAction", "");
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
 			// 再次判断是否有空闲技师：暂时不作判断、如果这里判断，不利于用户体验。不作判断不影响流程。
 			if (payWay == 5) {// 不支持“现场支付”
 				dataMap.put("result", "503");
@@ -1659,6 +1683,7 @@ public class AppServer {
 			order.setCleanType(cleanType);
 			order.setMember(member);
 			order.setCar(userCar.getCar());
+			order.setDrange(userCar.getDrange());
 			order.setCarColor(color);
 			order.setCarNum(plateNumber);
 			order.setNum(CommonUtil.getOrderNum()); // 订单编号
@@ -1714,11 +1739,36 @@ public class AppServer {
 			/**************** 检测会员卡支付END ************/
 			if (order.getPrice() == 0) { // 不需要支付
 				order.setIsPay(true);
+				MemberCoupon mc = order.getMemberCoupon();
+				if (mc != null) {// 扣除优惠券
+					mc.setStatus(1);
+					memberCouponService.update(mc);
+				}
 			}
 			orderService.save(order);
+			//
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo(null);
+			feeRecord.setFee(order.getPrice());
+			feeRecord.setVisible(false);
+			feeRecordService.save(feeRecord);
+
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
-			dataMap.put("onum", order.getNum());
+			if (order.getPayWay() == 4) {// 微信支付
+				dataMap.put("onum", WexinPay.weixinOrder(order.getNum(),
+						order.getPrice(), WeChatPayUtil.pay_return, "洗车订单",
+						request));
+			} else if (order.getPayWay() == 3) {// 银联支付
+				dataMap.put("onum", UnionPay.payNumber(order.getNum(),
+						order.getPrice(), UnionPayUtil.pay_return));
+			} else {
+				dataMap.put("onum", order.getNum());
+			}
 			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
@@ -1802,6 +1852,16 @@ public class AppServer {
 					+ " payWay=" + payWay + " httpData=" + httpData + " cpid="
 					+ cpid + " remark=" + remark);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			// 经纬度判断
+			if (lat == 0 || lng == 0) {
+				dataMap.put("result", "504"); // 经纬度不能为零
+				dataMap.put("oid", "");
+				dataMap.put("onum", "");
+				dataMap.put("payAction", "");
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			}
 
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
@@ -1847,6 +1907,7 @@ public class AppServer {
 			order.setPayWay(payWay);
 			order.setMember(member);
 			order.setCar(car);
+			order.setDrange(userCar.getDrange());
 			order.setCarColor(color);
 			order.setCarNum(plateNumber);
 			order.setStartDate(sdf.parse(stime));
@@ -1931,12 +1992,31 @@ public class AppServer {
 			/**************** 检测会员卡支付END ************/
 			if (order.getPrice() == 0 || order.getPayWay() == 5) { // 不需要支付;POS机现场支付
 				order.setIsPay(true);
+				MemberCoupon mc = order.getMemberCoupon();
+				if (mc != null) {// 扣除优惠券
+					mc.setStatus(1);
+					memberCouponService.update(mc);
+				}
 			}
 			orderService.save(order);
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo(null);
+			feeRecord.setFee(order.getPrice());
+			feeRecord.setVisible(false);
+			feeRecordService.save(feeRecord);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
 			if (order.getPayWay() == 4) {// 微信支付
-				dataMap.put("onum", this.wenxinOrder(order));
+				dataMap.put("onum", WexinPay.weixinOrder(order.getNum(),
+						order.getPrice(), WeChatPayUtil.pay_return, "保养订单",
+						request));
+			} else if (order.getPayWay() == 3) {// 银联支付
+				dataMap.put("onum", UnionPay.payNumber(order.getNum(),
+						order.getPrice(), UnionPayUtil.pay_return));
 			} else {
 				dataMap.put("onum", order.getNum());
 			}
@@ -2010,6 +2090,7 @@ public class AppServer {
 				if (userCar != null) {
 					Car car = userCar.getCar();
 					order.setCar(car);
+					order.setDrange(userCar.getDrange());
 				}
 			}
 			Product product = productService.find(pid);
@@ -2055,11 +2136,34 @@ public class AppServer {
 			/**************** 检测会员卡支付END ************/
 			if (order.getPrice() == 0) { // 不需要支付
 				order.setIsPay(true);
+				MemberCoupon mc = order.getMemberCoupon();
+				if (mc != null) {// 扣除优惠券
+					mc.setStatus(1);
+					memberCouponService.update(mc);
+				}
 			}
 			orderService.save(order);
+			FeeRecord feeRecord = new FeeRecord();
+			feeRecord.setType(2);
+			feeRecord.setOrder(order);
+			feeRecord.setPayWay(order.getPayWay());
+			feeRecord.setPhone(order.getPhone());
+			feeRecord.setTradeNo(null);
+			feeRecord.setFee(order.getPrice());
+			feeRecord.setVisible(false);
+			feeRecordService.save(feeRecord);
 			dataMap.put("result", "001");
 			dataMap.put("oid", order.getId());
-			dataMap.put("onum", order.getNum());
+			if (order.getPayWay() == 4) {// 微信支付
+				dataMap.put("onum", WexinPay.weixinOrder(order.getNum(),
+						order.getPrice(), WeChatPayUtil.pay_return, "商品订单",
+						request));
+			} else if (order.getPayWay() == 3) {// 银联支付
+				dataMap.put("onum", UnionPay.payNumber(order.getNum(),
+						order.getPrice(), UnionPayUtil.pay_return));
+			} else {
+				dataMap.put("onum", order.getNum());
+			}
 			dataMap.put("payAction", order.getIsPay() ? "2" : "1"); // 余额不足
 			String json = mapper.writeValueAsString(dataMap);
 			log.info("App【数据响应】：" + json);
@@ -2101,6 +2205,7 @@ public class AppServer {
 			}
 			String json = mapper.writeValueAsString(this.calcPrice(scidList,
 					pidMap, cpid, otype, uid));
+			log.info("App【数据响应】：" + json);
 			return json;
 		} catch (CouponUseExcepton cue) {// 优惠券使用异常
 			return "{\"result\":\"502\"}";
@@ -2115,6 +2220,7 @@ public class AppServer {
 	 * 
 	 * @param scids
 	 * @param productMap
+	 *            <String(产品ID),Integer(产品数量)>
 	 * @param cpid
 	 * @param otype
 	 *            订单类型 1=洗车优惠券、2=保养优惠券、3=商品优惠券
@@ -2141,10 +2247,17 @@ public class AppServer {
 			for (String pid : productMap.keySet()) {
 				Product product = productService.find(pid);
 				if (product.getProuductUniqueType() != null
-						&& product.getProuductUniqueType() == 3 && cpid != null
-						&& !"".equals(cpid)) {// 天天特价不能使用优惠券
-					throw new CouponUseExcepton("天天特价商品不能使用优惠券：【商品ID】："
-							+ product.getId() + " 【商品名称】：" + product.getName());
+						&& product.getProuductUniqueType() == 3) {// 天天特价
+					if (cpid != null && !"".equals(cpid)) { // 不能使用优惠券
+						throw new CouponUseExcepton("天天特价商品不能使用优惠券：【商品ID】："
+								+ product.getId() + " 【商品名称】："
+								+ product.getName());
+					} else { // 使用特价计算
+						opmoney = CommonUtil.add(
+								opmoney + "",
+								CommonUtil.mul(product.getDiscountMoney() + "",
+										productMap.get(pid) + "") + "");
+					}
 				} else {
 					opmoney = CommonUtil.add(
 							opmoney + "",
@@ -2553,21 +2666,24 @@ public class AppServer {
 				} else {
 					map.put("ocanop", 0);
 				}
-				if (order.getType() == 1 && order.getStatus() == 2
+				if (order.getType() == 1 && order.getStatus() >= 2
 						&& order.getTechMember() != null) { // 洗车订单并且技师已接单（路途中表示已接单）
 					map.put("ocontact", "服务技师："
 							+ order.getTechMember().getName());
-					map.put("ophone", "联系电话："
-							+ order.getTechMember().getPhonenumber());
+					map.put("ophone", order.getTechMember().getPhonenumber());
+					map.put("ostar",
+							Math.round(order.getTechMember().getLevel() * 2)
+									+ "");
 				} else if (order.getType() == 2 && order.getStatus() == 12
 						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
 					map.put("ocontact", "车队联系人："
 							+ order.getCarTeam().getHeadMember());
-					map.put("ophone", "联系电话："
-							+ order.getCarTeam().getHeadPhone());
+					map.put("ophone", order.getCarTeam().getHeadPhone());
+					map.put("ostar", "");
 				} else {
 					map.put("ocontact", "");
 					map.put("ophone", "");
+					map.put("ostar", "");
 				}
 
 				List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
@@ -2705,14 +2821,19 @@ public class AppServer {
 							+ order.getTechMember().getName());
 					map.put("ophone", "联系电话："
 							+ order.getTechMember().getPhonenumber());
+					map.put("ostar",
+							Math.round(order.getTechMember().getLevel() * 2)
+									+ "");
 				} else if (order.getType() == 2 && order.getStatus() == 12
 						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
 					map.put("ocontact", "车队联系人："
 							+ order.getCarTeam().getHeadMember());
 					map.put("ophone", "联系电话："
 							+ order.getCarTeam().getHeadPhone());
+					map.put("ophone", "");
 				} else {
 					map.put("ocontact", "");
+					map.put("ophone", "");
 					map.put("ophone", "");
 				}
 
@@ -2877,15 +2998,20 @@ public class AppServer {
 							+ order.getTechMember().getName());
 					map.put("ophone", "联系电话："
 							+ order.getTechMember().getPhonenumber());
+					map.put("ostar",
+							Math.round(order.getTechMember().getLevel() * 2)
+									+ "");
 				} else if (order.getType() == 2 && order.getStatus() == 12
 						&& order.getCarTeam() != null) {// 保养订单并且已分配车队
 					map.put("ocontact", "车队联系人："
 							+ order.getCarTeam().getHeadMember());
 					map.put("ophone", "联系电话："
 							+ order.getCarTeam().getHeadPhone());
+					map.put("ostar", "");
 				} else {
 					map.put("ocontact", "");
 					map.put("ophone", "");
+					map.put("ostar", "");
 				}
 
 				List<Map<String, Object>> sclist = new ArrayList<Map<String, Object>>();
@@ -3008,7 +3134,7 @@ public class AppServer {
 	/**
 	 * 用户【确认收货】
 	 */
-	@RequestMapping(value = "/user/order/op/confrim", produces = "text/html;charset=UTF-8")
+	@RequestMapping(value = "/user/order/op/confirm", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
 	String userOrderOpConfirm(String uid, String token, String oid) {
 		try {
@@ -3018,16 +3144,25 @@ public class AppServer {
 			if (!order.getMember().getId().equals(uid)) {// 非自己的订单
 				dataMap.put("result", "105");
 			}
-			if (order.getStatus() == 22) { // 配货中才能确认收货
+			if (order.getStatus() == 23) { // 配货中才能确认收货
 				order.setStatus(0); //
 				orderService.update(order);
 				Member member = memberService.find(uid);
 				/** 处理积分 */
-				for (ServerOrderDetail sod : order.getServerOrderDetail()) {
-					member.setAmount(member.getAmount()
-							+ sod.getProduct().getPoint());
+				float gainScore = 0;
+				if (order.getServerOrderDetail().size() > 0) {
+					for (ServerOrderDetail sod : order.getServerOrderDetail()) {
+						Product product = sod.getProduct();
+						float productScore = CommonUtil.mul(
+								sod.getCount() + "", product.getPoint() + "");
+						gainScore = CommonUtil.add(member.getAmount() + "",
+								productScore + "");
+					}
 				}
+				member.setAmount(CommonUtil.add(member.getAmount() + "",
+						gainScore + ""));
 				memberService.update(member);// 更新用户积分
+				log.info("App【用户确认收货】，获取积分为：" + gainScore);
 				dataMap.put("result", "001");
 			} else {
 				dataMap.put("result", "110");
@@ -3574,14 +3709,15 @@ public class AppServer {
 	 * 
 	 * @param uid
 	 * @param token
-	 * @param page
-	 * @param maxresult
-	 * @param type
+	 * @param money
+	 * @param payWay
+	 *            2=支付宝 ；3=银联； 4=微信
 	 * @return
 	 */
 	@RequestMapping(value = "/user/fee/rechareg/number", produces = "text/html;charset=UTF-8")
 	public @ResponseBody
-	String userFeeRechargeNumber(String uid, String token, float money) {
+	String userFeeRechargeNumber(String uid, String token, float money,
+			int payWay) {
 		try {
 			log.info("App【用户充值】：" + "uid=" + uid + " token=" + token);
 			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
@@ -3591,18 +3727,45 @@ public class AppServer {
 				String json = mapper.writeValueAsString(dataMap);
 				log.info("App【数据响应】：" + json);
 				return json;
-			} else {
-				FeeRecord feeRecord = new FeeRecord();
-				Member member = memberService.find(uid);
-				feeRecord.setRechargeNo(CommonUtil.getOrderNum());
-				feeRecord.setMember(member);
-				feeRecord.setPhone(member.getPhone());
-				feeRecord.setFee(money);
-				feeRecord.setType(1);
-				feeRecord.setVisible(false);
+			}
+			FeeRecord feeRecord = new FeeRecord();
+			Member member = memberService.find(uid);
+			feeRecord.setRechargeNo(CommonUtil.getOrderNum());
+			feeRecord.setMember(member);
+			feeRecord.setPhone(member.getPhone());
+			feeRecord.setFee(money);
+			feeRecord.setType(1);
+			feeRecord.setVisible(false);
+			feeRecord.setPayWay(payWay);
+			if (payWay == 2) {// 支付宝
 				feeRecordService.save(feeRecord);
 				dataMap.put("result", "001");
 				dataMap.put("num", feeRecord.getRechargeNo());
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			} else if (payWay == 3) {// 银联
+				feeRecordService.save(feeRecord);
+				dataMap.put("result", "001");
+				dataMap.put("num", UnionPay.payNumber(
+						feeRecord.getRechargeNo(), feeRecord.getFee(),
+						UnionPayUtil.recharge_return));
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			} else if (payWay == 4) { // 微信
+				feeRecordService.save(feeRecord);
+				dataMap.put("result", "001");
+				dataMap.put("num", WexinPay.weixinOrder(
+						feeRecord.getRechargeNo(), feeRecord.getFee(),
+						WeChatPayUtil.recharge_return,
+						"微信充值：" + feeRecord.getFee(), request));
+				String json = mapper.writeValueAsString(dataMap);
+				log.info("App【数据响应】：" + json);
+				return json;
+			} else {
+				dataMap.put("result", "115");
+				dataMap.put("num", "");
 				String json = mapper.writeValueAsString(dataMap);
 				log.info("App【数据响应】：" + json);
 				return json;
@@ -3627,7 +3790,7 @@ public class AppServer {
 			PageView<FeeRecord> pageView = new PageView<FeeRecord>(maxresult,
 					page);
 			LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
-			orderby.put("id", "desc");
+			orderby.put("createDate", "desc");
 			StringBuffer jpql = new StringBuffer(
 					"o.visible=?1 and o.member.id=?2");
 			List<Object> params = new ArrayList<Object>();
@@ -3644,6 +3807,17 @@ public class AppServer {
 			List<FeeRecord> frList = pageView.getRecords();
 			for (FeeRecord feeRecord : frList) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>();
+				if (feeRecord.getIsRefund() != null
+						&& feeRecord.getIsRefund() == 1) {// 退费
+					if (feeRecord.getPayWay() == 1) {// 会员卡支付 退费才显示
+						map.put("ftext", "退费(订单号："
+								+ feeRecord.getOrder().getNum() + ")"); // 费用描述
+						map.put("fdate", sdf.format(feeRecord.getCreateDate())); // 退费日期
+						map.put("fmoney", "+" + feeRecord.getFee()); // 金额描述
+						list.add(map);
+						map = new LinkedHashMap<String, Object>();
+					}
+				}
 				if (feeRecord.getType() == 1) { // 充值
 					map.put("ftext",
 							"充值"
@@ -3658,7 +3832,6 @@ public class AppServer {
 							+ ")"); // 费用描述
 					map.put("fdate", sdf.format(feeRecord.getCreateDate())); // 充值/消费日期
 					map.put("fmoney", "-" + feeRecord.getFee()); // 金额描述
-
 				}
 				list.add(map);
 			}
@@ -3830,6 +4003,9 @@ public class AppServer {
 			o.setNum(CommonUtil.getOrderNum());
 			orderService.update(o);
 		}
+		String notify_url = CommonAttributes.getInstance().getPayURL()
+				+ "/web/pay/" + WeChatPayUtil.pay_return;
+		System.out.println(notify_url);
 		return "test";
 
 	}
@@ -3956,8 +4132,8 @@ public class AppServer {
 			}
 			// 发送时间间隔大于1分钟，执行发送相关程序
 			ShortMessage message = new ShortMessage();
-			// message.setCode(IDGenerator.getRandomString(4, 1));
-			message.setCode("1234");
+			message.setCode(IDGenerator.getRandomString(6, 1));
+			// message.setCode("1234");
 			message.setType(type);
 			message.setPhone(phone);
 			if (type == 1) {
@@ -3970,6 +4146,43 @@ public class AppServer {
 			dataMap.put("result", "001");
 			String json = mapper.writeValueAsString(dataMap);
 			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "{\"result\":\"000\"}";
+		}
+	}
+
+	/**
+	 * 获取android版本号版本号
+	 * 
+	 * @param phone
+	 * @param type
+	 * @return
+	 */
+	@RequestMapping("/common/version/{client}")
+	public @ResponseBody
+	String commonVersion(@RequestParam(required = false) String uid,
+			@RequestParam(required = false) String token,
+			@PathVariable String client) {
+		try {
+			log.info("App【获取版本号】：" + " uid=" + uid + " token=" + token
+					+ " client=" + client);
+			Map<String, Object> dataMap = new LinkedHashMap<String, Object>();
+			if ("android".equals(client)) { // android
+				dataMap.put("result", "001");
+				dataMap.put("version", CommonAttributes.getInstance()
+						.getSystemBean().getVersion());
+				dataMap.put("url", "/web/server/appdown");
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			} else {
+				dataMap.put("result", "001");
+				dataMap.put("version", "");
+				dataMap.put("url", "");
+				String json = mapper.writeValueAsString(dataMap);
+				return json;
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "{\"result\":\"000\"}";
@@ -4053,18 +4266,6 @@ public class AppServer {
 		return sendResult;
 	}
 
-	public String wenxinOrder(Order order) throws Exception {
-		String orderNum = order.getNum();
-		String orderName = "一动车保服务";
-		CommonUtil.getLong(order.getPrice(), 100, 0);
-		Map<String, Object> retMap = ((Map<String, Object>) new WeChatPayUtil()
-				.getParameterMap(orderNum, orderName,
-						CommonUtil.getLong(order.getPrice(), 100, 0), "app",
-						WeChatPayUtil.pay_return, WebUtil.getIp(request)));
-		String prepay_id = retMap.get("prepay_id").toString();
-		return prepay_id;
-	}
-
 	/***
 	 * 发送HTTP GET请求
 	 */
@@ -4093,15 +4294,13 @@ public class AppServer {
 	}
 
 	public static void main(String[] args) {
-		File file = new File("c:/abc", "abc.xml");
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(new Date());
+		float f = 123f;
+		// long l = CommonUtil.getLong(f, 1, 0);
+		// System.out.println(l);
 
+		BigDecimal b = new BigDecimal(f);
+		long b1 = b.setScale(0).longValue();
+		System.out.println(b1);
 	}
 
 }

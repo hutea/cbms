@@ -60,9 +60,11 @@ public class ParameterGroupAction extends BaseAction{
 		
 		StringBuffer jpql = new StringBuffer();
 		List<Object> params = new ArrayList<Object>();
+		jpql.append("o.visible = true ");
+		
 		String queryContent = request.getParameter("queryContent");
 		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append(" o.name like ?"+(params.size()+1));
+			jpql.append(" and o.name like ?"+(params.size()+1));
 			params.add("%"+queryContent+"%");
 		}
 		model.addAttribute("queryContent", queryContent);
@@ -159,9 +161,11 @@ public class ParameterGroupAction extends BaseAction{
 				ParameterGroup parameterGroup = parameterGroupService.find(id);
 				List<Parameter> list = parameterGroup.getParameters();
 				for(Parameter p : list){
-					parameterService.remove(p);
+					p.setVisible(false);
+					parameterService.update(p);
 				}
-				parameterGroupService.remove(parameterGroup);
+				parameterGroup.setVisible(false);
+				parameterGroupService.update(parameterGroup);
 			}
 			
 			return ajaxSuccess("成功", response);
@@ -181,7 +185,8 @@ public class ParameterGroupAction extends BaseAction{
 	public String deleteParameter(String ids){
 		try{
 			Parameter parameter = parameterService.find(ids);
-			parameterService.remove(parameter);
+			parameter.setVisible(false);
+			parameterService.update(parameter);
 			return ajaxSuccess("成功", response);
 		}catch(Exception e){
 			e.printStackTrace();

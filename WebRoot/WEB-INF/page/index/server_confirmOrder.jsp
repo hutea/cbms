@@ -18,6 +18,9 @@
 	src="${pageContext.request.contextPath}/resource/chain/js/jquery-1.11.1.min.js"></script>
 <script
 	src="${pageContext.request.contextPath}/resource/js/common.other.js"></script>
+<!-- 微信二维码生成 -->
+<script type="text/javascript" src="${pageContext.request.contextPath}/weixin/qrcode/jquery.qrcode.js"></script>
+<script type="text/javascript" src="${pageContext.request.contextPath}/weixin/qrcode/qrcode.js"></script>
 <style type="text/css">
 	/**网上支付提示**/
 	#mabg8 {width:100%; height: 100%; top:0px;left:0px; position: fixed; filter: alpha(opacity=50);opacity:0.3; background:#000000; /* display:none; */ z-index: 99997;}
@@ -33,6 +36,13 @@
 	.payRemindersBottom div a {color: #fff;}
 	.payRemindersBottom .left {margin-left: 100px; margin-right: 70px;  background-color: #c9c9c9;}
 	.payRemindersBottom .right {background-color: #ffae00;}
+	
+	.weixinBody .bodyTable {
+		display: inline-block;
+		margin-left: 145px;
+		margin-bottom: 10px;
+		margin-top: 10px;
+	}
 </style>
 </head>
 
@@ -98,19 +108,23 @@
 						<b class="jiaoButton"></b>
 					</div>
 				</div>
-				<dl class="modify">
+				
 					<c:if test="${order.isPay eq false}">
+					<dl class="modify">
 						<dd>
 							<a href="javascript:modifyOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/ma4_5.png" /></a>
 						</dd>
 						<dd>
 							<a href="javascript:payOrder();"><img src="${pageContext.request.contextPath}/resource/page/images/sure2.png" /></a>
 						</dd>
+						</dl>
 					</c:if>
 					<c:if test="${order.isPay eq true}">
-						<dd>该订单已完成支付</dd>
+						<dl class="modify" style="padding-left: 0px;text-align: center;color: green;">
+							<dd>该订单已完成支付</dd>
+						</dl>
 					</c:if>
-				</dl>
+				
 			</div>
 		</div>
 	</div>
@@ -118,7 +132,7 @@
 	<div id="mabg8" style="display: none;"></div>
 	<!--弹出层-->
 	<div class="success" style="display: none;">
-		<div class="mabg7" id="mabg7"></div>
+		<!-- <div class="mabg7" id="mabg7"></div> -->
 		<div class="malist" id="malist" style="margin: -28px 0 0 -84px;">
 			<div class="malistTop">
 				<h2><span id="time">3</span>秒自动关闭</h2>
@@ -131,7 +145,7 @@
 		</div>
 	</div>
 	<div class="pay" style="display: none;">
-		<div id="mabg9"></div>
+		<!-- <div id="mabg9"></div> -->
 		<div class="payReminders">
 			<div class="payRemindersTitle">
 				<span>网上支付提示</span>
@@ -148,7 +162,23 @@
 			</div>
 		</div>
 	</div>
-	
+	<div class="weixinPay" style="display: none;">
+		<!-- <div id="mabg9"></div> -->
+		<div class="payReminders" style="height: auto;">
+			<div class="payRemindersTitle">
+				<span>微信支付提示</span>
+				<a href="javascript:closeDiv();" class="closePayRem"><img src="${pageContext.request.contextPath}/resource/page/images/login_2.png" /></a>
+			</div>
+			<div class="weixinBody">
+				<p style="text-align: center;margin-top: 5px;">请用微信扫描二维码</p>
+				<div id="qrcodeTable" class="bodyTable"></div>
+			</div>
+			<div class="payRemindersBottom" style="margin-bottom: 10px;">
+				<div class="left"><a href="#">支付遇到问题</a></div>
+				<div class="right "><a href="javascript:orderSuccess();">支付完成</a></div>
+			</div>
+		</div>
+	</div>
 	
 	<!--网上支付提示-->
 	
@@ -160,6 +190,19 @@
 		
 		var confirmId = "${confimId}";
 		var payWay = "${order.payWay}";
+		
+		var isPay = "${order.isPay}";
+		
+		$(document).ready(function(){
+			if(isPay == "true"){
+				$(".success").show();
+				$(".pay").hide();
+				$(".weixinPay").hide();
+				$("#mabg8").show();
+				run();
+			}
+		});
+		
 		
 		function modifyOrder(){
 			var url = "<%=basePath%>/web/modify";
@@ -173,7 +216,7 @@
 		
 		//将当前支付
 		function payOrder(){
-			
+		
 			if(payWay == "1"){//现金支付
 				if(sessionId != ""){
 					saveOrder();
@@ -185,8 +228,12 @@
 				$(".pay").show();
 				$("#mabg8").show();
 				alipay();
+			}else if(payWay == "4"){//现场支付
+				weixinPay();
 			}else if(payWay == "5"){//现场支付
 				saveOrder();
+			}else if(payWay == "3"){//银联支付
+				//unionPay();
 			}
 		}
 		
@@ -202,8 +249,10 @@
 					var orderPrice = value.orderPrice;
 					var orderName = value.orderName;
 					var address = "alipay_return";
-					var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address;
-					window.open(openUrl);					
+					var returnAddress = "gotoConfirmServer";
+					var openUrl = "<%=basePath%>alipay/alipayapi.jsp?orderNum="+orderNum+"&orderPrice="+orderPrice+"&orderName="+orderName+"&address="+address+"&returnAddress="+returnAddress;;
+					window.location.href = openUrl;
+				//	window.open(openUrl);					
 				}else{
 					alert(result.message);
 					$(".pay").hide();
@@ -222,6 +271,7 @@
 				if(result.status == "success"){
 					$(".success").show();
 					$(".pay").hide();
+					$(".weixinPay").hide();
 					$("#mabg8").show();
 					run();
 				}else{
@@ -250,9 +300,11 @@
 		function closeDiv(){
 			$(".success").hide();
 			$(".pay").hide();
+			$(".weixinPay").hide();
 			$("#mabg8").hide();
 		}
 		
+		//支付成功后  显示
 		var intterval;
 		function run(){
 			intterval = setInterval(function(){
@@ -270,6 +322,34 @@
 		//跳转到首页
 		function gotoIndex(){
 			window.location.href="<%=basePath%>";
+		}
+		
+		//微信支付
+		function weixinPay(){
+			var url = "<%=basePath%>web/pay/weixin/payOrder";
+			var data =  {order_num:confirmId};
+			$.post(url,data,function(result){
+				if(result.status == "success"){
+					var erwei = result.message;
+					initQrcode(erwei);
+					$(".weixinPay").show();
+					$("#mabg8").show();
+				}
+			},"json");
+		}
+		//微信二维码生成
+		function initQrcode(value){
+			$("#qrcodeTable").html("");
+			jQuery('#qrcodeTable').qrcode({
+				render : "table",
+				text : value
+			});
+		}
+		
+		//银联支付
+		function unionPay(){
+			var url = "<%=basePath%>web/pay/union/payOrder?order_num="+confirmId+"&returnAddress=gotoConfirmServer";
+			window.location.href=url;
 		}
 	</script>
 	<!--中部结束-->

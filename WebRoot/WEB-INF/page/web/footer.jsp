@@ -24,8 +24,8 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 			</div>
 			<div class="span5r">
 				<ul>
-					<li class="l1">咨询热线：400-855-9999</li>
-					<li class="l2">咨询QQ：4008559999</li>
+					<li class="l1">咨询热线：0851-82239999</li>
+				<!-- 	<li class="l2">咨询QQ：4008559999</li> -->
 					<li class="l3">公司地址：贵州省贵阳市高新区688号</li>
 				</ul>
 				<div class="weixin">

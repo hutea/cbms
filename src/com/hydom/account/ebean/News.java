@@ -1,5 +1,7 @@
 package com.hydom.account.ebean;
 
+import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -7,6 +9,7 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.hydom.util.dao.BaseEntity;
@@ -44,9 +47,10 @@ public class News extends BaseEntity {
 	@JoinColumn(name = "modify_id")
 	private Account modifyUser;
 
-	public static void main(String[] args) {
-		System.out.println(Integer.MAX_VALUE);
-	}
+	@OneToMany(mappedBy="news",fetch = FetchType.LAZY,cascade={CascadeType.REMOVE})
+	private Set<NewsRecord> newsRecords;
+	
+	
 	private Boolean visible = true;
 
 	public String getTitle() {
@@ -113,4 +117,11 @@ public class News extends BaseEntity {
 		this.visible = visible;
 	}
 
+	public Set<NewsRecord> getNewsRecords() {
+		return newsRecords;
+	}
+
+	public void setNewsRecords(Set<NewsRecord> newsRecords) {
+		this.newsRecords = newsRecords;
+	}
 }

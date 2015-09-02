@@ -7,6 +7,8 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html lang="cn">
     <head>
+    	<meta http-equiv='X-UA-Compatible' content='IE=edge,Chrome=1' />
+		<meta http-equiv='X-UA-Compatible' content='IE=9' />
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
         <meta name="description" content="">

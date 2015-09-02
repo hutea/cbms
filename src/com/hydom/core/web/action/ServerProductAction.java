@@ -267,16 +267,20 @@ public class ServerProductAction extends BaseAction{
 		Product product = productService.find(productId);
 		model.addAttribute("product", product);
 		model.addAttribute("type", type);
+		
 		//参数
 		Map<Parameter, String> parameterValue = product.getParameterValue();
 		Set<Parameter> iterable = parameterValue.keySet();
 		List<ParameterValueBean> parameterBean = new ArrayList<ParameterValueBean>();
 		for(Parameter p : iterable){
-			ParameterValueBean bean = new ParameterValueBean();
-			bean.setParameter(p);
-			bean.setParameterValue(parameterValue.get(p));
-			parameterBean.add(bean);
+			if(p.getVisible()){
+				ParameterValueBean bean = new ParameterValueBean();
+				bean.setParameter(p);
+				bean.setParameterValue(parameterValue.get(p));
+				parameterBean.add(bean);
+			}
 		}
+		
 		model.addAttribute("parameters", parameterBean);
 		//介绍
 		model.addAttribute("introduction", product.getIntroduction());
@@ -336,10 +340,11 @@ public class ServerProductAction extends BaseAction{
 		
 		PageView<Comment> pageView = new PageView<Comment>(pageSize,page);
 		
-		//pageView = commentService.getListByProduct(product,hasImg,pageView);
+		pageView = commentService.getListByProduct(product,hasImg,pageView);
+		Long count = commentService.getCountByHasImg(product);
 		
-		model.addAttribute("pageView", null);
-		
+		model.addAttribute("pageView", pageView);
+		model.addAttribute("count", count);
 		return base + "/server_productComment";
 	}
 	

@@ -59,6 +59,14 @@ public interface OrderService extends DAO<Order> {
 	 * @return
 	 */
 	public boolean bindTechnician(String oid);
+	
+	/**
+	 * 给指定的订单重新绑定技师<br>
+	 * 
+	 * @param oid
+	 * @return
+	 */
+	public boolean resetBindTechnician(String oid,float maxDistance);
 
 	/**
 	 * 根据区域 和 时间 获取 这个区域内在这段时间内的所有空闲时间段
@@ -115,5 +123,7 @@ public interface OrderService extends DAO<Order> {
 	 * @return
 	 */
 	public String getCouponPrice(MemberCoupon memberCoupon, Float sum);
+
+	
 
 }

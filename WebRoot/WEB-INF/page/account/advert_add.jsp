@@ -179,7 +179,7 @@
 						<div class="panel-footer">
 							<div class="row">
 								<div class="col-sm-9 col-sm-offset-3">
-									<button id="addCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
+									<button type="button" id="addCate" class="btn btn-primary mr5" onclick="saveType()">提交</button>
 									<button id="reset" class="btn btn-dark" type="reset">重置</button>
 								</div>
 							</div>

@@ -249,13 +249,22 @@
 				return;
 			}
 			
-			if(isNaN(scale)){
-				alert("折扣率请填写数字");
+			if(!checkScale(scale)){
+				alert("折扣率请填写小数");
 				return;
 			}
 			
 			$("#inputForm").submit();
 		}
+		
+		function checkScale(value){
+			var v = parseFloat(value);
+			if(v>0 && v<=1){
+				return true;
+			}
+			return false;
+		}
+		
 	</script>
 </body>
 </html>

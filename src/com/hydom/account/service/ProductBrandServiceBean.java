@@ -40,4 +40,14 @@ public class ProductBrandServiceBean extends DAOSupport<ProductBrand> implements
 		}
 		return null;
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<ProductBrand> getAllProductBrand() {
+		String sql = "select o from ProductBrand o where o.visible = :visible";
+		Query query = em.createQuery(sql);
+		query.setParameter("visible", true);
+		List<ProductBrand> list = query.getResultList();
+		return list;
+	}
 }

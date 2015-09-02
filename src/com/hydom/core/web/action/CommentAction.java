@@ -1,14 +1,10 @@
 package com.hydom.core.web.action;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
 import javax.annotation.Resource;
-import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,11 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Comment;
@@ -63,7 +55,7 @@ private int maxresult = 10;
  */
 @RequestMapping("/saveproductcomment")
 public ModelAndView save(@ModelAttribute Comment comment,
-		@RequestParam String[] imgPath,
+		@RequestParam(required = false) String[] imgPath,
 		@RequestParam String serverOrderDetailId,
 		@RequestParam(required = false, defaultValue = "1") int page) {
 	MemberBean bean = getMemberBean(request);
@@ -72,11 +64,13 @@ public ModelAndView save(@ModelAttribute Comment comment,
 	comment.setMember(member);
 	commentService.save(comment);
 	//保存评论图片
+	if(imgPath!=null){
 	for (String imgpath : imgPath) {
 		CommentImg ci = new CommentImg();
 		ci.setComment(comment);
 		ci.setImgPath(imgpath);
 		commentImgService.save(ci);
+		}
 	}
 	ServerOrderDetail s = serverOrderDetailService.find(serverOrderDetailId);
 	s.setComment(comment);
@@ -108,7 +102,7 @@ public ModelAndView save1(@ModelAttribute Comment comment,
 	commentService.save(comment);
 	ServerOrder s =serverOrderService.find(serverOrderId);
 	s.setComment(comment);
-	serverOrderService.update(s);
+	serverOrderService.save(s);
 	
 	/*String memberId = comment.getMember().getId();*/
 	PageView<Order> pageView = new PageView<Order>(maxresult, page);

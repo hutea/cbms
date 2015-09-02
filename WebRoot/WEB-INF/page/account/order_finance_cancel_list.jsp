@@ -23,6 +23,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="${pageContext.request.contextPath}/resource/chain/js/retina.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery.cookies.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/custom.js"></script>
+	
+	<script src="${pageContext.request.contextPath}/resource/chain/js/laydate/laydate.js"></script>
+	
 	<script src="${pageContext.request.contextPath}/resource/js/myform.js" type="text/javascript"></script>
 	<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
 	<!--[if lt IE 9]>
@@ -47,27 +50,60 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		        <div class="media-body">
 		          <ul class="breadcrumb">
 		            <li><a href=""><i class="glyphicon glyphicon-home"></i></a></li>
-		            <li><a href="">订单列表</a></li>
+		            <li><a href="">财务部退款订单列表</a></li>
 		          </ul>
 		        </div>
 		      </div><!-- media -->
 		    </div>
-		    <form id="pageList" action="${pageContext.request.contextPath}/manage/order/finance_list" method="post">
+		    <form id="pageList" action="${pageContext.request.contextPath}/manage/order/finance_list" method="post" class="form-horizontal form-bordered">
 		    	<input type="hidden" name="searchProp" value="${searchProp }"/>
 			    <div class="contentpanel">
 			      <div class="search-header">
+			      	
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">订单编号</label>
+						<div class="col-sm-8">
+							<input type="text" name="orderNum" class="form-control" maxlength="200" value="${orderNum }"/>
+						</div>
+					</div>
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">收货人电话</label>
+						<div class="col-sm-8">
+							<input type="text" name="orderPhone" class="form-control" maxlength="200" value="${orderPhone }"/>
+						</div>
+					</div>
+					<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">开始时间</label>
+						<div class="col-sm-8">
+							<div class="input-group">
+                               <input type="text" class="form-control" placeholder="开始时间" id="datepicker" onclick="initPicker('datepicker');" name="startDate" value="${startDate }">
+                               <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                           </div>
+						</div>
+					</div>
+			      	<div class="form-group" style="border-top: 0px dotted #d3d7db;width: 49%;display: inline-block;">
+						<label class="col-sm-3 control-label">结束时间</label>
+						<div class="col-sm-8">
+							<div class="input-group">
+	                           <input type="text" class="form-control" placeholder="结束时间" id="datepicker1" onclick="initPicker('datepicker1');" name="endDate" value="${endDate }">
+	                           <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+                           </div>
+						</div>
+					</div>
+			      
 			        <div class="btn-list">
-			          <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/order" disabled>删除</button>
+			          <%-- <button class="btn btn-danger" id="deleteButton" type="button" val="<%=path %>/manage/order" disabled>删除</button> --%>
 			          <button class="btn btn-success" id="refreshButton">刷新</button>
+			          <button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
 					 <%--  <button id="add" type="button" class="btn btn-primary" val="<%=path %>/manage/order">添加</button> --%>
-			          <div style="float: right;max-width: 340px;height: 37px;">
+			          <%-- <div style="float: right;max-width: 340px;height: 37px;">
 			            <div class="input-group" style="float: left;max-width: 240px;">
 			              <input id="searchValue" placeholder="关键字查询" name="queryContent" value="${queryContent}" type="text" class="form-control" maxlength="50" style="height: 37px">
 			            </div>
 			            <div style="float: right">
 			            	<button type="button" class="btn btn-info btn-metro" onclick="confirmQuery();">查询</button>
 			            </div>
-			          </div>
+			          </div> --%>
 			        </div>
 			      </div>
 			
@@ -75,11 +111,17 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			        <table id="listTable" class="table table-info" >
 			        	<thead>
 							<tr>
-								<th class="check">
+								<!-- <th class="check">
 									<input type="checkbox" id="selectAll"/>
+								</th> -->
+								<th>
+									订单编号
 								</th>
 								<th>
-									收货人
+									客户名称
+								</th>
+								<th>
+									客户电话
 								</th>
 								<th>
 									订单金额
@@ -109,11 +151,17 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						</thead>
 						<c:forEach items="${pageView.records}" var="order">  
 							<tr class="order">
-								<td>
+								<%-- <td>
 									<input type="checkbox" name="ids" value="${order.id}" />
+								</td> --%>
+								<td>
+									<a href="<%=base %>/manage/order/detail?id=${order.id}" title="详情">${order.num }</a>
 								</td>
 								<td>
 									${order.contact }
+								</td>
+								<td>
+									${order.phone }
 								</td>
 								<td>
 									${order.price }
@@ -190,6 +238,15 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
    			$(".bs-example-modal-lg").modal();
    		}
    		
+   		function initPicker(obj){
+   			var pricker = {
+   				elem : '#'+obj,
+   				format : 'YYYY-MM-DD',
+   				istime : true,
+   				istoday : false
+   			};
+   			laydate(pricker);
+   		}
    		
    		//完结订单
    		function agreeOrder(){
@@ -219,9 +276,26 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 				var content = result.content;//理由
 				var openUrl = "<%=base%>alipay/alipayrefund.jsp?orderTradeNum="+trade_no+"&orderPrice="+price+"&orderContent="+content;
 				window.open(openUrl);	
+   			}else if(result.payWay == 1){
+   				
+   			}else if(result.payWay == 4){//微信
+   				var order_num = result.order_num;//order编号
+   				weixinRefund(order_num);
    			}
    		}
-   		
+   		//微信退款请求
+   		function weixinRefund(value){
+   			var url = "<%=base%>web/pay/weixin/refundOrder";
+   			var data = {
+   				order_num:value
+   			};
+   			$.post(url,data,function(result){
+   				if(result.status == "success"){
+   					alert("退款成功");
+   					window.location.reload(true);
+   				}
+   			},"json");
+   		}
    		
    		//驳回的订单
    		function overOrder(obj){

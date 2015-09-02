@@ -53,9 +53,13 @@
 	width: 100%;
 }
 div.form-group{
-	width: 49%;
-	display: inline-block;
+	 /* width: 49%;
+	 display: inline-block;  */
 }
+.form-bordered .form-group {
+  margin: 0;
+  padding: 0px 10px;
+ }
 </style>
 
 </head>
@@ -85,19 +89,19 @@ div.form-group{
 						<div class="left_panel_body">
 							<div class="panel-body nopadding">
 								<div class="form-group">
-									<label class="col-sm-4 control-label">订单联系人</label>
+									<label class="col-sm-2 control-label">订单联系人</label>
 									<div class="col-sm-8">
 										<label class="control-label">${entity.contact }</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">订单联系电话</label>
+									<label class="col-sm-2 control-label">订单联系电话</label>
 									<div class="col-sm-8">
 										<label class="control-label">${entity.phone }</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">服务车型</label>
+									<label class="col-sm-2 control-label">服务车型</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.car.carBrand.name }&nbsp;${entity.car.carType.name }&nbsp;${entity.car.name }
@@ -105,7 +109,7 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">车辆颜色</label>
+									<label class="col-sm-2 control-label">车辆颜色</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.carColor }
@@ -113,7 +117,7 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">车牌号</label>
+									<label class="col-sm-2 control-label">车牌号</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.carNum }
@@ -121,7 +125,15 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">服务地址</label>
+									<label class="col-sm-2 control-label">行驶路程</label>
+									<div class="col-sm-8">
+										<label class="control-label">
+											${entity.drange } km
+										</label>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-2 control-label">服务地址</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.address }
@@ -129,7 +141,7 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">服务时间</label>
+									<label class="col-sm-2 control-label">预约时间</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.dateTimeMap }
@@ -137,23 +149,23 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">订单类型</label>
+									<label class="col-sm-2 control-label">订单类型</label>
 									<div class="col-sm-8">
 										<label class="control-label">
-											<c:if test="${order.type eq 1}">
+											<c:if test="${entity.type eq 1}">
 												洗车订单
 											</c:if>
-											<c:if test="${order.type eq 2}">
+											<c:if test="${entity.type eq 2}">
 												保养订单
 											</c:if>
-											<c:if test="${order.type eq 3}">
+											<c:if test="${entity.type eq 3}">
 												商品订单
 											</c:if>
 										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">商品金额</label>
+									<label class="col-sm-2 control-label">商品金额</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${productSum }
@@ -161,7 +173,7 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">服务金额</label>
+									<label class="col-sm-2 control-label">服务金额</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${serverSum}
@@ -169,15 +181,15 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">优惠价</label>
+									<label class="col-sm-2 control-label">优惠价</label>
 									<div class="col-sm-8">
 										<label class="control-label">
-											${youhuiSum }
+											${youhuiSum }${youhuiRemark }
 										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">实付金额</label>
+									<label class="col-sm-2 control-label">实付金额</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.price }
@@ -185,18 +197,19 @@ div.form-group{
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">支付方式</label>
+									<label class="col-sm-2 control-label">支付方式</label>
 									<div class="col-sm-8">
 										<label class="control-label">
-											<c:if test="${order.payWay eq 1}">会员卡支付</c:if>
-											<c:if test="${order.payWay eq 2}">支付宝</c:if>
-											<c:if test="${order.payWay eq 3}">银联</c:if>
-											<c:if test="${order.payWay eq 4}">微信</c:if>
+											<c:if test="${entity.payWay eq 1}">会员卡支付</c:if>
+											<c:if test="${entity.payWay eq 2}">支付宝</c:if>
+											<c:if test="${entity.payWay eq 3}">银联</c:if>
+											<c:if test="${entity.payWay eq 4}">微信</c:if>
+											<c:if test="${entity.payWay eq 5}">现在支付</c:if>
 										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="col-sm-4 control-label">订单状态</label>
+									<label class="col-sm-2 control-label">订单状态</label>
 									<div class="col-sm-8">
 										<label class="control-label">
 											${entity.statusString }
@@ -204,9 +217,9 @@ div.form-group{
 									</div>
 								</div>
 								<c:choose>
-									<c:when test="${order.type eq 1}">
+									<c:when test="${entity.type eq 1}">
 										<div class="form-group">
-											<label class="col-sm-4 control-label">
+											<label class="col-sm-2 control-label">
 												清洗方式
 											</label>
 											<div class="col-sm-8">
@@ -221,7 +234,7 @@ div.form-group{
 											</div>
 										</div>
 										<div class="form-group">
-											<label class="col-sm-4 control-label">
+											<label class="col-sm-2 control-label">
 												服务技师
 											</label>
 											<div class="col-sm-8">
@@ -236,7 +249,31 @@ div.form-group{
 											</div>
 										</div>
 										<div class="form-group">
-											<label class="col-sm-4 control-label">
+											<label class="col-sm-2 control-label">接单时间</label>
+											<div class="col-sm-8">
+												<label class="control-label">
+													<fmt:formatDate value="${entity.ordersDate }" pattern="yyyy-MM-dd HH:mm:ss"/>
+												</label>
+											</div>
+										</div>
+										<div class="form-group">
+											<label class="col-sm-2 control-label">服务时间</label>
+											<div class="col-sm-8">
+												<label class="control-label">
+													<fmt:formatDate value="${entity.makeStartDate }" pattern="yyyy-MM-dd HH:mm:ss"/>
+												</label>
+											</div>
+										</div>
+										<div class="form-group">
+											<label class="col-sm-2 control-label">结束服务时间</label>
+											<div class="col-sm-8">
+												<label class="control-label">
+													<fmt:formatDate value="${entity.makeEndDate }" pattern="yyyy-MM-dd HH:mm:ss"/>
+												</label>
+											</div>
+										</div>
+										<div class="form-group">
+											<label class="col-sm-2 control-label">
 												接单距离(公里)
 											</label>
 											<div class="col-sm-8">
@@ -248,28 +285,33 @@ div.form-group{
 									</c:when>
 									<c:otherwise>
 										<div class="form-group">
-											<label class="col-sm-4 control-label">
-												预约时间
+											<label class="col-sm-2 control-label">
+												服务时间
 											</label>
 											<div class="col-sm-8">
 												<label class="control-label">
-													${entity.dateTimeMap }
+													<fmt:formatDate value="${entity.makeStartDate }" pattern="yyyy-MM-dd HH:mm"/> - <fmt:formatDate value="${entity.makeEndDate }" pattern="yyyy-MM-dd HH:mm"/>
 												</label>
 											</div>
 										</div>
 									   	<div class="form-group">
-											<label class="col-sm-4 control-label">
+											<label class="col-sm-2 control-label">
 												服务车队
 											</label>
 											<div class="col-sm-8">
 												<label class="control-label">
-													${entity.carTeam.name }
+													<c:if test="${empty entity.carTeam }">
+														<span style="color:red;">暂无</span>
+													</c:if>
+													<c:if test="${empty entity.carTeam }">
+														${entity.carTeam.headMember }
+													</c:if>
 												</label>
 											</div>
 										</div>
-										<c:if test="${order.ServerOrderDetail.size() > 0}">
-											<div class="form-group" style="width: 100%;">
-												<label class="col-sm-2 control-label" style="width: 16%;">服务列表</label>
+										<c:if test="${entity.serverOrderDetail.size() > 0}">
+											<div class="form-group" style="width: 100%;"><!--  style="width: 17%;" -->
+												<label class="col-sm-2 control-label">商品列表</label>
 												<div class="col-sm-8">
 													<div class="table-responsive">
 				       									<table id="listTable" class="table table-info" >
@@ -282,7 +324,7 @@ div.form-group{
 																	<th>金额合计</th>
 					       										</tr>
 															</thead>
-															<c:forEach var="value" items="${order.ServerOrderDetail }">
+															<c:forEach var="value" items="${entity.serverOrderDetail }">
 																<tr>
 																	<td>${value.product.sn }</td>
 																	<td>${value.name }</td>
@@ -296,9 +338,9 @@ div.form-group{
 												</div>
 											</div>
 										</c:if>
-										<c:if test="${order.serverOrder.size() > 0}">
-											<div class="form-group" style="width: 100%;">
-												<label class="col-sm-2 control-label" style="width: 16%;">服务列表</label>
+										<c:if test="${entity.serverOrder.size() > 0}">
+											<div class="form-group" style="width: 100%;"><!--  style="width: 16%;" -->
+												<label class="col-sm-2 control-label">服务列表</label>
 												<div class="col-sm-8">
 													<div class="table-responsive">
 				       									<table id="listTable" class="table table-info" >
@@ -308,7 +350,7 @@ div.form-group{
 																	<th>金额</th>
 					       										</tr>
 															</thead>
-															<c:forEach var="value" items="${order.serverOrder }">
+															<c:forEach var="value" items="${entity.serverOrder }">
 																<tr>
 																	<td>${value.name }</td>
 																	<td>${value.price }</td>
@@ -323,6 +365,34 @@ div.form-group{
 								</c:choose>
 							</div>
 						</div>
+						<%-- <div class="panel-heading" style="border-top: 1px solid #d1d1d1">
+							<h4 class="panel-title">用户评论</h4>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-12">
+								<div class="table-responsive">
+      									<table id="listTable" class="table table-info" >
+       									<thead>
+       										<tr>
+       											<!-- <th>编号</th> -->
+       											<th>商品/服务</th>
+												<th>评论内容</th>
+												<th>评论时间</th>
+												<th>操作</th>
+       										</tr>
+										</thead>
+										<c:if test="${entity.serverOrder.size() > 0}">
+											<c:forEach var="value" items="${entity.serverOrder }">
+												<tr>
+													<td>${value.name }</td>
+													<td>${value.price }</td>
+												</tr>	
+											</c:forEach>
+										</c:if>
+									</table>
+								</div>
+							</div>
+						</div> --%>
 					</div>
 				</div>
 			</div>

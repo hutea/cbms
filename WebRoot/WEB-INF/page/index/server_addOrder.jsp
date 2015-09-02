@@ -218,11 +218,11 @@ function saveOrder() {
 										<input type="radio" name="payWay" class="payInput" value="3"/>银联
 									</label>
 								</li>
-								<li>
+								<%-- <li>
 									<label>
 										<input type="radio" name="payWay" class="payInput" value="4"/>微信
 									</label>
-								</li>
+								</li> --%>
 								<li>
 									<label>
 										<input type="radio" name="payWay" class="payInput" value="5"/>现场支付

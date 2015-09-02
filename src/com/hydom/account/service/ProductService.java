@@ -51,7 +51,7 @@ public interface ProductService extends DAO<Product> {
 	long countForServer(String stid, String cid, String[] pids);
 	
 	/**
-	 * 
+	 * 根据服务类型 车型 品牌 查找参数 来查询商品
 	 * @param serviceTypeId
 	 * @param carId
 	 * @param brandId
@@ -71,4 +71,15 @@ public interface ProductService extends DAO<Product> {
 	 * @return
 	 */
 	public List<Product> getProductByGoodsNum(String goodsNum, String id);
+
+	/**
+	 * 根据分类ID 商品名称 商品编号 来获取商品
+	 * @param pageView
+	 * @param productCategoryId 分类ID
+	 * @param productName 商品名称
+	 * @param productNum 商品编号
+	 * @return
+	 */
+	public PageView<Product> getPage(PageView<Product> pageView,
+			String productCategoryId, String productName, String productNum);
 }

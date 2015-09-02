@@ -1,5 +1,7 @@
 package com.hydom.account.service;
 
+import javax.persistence.Query;
+
 import org.springframework.stereotype.Service;
 
 import com.hydom.account.ebean.Account;
@@ -11,13 +13,14 @@ public class AccountServiceBean extends DAOSupport<Account> implements AccountSe
 	@Override
 	public Account findByUP(String username, String password) {
 		try {
-			return (Account) em
-					.createQuery(
-							"select o from Account o where o.visible=?1 and o.username=?2 and o.password=?3")
-					.setParameter(1, true).setParameter(2, username).setParameter(3, password)
-					.getSingleResult();
+			String sql = "select o from Account o where o.visible=?1 and o.username=?2 and o.password=?3";
+			Query query = em.createQuery(sql);
+			query.setParameter(1, true);
+			query.setParameter(2, username);
+			query.setParameter(3, password);
+			return (Account) query.getSingleResult();
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return null;
 		}
 	}

@@ -17,6 +17,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -46,7 +47,7 @@ public class Order extends BaseEntity {
 	/** 详细地址 */
 	private String address;
 
-	/** 支付方式 1=会员卡支付；2=支付宝 ；3=银联 4=微信 5=现成支付**/
+	/** 支付方式 1=会员卡支付；2=支付宝 ；3=银联 4=微信 5=现成支付 **/
 	private Integer payWay;
 
 	/** 配送方式 1=上门服务； 2=到门店 **/
@@ -65,7 +66,7 @@ public class Order extends BaseEntity {
 	private Float price;
 
 	/** 订单编号 **/
-	@Column(unique=true,nullable=false)
+	@Column(unique = true, nullable = false)
 	private String num;
 
 	/**
@@ -89,11 +90,11 @@ public class Order extends BaseEntity {
 	@OneToOne(fetch = FetchType.LAZY, mappedBy = "order")
 	private FeeRecord feeRecord;
 
-	/** 服务开始时间 **/
+	/** 用户预约开始时间 **/
 	@Column(name = "start_date")
 	private Date startDate;
 
-	/** 服务时间结束时间 **/
+	/** 用户预约结束时间 **/
 	@Column(name = "end_date")
 	private Date endDate;
 
@@ -101,6 +102,9 @@ public class Order extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "car_id")
 	private Car car;
+
+	/** 行驶里程 单位为km */
+	private Double drange;
 
 	/**
 	 * 车牌
@@ -136,6 +140,7 @@ public class Order extends BaseEntity {
 	 * 保养订单：带商品时，在serverOrder中的serverOrderDetail进行体现
 	 */
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "order", cascade = CascadeType.PERSIST)
+	@OrderBy("serviceType asc")
 	private Set<ServerOrder> serverOrder = new HashSet<ServerOrder>();
 
 	/**
@@ -165,6 +170,7 @@ public class Order extends BaseEntity {
 	private TechnicianBindRecord technicianBindRecord;
 
 	/** 技师与用户之间的距离：在绑定技师时填充该数据 */
+	@Column(columnDefinition = "decimal(20,2)")
 	private Double distance;
 
 	/**
@@ -172,6 +178,12 @@ public class Order extends BaseEntity {
 	 */
 	@Column(name = "cleantype")
 	private Integer cleanType;
+
+	/**
+	 * 技师接单时间
+	 */
+	@Column(name = "orders_Date")
+	private Date ordersDate;
 
 	/**
 	 * 保养服务专用
@@ -184,10 +196,16 @@ public class Order extends BaseEntity {
 	@JoinColumn(name = "area_id")
 	private Area area;
 	/**
-	 * 预约时间
+	 * 服务开始时间
 	 */
 	@Column(name = "mark_startdate")
 	private Date makeStartDate;
+
+	/**
+	 * 服务结束时间
+	 */
+	@Column(name = "mark_enddate")
+	private Date makeEndDate;
 
 	/** 车队 **/
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -201,8 +219,16 @@ public class Order extends BaseEntity {
 	/**
 	 * 是否支付 默认为未支付false true为支付
 	 */
-	@Column(name = "ispay", nullable=false)
+	@Column(name = "ispay", nullable = false)
 	private Boolean isPay = false;
+
+	public Double getDrange() {
+		return drange;
+	}
+
+	public void setDrange(Double drange) {
+		this.drange = drange;
+	}
 
 	public FeeRecord getFeeRecord() {
 		return feeRecord;
@@ -469,6 +495,22 @@ public class Order extends BaseEntity {
 		this.isPay = isPay;
 	}
 
+	public Date getMakeEndDate() {
+		return makeEndDate;
+	}
+
+	public void setMakeEndDate(Date makeEndDate) {
+		this.makeEndDate = makeEndDate;
+	}
+
+	public Date getOrdersDate() {
+		return ordersDate;
+	}
+
+	public void setOrdersDate(Date ordersDate) {
+		this.ordersDate = ordersDate;
+	}
+
 	@Transient
 	public String getDateTimeMap() {
 
@@ -530,7 +572,9 @@ public class Order extends BaseEntity {
 		case 34:
 			return "已退款";
 		case 35:
-			return "未通过";
+			return "退款未通过";
+		case 36:
+			return "已完结";
 		default:
 			return "未知状态";
 		}

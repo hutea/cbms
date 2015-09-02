@@ -123,41 +123,42 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 						</table>						
 					</div>
 				</div>
-				<ul class="comment2 couponsStep">
-				<c:if test="${pageView.totalrecord > 0}">
-					<c:if test="${(pageView.currentPage-1)<1}" >
-						<li class="pre"><a>&lt;&lt;上一页</a></li>
+				<div class="comment3">
+					<ul class="couponsStep">
+					<c:if test="${pageView.totalrecord > 0}">
+						<c:if test="${(pageView.currentPage-1)<1}" >
+							<li class="pre"><a>&lt;&lt;上一页</a></li>
+						</c:if>
+						<c:if test="${(pageView.currentPage-1)>=1}" >
+							<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
+						</c:if>
+						<li><a href="javascript:topage(1)">1</a></li>
+						<c:if test="${pageView.pageIndex.startindex>2}" >
+							<li> <a>...</a> </li> 
+						</c:if>
+						<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex}" var="per">
+							<li><a href="javascript:topage(${per})">${per}</a></li>
+						</c:forEach>
+						<c:if test="${pageView.pageIndex.endindex<pageView.totalPage-1}" >
+							<li> <a>...</a> </li>
+						</c:if>
+						<c:if test="${pageView.totalPage>=2}">
+							<li> <a href='javascript:topage(${pageView.totalPage})' >${pageView.totalPage}</a> </li>
+						</c:if>
+						<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
+							<li class="next"><a>&gt;&gt;下一页</a></li>
+						</c:if>
+						<c:if test="${(pageView.currentPage+1)<=pageView.totalPage}" >
+							<li class="next"><a href="javascript:topage(${pageView.currentPage+1})">&gt;&gt;下一页</a></li>
+						</c:if>
 					</c:if>
-					<c:if test="${(pageView.currentPage-1)>=1}" >
-						<li class="pre"><a href="javascript:topage(${pageView.currentPage-1})">&lt;&lt;上一页</a></li>
+					<c:if test="${pageView.totalrecord <= 0 }">
+						<div style="color: #CC0001; text-align: center;">
+							<span>对不起，没有相关记录!</span>
+						</div>
 					</c:if>
-					<li class="lihover"><a href="javascript:topage(1)">1</a></li>
-					<c:if test="${pageView.pageIndex.startindex>2}" >
-						<li class="lihover"> <a>...</a> </li> 
-					</c:if>
-					<c:forEach begin="${pageView.pageIndex.startindex}" end="${pageView.pageIndex.endindex}" var="per">
-						<li class="lihover"><a href="javascript:topage(${per})">${per}</a></li>
-					</c:forEach>
-					<c:if test="${pageView.pageIndex.endindex<pageView.totalPage-1}" >
-						<li> <a>...</a> </li>
-					</c:if>
-					<c:if test="${pageView.totalPage>=2}">
-						<li> <a href='javascript:topage(${pageView.totalPage})' >${pageView.totalPage}</a> </li>
-					</c:if>
-					<c:if test="${(pageView.currentPage+1)>pageView.totalPage}" >
-						<li class="next"><a>&gt;&gt;下一页</a></li>
-					</c:if>
-					<c:if test="${(pageView.currentPage+1)<=pageView.totalPage}" >
-						<li class="next"><a href="javascript:topage(${pageView.currentPage+1})">&gt;&gt;下一页</a></li>
-					</c:if>
-						${pageView.pageIndex.startindex} ${pageView.pageIndex.endindex} ${pageView.totalPage-1}
-				</c:if>
-				<c:if test="${pageView.totalrecord <= 0 }">
-					<div style="color: #CC0001;">
-						<span>对不起，没有相关记录!</span>
-					</div>
-				</c:if>
-				</ul>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>

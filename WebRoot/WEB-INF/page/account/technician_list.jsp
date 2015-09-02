@@ -121,6 +121,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									工作状态
 								</th>
 								<th>
+									当前所在地
+								</th>
+								<th>
 									操作
 								</th>
 							</tr>
@@ -150,6 +153,9 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 								<td>
 									<c:if test="${false eq technician.jobstatus }">休息中</c:if>
 									<c:if test="${true eq technician.jobstatus }">工作中</c:if>
+								</td>
+								<td>
+									<div style="max-width:400px; white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${technician.area}</div>
 								</td>
 								<td>
 									<a href="<%=base %>manage/technician/edit?id=${technician.id}">修改</a>

@@ -28,9 +28,17 @@ function confirmQuery() {
 	form.submit();
 }
 
+//添加meta 标签
+function addMetaHTML(){
+	var html2 = "<meta http-equiv='X-UA-Compatible' content='IE=edge,Chrome=1' />";
+	var html1 = "<meta http-equiv='X-UA-Compatible' content='IE=9' />";
+	$("head").prepend(html1);
+	$("head").prepend(html2);
+}
+
 
 $(document).ready(function(){
-	
+	addMetaHTML();
 	var $deleteButton = $("#deleteButton");
 	var $refreshButton = $("#refreshButton");
 	var $listTable = $("#listTable");

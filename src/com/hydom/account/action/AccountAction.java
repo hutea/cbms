@@ -78,6 +78,12 @@ public class AccountAction extends BaseAction {
 	@RequestMapping("/save")
 	public ModelAndView add(@ModelAttribute Account account,
 			@RequestParam(required = false) String[] gids) {
+		if (gids != null && gids.length > 0) {
+			for (String gid : gids) {
+				PrivilegeGroup group = groupService.find(gid);
+				account.getGroups().add(group);
+			}
+		}
 		accountService.save(account);
 		ModelAndView mav = new ModelAndView("redirect:list");
 		return mav;
@@ -157,24 +163,26 @@ public class AccountAction extends BaseAction {
 		}
 
 	}
-	
+
 	@RequestMapping("/changePasswordView")
-	public String changePasswordView(HttpServletResponse response,ModelMap model) {
+	public String changePasswordView(HttpServletResponse response,
+			ModelMap model) {
 		model.addAttribute("memberBean", getAdminBean(request));
 		return "/common/changePsd";
 	}
-	
+
 	@RequestMapping("/changePassword")
-	public String changePassword(String newPass,String oldPass,HttpServletResponse response) {
+	public String changePassword(String newPass, String oldPass,
+			HttpServletResponse response) {
 		AdminBean bean = getAdminBean(request);
-		if(bean == null){
+		if (bean == null) {
 			return ajaxError("登录已失效,请重新登录", response);
 		}
 		Account account = accountService.find(bean.getMember().getId());
-		if(!account.getPassword().equals(oldPass)){
+		if (!account.getPassword().equals(oldPass)) {
 			return ajaxError("旧密码输入错误", response);
 		}
-		if(StringUtils.isEmpty(newPass)){
+		if (StringUtils.isEmpty(newPass)) {
 			return ajaxError("请输入新密码", response);
 		}
 		account.setPassword(newPass);

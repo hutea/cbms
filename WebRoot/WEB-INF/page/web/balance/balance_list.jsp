@@ -356,14 +356,14 @@ td{
 												</td>
 												<td>
 													<c:if test="${2 eq value.type}">消费</c:if>
-													<c:if test="${1 eq entry.type}">充值</c:if> 
+													<c:if test="${1 eq value.type}">充值</c:if> 
 												</td>
 												<td>
 													<c:if test="${5 eq value.payWay}">现金支付</c:if>
 													<c:if test="${4 eq value.payWay}">微信</c:if>
 													<c:if test="${3 eq value.payWay}">银联</c:if>
 													<c:if test="${2 eq value.payWay}">支付宝</c:if>
-													<c:if test="${1 eq entry.payWay}">会员卡支付</c:if> 
+													<c:if test="${1 eq value.payWay}">会员卡支付</c:if> 
 												</td>
 												<td>
 													<fmt:formatNumber value="${value.fee }" pattern="0.00"/>

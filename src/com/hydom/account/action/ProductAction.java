@@ -43,6 +43,7 @@ import com.hydom.account.service.ProductCategoryService;
 import com.hydom.account.service.ProductImageService;
 import com.hydom.account.service.ProductLabelService;
 import com.hydom.account.service.ProductService;
+import com.hydom.account.service.ServiceTypeService;
 import com.hydom.account.service.SpecificationService;
 import com.hydom.account.service.SpecificationValueService;
 import com.hydom.core.server.ebean.Car;
@@ -90,7 +91,8 @@ public class ProductAction extends BaseAction{
 	private ProductImageService productImageService;
 	@Resource
 	private ProductBrandService productBrandService;
-	
+	@Resource
+	private ServiceTypeService serviceTypeService;
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -98,9 +100,14 @@ public class ProductAction extends BaseAction{
 	private HttpServletResponse response;
 
 	@RequestMapping("/list")
-	public String list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model) {
+	public String list(@RequestParam(required = false, defaultValue = "1") int page,
+			String productCategoryId,
+			String productName,
+			String productNum,
+			ModelMap model) {
+		
 		PageView<Product> pageView = new PageView<Product>(null, page);
-		String jpql = "o.visible = ?1";
+		/*String jpql = "o.visible = ?1";
 		List<Object> params = new ArrayList<Object>();
 		params.add(true);
 		pageView.setJpql(jpql);
@@ -108,13 +115,23 @@ public class ProductAction extends BaseAction{
 		
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("createDate", "desc");
-		pageView.setOrderby(orderby);
+		pageView.setOrderby(orderby);*/
 		
-		pageView = productService.getPage(pageView);
+		pageView = productService.getPage(pageView,productCategoryId,productName,productNum);
 		
 		model.addAttribute("pageView", pageView);
-		
 		model.addAttribute("m", mark);
+		model.addAttribute("productCategorys", productCategoryService.findProductCategory(null));
+		
+		List<ProductBrand> productBrands = productBrandService.getAllProductBrand();
+		
+		model.addAttribute("productBrands", productBrands);
+		
+		model.addAttribute("productCategoryId", productCategoryId);
+		model.addAttribute("productName", productName);
+		model.addAttribute("productNum", productNum);
+		
+		
 		//mav.addAllObjects(model);
 		return basePath+"/product_list";
 	}
@@ -144,9 +161,22 @@ public class ProductAction extends BaseAction{
 		return  basePath+"/product_add";
 	}
 	
-	
+	/**
+	 * 编辑 保存当前的查询条件
+	 * @param model
+	 * @param id
+	 * @param productName 商品名称
+	 * @param productNum 商品品牌
+	 * @param productCategoryId 商品分类
+	 * @param page 当前分页
+	 * @return
+	 */
 	@RequestMapping("/edit")
-	public String edit(ModelMap model,String id){
+	public String edit(ModelMap model,String id,
+			String productName,
+			String productNum,
+			String productCategoryId,
+			@RequestParam(required = false, defaultValue = "1") int page){
 		
 		Product product = productService.find(id);
 		model.addAttribute("entity", product);
@@ -189,6 +219,20 @@ public class ProductAction extends BaseAction{
 		
 		model.addAttribute("m", mark);
 		
+		model.addAttribute("productCategorys", productCategoryService.findProductCategory(null));
+		
+		
+		if(StringUtils.isNotEmpty(productName)){
+			model.addAttribute("productName",productName);
+		}
+		if(StringUtils.isNotEmpty(productNum)){
+			model.addAttribute("productNum",productNum);
+		}
+		if(StringUtils.isNotEmpty(productCategoryId)){
+			model.addAttribute("productCategoryId",productCategoryId);
+		}
+		
+		model.addAttribute("page",page);
 		return  basePath+"/product_edit";
 	}
 	
@@ -404,8 +448,11 @@ public class ProductAction extends BaseAction{
 			@RequestParam(required=false) String[] oldSpecificationValueIds,
 			@RequestParam(required=false) String[] labelIds,
 			@RequestParam(required=false) String[] carBrandIds,
-			@RequestParam(required=false) String[] carIds){
-			
+			@RequestParam(required=false) String[] carIds,
+			String productName,//商品名称
+			String productNum,//商品品牌
+			String productCategoryId,//商品分类    page 当前分页页码
+			@RequestParam(required = false, defaultValue = "1") int page){
 		
 			Product productEntity = productService.find(productId);
 			productEntity.setMarketPrice(product.getMarketPrice());
@@ -422,7 +469,7 @@ public class ProductAction extends BaseAction{
 			productEntity.setName(product.getName());
 			productEntity.setPoint(product.getPoint());
 			productEntity.setRecommend(product.getRecommend());
-			
+			productEntity.setProductCategory(product.getProductCategory());
 			//特色商品 限量
 			if(product.getProuductUniqueType() != null){
 				if(product.getProuductUniqueType() == 2){
@@ -460,6 +507,8 @@ public class ProductAction extends BaseAction{
 					}
 				}
 				productEntity.setParameterValue(map);
+			}else{
+				productEntity.setParameterValue(null);
 			}
 			
 			//适用车辆
@@ -567,10 +616,24 @@ public class ProductAction extends BaseAction{
 				}
 				//product.setProductImages(imgs);
 			}
+			//String productCategoryId,String productName,String productNum,
+		/*	String productCategoryId = productEntity.getProductCategory().getId();
+			String productName = productEntity.getName();
+			String productNum = productEntity.getProductBrand().getId();*/
+			//"&productName="+productName+
 			
-		return  "redirect:list";
+			if(StringUtils.isEmpty(productName)){
+				productName = "";
+			}
+			if(StringUtils.isEmpty(productNum)){
+				productNum = "";
+			}
+			if(StringUtils.isEmpty(productCategoryId)){
+				productCategoryId="";
+			}
+			
+		return  "redirect:list?productCategoryId="+productCategoryId+"&page="+page+"&productName="+productName+"&productNum="+productNum;
 	}
-	
 	
 	@RequestMapping("/delete")
 	@ResponseBody
@@ -582,8 +645,6 @@ public class ProductAction extends BaseAction{
 		}
 		return ajaxSuccess("成功", response);
 	}
-	
-	
 	
 	//获取商品品牌
 	@RequestMapping("/findBrand")
@@ -607,7 +668,7 @@ public class ProductAction extends BaseAction{
 	@RequestMapping("/loadParameter")
 	public String getParamenterPage(ModelMap model, String productCategoryId, String productId){
 		
-		String jpql = "o.productCategory.id = ?1";
+		String jpql = "o.productCategory.id = ?1 and o.visible = true";
 		List<Object> params = new ArrayList<Object>();
 		params.add(productCategoryId);
 		
@@ -621,15 +682,15 @@ public class ProductAction extends BaseAction{
 				JSONArray array = new JSONArray();
 				Map<Parameter,String> map = product.getParameterValue();
 				for(Parameter p : parameters){
-					JSONObject obj = new JSONObject();
-					obj.put("id", p.getId());
-					obj.put("value", map.get(p));
-					array.add(obj);
+					if(p.getVisible()){
+						JSONObject obj = new JSONObject();
+						obj.put("id", p.getId());
+						obj.put("value", map.get(p));
+						array.add(obj);
+					}
 				}
 				model.addAttribute("productPara", array);
 			}
-			
-			
 			
 		}
 		return basePath+"/product/product_load_parameter";
@@ -762,13 +823,20 @@ public class ProductAction extends BaseAction{
 	public String test(@RequestParam(required=false) String[] carIds){
 		JSONArray array = new JSONArray();
 		
-		List<Car> carList = carService.getList(carIds);
-		for(Car car : carList){
-			JSONObject obj = new JSONObject();
-			obj.put("id", car.getId());
-			obj.put("text", car.getName());
-			array.add(obj);
+		String jpql = "";
+		
+		List<ParameterGroup> parameterGroups = parameterGroupService.getList(jpql, null, null);
+		for(ParameterGroup pg : parameterGroups){
+			pg.setVisible(true);
+			parameterGroupService.update(pg);
 		}
+		
+		List<Parameter> parameters = parameterService.getList(jpql, null, null);
+		for(Parameter pg : parameters){
+			pg.setVisible(true);
+			parameterService.update(pg);
+		}
+		
 		return ajaxSuccess(array, response);
 	}
 }

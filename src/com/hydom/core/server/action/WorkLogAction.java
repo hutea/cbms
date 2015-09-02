@@ -1,6 +1,9 @@
 package com.hydom.core.server.action;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -40,29 +43,33 @@ public class WorkLogAction extends BaseAction{
 	 * 列表
 	 */
 	@RequestMapping("/list")
-	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent, String queryDate) {
+	public ModelAndView list(@RequestParam(required = false, defaultValue = "1") int page, String queryContent, Date opDate, Date edDate) {
 		PageView<WorkLog> pageView = new PageView<WorkLog>(maxresult, page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("createDate", "desc");
-		String jpql = "";
-		Object[] params = new Object[]{};
-		if(queryContent!=null && queryDate==null){
-			jpql="o.technician.phonenumber like ?1 or o.technician.name like ?2";
-			params = new Object[]{"%"+queryContent+"%","%"+queryContent+"%"};
-		}else if(queryDate!=null && queryContent!=null){
-			jpql="convert(varchar(10),o.createDate,120) = ?1 and (o.technician.phonenumber like ?2 or o.technician.name like ?3)";
-			params = new Object[]{queryDate,"%"+queryContent+"%","%"+queryContent+"%"};
-		}else if(queryDate!=null && queryContent==null){
-//			jpql="convert(varchar(10),o.createDate,120) = ?1";
-			jpql="o.createDate between ?1 and ?1";
-			params = new Object[]{queryDate};
+		StringBuffer jpql = new StringBuffer("1=1");
+		
+		List<Object> params = new ArrayList<Object>();
+		if(queryContent!=null){
+			jpql.append(" and o.technician.phonenumber like ?"+(params.size()+1)+" or o.technician.name like ?"+(params.size()+1));
+			params.add("%"+queryContent+"%");
 		}
-		pageView.setQueryResult(workLogService.getScrollData(pageView.getFirstResult(), maxresult, jpql, params, orderby));
+		if(opDate!=null){
+			jpql.append(" and o.createDate >= ?"+(params.size()+1));
+			params.add(opDate);
+		}
+		if(edDate!=null){
+			jpql.append(" and o.createDate <= ?"+(params.size()+1));
+			params.add(edDate);
+		}
+		
+		pageView.setQueryResult(workLogService.getScrollData(pageView.getFirstResult(), maxresult, jpql.toString(), params.toArray(), orderby));
 		request.setAttribute("pageView", pageView);
 		ModelAndView mav = new ModelAndView("/workLog/workLog_list");
 		mav.addObject("paveView", pageView);
 		mav.addObject("queryContent", queryContent);
-		mav.addObject("queryDate", queryDate);
+		mav.addObject("opDate", opDate);
+		mav.addObject("edDate", edDate);
 		mav.addObject("m", 10);
 		return mav;
 	}

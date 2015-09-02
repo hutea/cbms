@@ -101,6 +101,15 @@
 .mg10{
 	margin-top: 8px;
 }
+div.car_div_label label{
+	min-width: 140px;
+}
+#carType div.form-group{
+	width: 100%;
+}
+div.car_div_label_type label{
+	min-width: 33%;
+}
 </STYLE>
 <script type="text/javascript">
 	var base = "<%=basePath%>";
@@ -457,6 +466,7 @@
                                 				addCarType(carBrandId);
                                 			}else{//取消
                                 				$("."+carBrandId).closest("label").remove();
+                                				setCarBrand();
                                 			}
                                 		});
                                 		
@@ -467,6 +477,15 @@
                                 				addCar(carTypeId,parentId);
                                 			}else{//取消
                                 				$("."+carTypeId).closest("label").remove();
+                                			}
+                                		});
+                                		
+                                		//选择所有的车型
+                                		$(document).on("click","#allCarCheckbox",function(){
+                                			if($(this).prop("checked")){
+                                				$("input[name='carIds']").prop("checked",true);
+                                			}else{
+                                				$("input[name='carIds']").prop("checked",false);
                                 			}
                                 		});
                                 	}
@@ -561,23 +580,23 @@
                                  <div class="tab-pane" id="carType">
                                   <div class="panel-body nopadding">
 										<div class="form-group">
-											<label class="col-sm-4 control-label">车辆品牌</label>
-											<div class="col-sm-8">
+											<div><label class="col-sm-2" style="font-weight: bold;">车辆品牌</label></div>
+											<div class="col-sm-12 car_div_label">
 												<label><input type="checkbox" value="-1" name="carBrandIds" checked="checked"/>不限</label>
 												<c:forEach var="value" items="${carBrands }">
 													<label><input type="checkbox" value="${value.id }" name="carBrandIds"/>${value.name }</label>
 												</c:forEach>
 											</div>
 										</div>
-										<div class="form-group" id="carTypeIdDiv">
-											<label class="col-sm-4 control-label">车系</label>
-											<div class="col-sm-8" id="carTypeLabel">
+										<div class="form-group" id="carTypeIdDiv" style="border-top: 1px solid #d1d1d1;">
+											<div><label class="col-sm-2" style="font-weight: bold;">车系</label></div>
+											<div class="col-sm-12 car_div_label" id="carTypeLabel">
 												
 											</div>
 										</div>
-										<div class="form-group" id="carIdDiv">
-											<label class="col-sm-4 control-label">车型</label>
-											<div class="col-sm-8" id="carLabel">
+										<div class="form-group" id="carIdDiv" style="border-top: 1px solid #d1d1d1;">
+											<div><label class="col-sm-2" style="font-weight: bold;"><input type="checkbox" id="allCarCheckbox"/>车型(全选)</label></div>
+											<div class="col-sm-12 car_div_label_type" id="carLabel">
 												
 											</div>
 										</div>

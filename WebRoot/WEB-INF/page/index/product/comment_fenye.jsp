@@ -50,7 +50,7 @@
 </style>
 <c:if test="${pageView.totalrecord > 0}">
 <div style="margin-top: 10px;margin-bottom: 10px;position: absolute;bottom: 0px;right: 0px">
-	<div style="float: left;height: 32px;">
+	<div style="float: left;height: 32px; margin-top: 6px;">
 		<ul class="pagination  pagination-md" style="margin: 0px;"> 
 			<c:if test="${(pageView.currentPage-1)<1}" >
 				<li  class="disabled" > <a href='#' >Prev</a> </li>
@@ -83,7 +83,7 @@
 		</ul>
 	</div>
 	<span style="display: inline-block;float: left;padding-top: 3px;padding-left: 5px;margin-right: 10px;">
-			共计<b style="color: blue"> ${pageView.totalrecord }</b>件符合商品
+			共计<b style="color: blue;display: inline-block;"> ${pageView.totalrecord }</b>件符合商品
 			到 <input type="text" value="${pageView.currentPage}" id="inputComentPage"  maxlength="5" style="width:40px;height: 25px;vertical-align:baseline;" name="page"> 页
 			<input type="button" onclick="javascript:goComment(${pageView.totalPage})" class="btn btn-primary btn-xs" value="GO" style="vertical-align:baseline;"> 
 	</span>

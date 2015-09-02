@@ -131,6 +131,7 @@ function saveOrder() {
 						<input name="serviceType.id" type="hidden" value="${serviceType.id }" id="serviceType" />
 						<input name="cleanType" type="hidden" value="1" id="serverWay" />
 						<input name="car.id" type="hidden" value="${cleanCar.car.id }" id="carHiddenId"/>
+						<input name="userCarId" type="hidden" value="${cleanCar.userCar.id  }"/>
 						<c:choose>
 							<c:when test="${empty cleanCar.userCar}"><%-- 没有默认车型  点击重选 跳转到选择车型页面 --%>
 								<div class="shopping_con_top">
@@ -269,11 +270,11 @@ function saveOrder() {
 										<input type="radio" name="payWay" class="payInput" value="3" />银联
 									</label>
 								</li>
-								<li>
+								<%-- <li>
 									<label>
 										<input type="radio" name="payWay" class="payInput" value="4"/>微信
 									</label>
-								</li>
+								</li> --%>
 								<c:choose>
 									<c:when test="${!empty sessionScope.member_session }">
 										<li>

@@ -5,7 +5,7 @@ String path = request.getContextPath();
 String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
 %>
 <!--上部开始-->
-<div class="top">
+<div class="top topfixed">
 	<div class="top_header box0">
 		<div class="logo"><a href="<%=basePath%>"><img src="<%=basePath %>resource/page/images/top_logo.png" alt="logo" /></a></div>
 		<ul class="top_right"><%-- class="b1" b2 b3 b4 --%>
@@ -58,6 +58,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 		</div>
 	</div>
 </div>
+<div class="topHight"></div>
 	<!--box banner start-->
 	<!--box banner end-->
 <!--上部结束-->
@@ -75,6 +76,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	}
 	//获取验证码
 	function getCode(){
+		errorMessage("");
 		$("#sendCodeBtn").prop("disabled",true);
 		var mobile = $(".login_tel").val();
 		
@@ -106,6 +108,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				},
 				error:function(XMLHttpRequest, textStatus, errorThrown){
 					errorMessage("请求出错");
+					$("#sendCodeBtn").prop("disabled",false);
 				}
 		};
 		$.ajax(options);
@@ -130,10 +133,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 	
 	//充值登录框信息
 	function resetCodeBtn(){
-		clearInterval(intterval2);
 		$("#sendCodeBtn").val("获取动态密码");
 		$("#sendCodeBtn").prop("disabled",false);
-		
+		clearInterval(intterval2);
 	}
 	
 	//验证手机

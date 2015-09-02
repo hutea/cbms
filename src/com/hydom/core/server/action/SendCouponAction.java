@@ -54,8 +54,8 @@ public class SendCouponAction extends BaseAction{
 	public ModelAndView addUI() {
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("createDate", "desc");
-		String jpql = "o.useType=1";
-		Object[] params = new Object[]{};
+		String jpql = "o.visible=?1 and o.useType=1";
+		Object[] params = new Object[]{true};
 		
 		ModelAndView mav = new ModelAndView("/sendCoupon/sendCoupon_add");
 		mav.addObject("m", 9);
@@ -136,8 +136,8 @@ public class SendCouponAction extends BaseAction{
 		if(null == useTypeId) return null;
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("createDate", "desc");
-		String jpql = "o.useType=?1";
-		Object[] params = new Object[]{useTypeId};
+		String jpql = "o.visible=?1 and o.useType=?2";
+		Object[] params = new Object[]{true,useTypeId};
 		return couponService.getScrollData(-1, -1, jpql, params, orderby).getResultList();
 	}
 }

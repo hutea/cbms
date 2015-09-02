@@ -72,6 +72,11 @@ public class FeeRecord extends BaseEntity {
 	 */
 	private String refundNo;
 	
+	/**
+	 * 微信 退款编号
+	 */
+	private String refundContent;
+	
 	public Integer getType() {
 		return type;
 	}
@@ -160,4 +165,12 @@ public class FeeRecord extends BaseEntity {
 		this.refundNo = refundNo;
 	}
 
+	public String getRefundContent() {
+		return refundContent;
+	}
+
+	public void setRefundContent(String refundContent) {
+		this.refundContent = refundContent;
+	}
+	
 }

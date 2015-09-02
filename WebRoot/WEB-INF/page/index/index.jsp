@@ -15,8 +15,8 @@
 	rel="stylesheet" />
 <script type="text/javascript"
 	src="<%=basePath%>resource/page/js/jquery.js"></script>
-<script type="text/javascript"
-	src="<%=basePath%>resource/page/js/function.js"></script>
+<%-- <script type="text/javascript"
+	src="<%=basePath%>resource/page/js/function.js"></script> --%>
 <style type="text/css">
 /******form*******/
 .divselectcon {
@@ -148,17 +148,17 @@
 		<%-- <%@ include file="/WEB-INF/page/web/header.jsp" %> --%>
 		<jsp:include page="../web/header.jsp" />
 		<!--box banner start-->
-		<div id="box" class="trans">
-			<ul class="list">
-				<li class="current"><a href="#" target="_blank"><img
-						src="<%=basePath%>resource/page/images/banner.png" alt="" /></a></li>
-				<%-- <li><a href="#" target="_blank"><img
-						src="<%=basePath%>resource/page/images/banner0.png" alt="" /></a></li> --%>
-			</ul>
-			<ul class="num">
+		<div id="box" class="trans" style="min-width: 1024px;">
+			<img src="<%=basePath%>resource/page/images/banner.png" alt="" />
+			<%-- <ul class="list">
+				<li class="current"></li>
+				<li><a href="#" target="_blank"><img
+						src="<%=basePath%>resource/page/images/banner0.png" alt="" /></a></li>
+			</ul> --%>
+			<!-- <ul class="num">
 				<li class="current">1</li>
-				<!-- <li>2</li> -->
-			</ul>
+				<li>2</li>
+			</ul> -->
 		</div>
 		<!--box banner end-->
 	</div>

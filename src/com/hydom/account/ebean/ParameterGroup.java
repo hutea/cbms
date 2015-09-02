@@ -21,10 +21,12 @@ import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hp.hpl.sparta.xpath.TrueExpr;
 import com.hydom.util.dao.BaseEntity;
 
 /**
@@ -53,7 +55,10 @@ public class ParameterGroup extends BaseEntity {
 	/** 参数 */
 	@OneToMany(mappedBy = "parameterGroup", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("order asc")
+	@Where(clause="visible = 1")
 	private List<Parameter> parameters = new ArrayList<Parameter>();
+	
+	private Boolean visible = true;
 	
 	public String getName() {
 		return name;
@@ -78,4 +83,13 @@ public class ParameterGroup extends BaseEntity {
 	public void setParameters(List<Parameter> parameters) {
 		this.parameters = parameters;
 	}
+
+	public Boolean getVisible() {
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
+	}
+	
 }

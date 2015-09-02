@@ -101,6 +101,15 @@
 .mg10{
 	margin-top: 8px;
 }
+div.car_div_label label{
+	min-width: 140px;
+}
+#carType div.form-group{
+	width: 100%;
+}
+div.car_div_label_type label{
+	min-width: 33%;
+}
 </STYLE>
 <script type="text/javascript">
 	var base = "<%=basePath%>";
@@ -155,7 +164,7 @@
                             		var productBrand = "${entity.productBrand.id}";
                             		var productId = "${entity.id}";
                             		function changeProductCategory(){
-                            			var id = $("#productCategorySelect").find("option:selected").val();
+                            			var id = $("#productCategoryId").find("option:selected").val();
                             			if(id == ""){
                             				return;
                             			}
@@ -218,8 +227,17 @@
                                     	<div class="form-group">
 											<label class="col-sm-4 control-label">商品分类</label>
 											<div class="col-sm-8">
-												<select name="productCategory.id" class="mg10" id="productCategorySelect">
-													<option value="${entity.productCategory.id }">${entity.productCategory.name }</option>
+												<select name="productCategory.id" onchange="changeProductCategory(this);" class="mg10" id="productCategoryId">
+													<option value="">请选择商品分类</option>
+													<c:forEach var="category" items="${productCategorys }">
+														<option value="${category.id }" <c:if test="${entity.productCategory.id eq category.id}">selected="selected"</c:if> >
+															<c:if test="${category.grade gt 0}">
+																<c:forEach begin="1" end="${category.grade }">
+																	&nbsp;&nbsp;
+																</c:forEach>
+															</c:if>
+															${category.name}
+													</c:forEach>
 												</select>
 											</div>
 										</div>
@@ -484,10 +502,13 @@
                                 			}
                                 		});
                                 		
-                                		$(document).on("click","input.carIds",function(){
-											  var carName = $(this).attr("name");
-											  var carId = $(this).attr("id");
-                                				var html = ""
+                                		//选择所有的车型
+                                		$(document).on("click","#allCarCheckbox",function(){
+                                			if($(this).prop("checked")){
+                                				$("input[name='carIds']").prop("checked",true);
+                                			}else{
+                                				$("input[name='carIds']").prop("checked",false);
+                                			}
                                 		});
                                 	}
                                 	//当起选择不限的时
@@ -630,8 +651,8 @@
                                  <div class="tab-pane" id="carType">
                                   <div class="panel-body nopadding">
 										<div class="form-group">
-											<label class="col-sm-4 control-label">车辆品牌</label>
-											<div class="col-sm-8">
+											<label class="col-sm-2 " style="font-weight: bold;">车辆品牌</label>
+											<div class="col-sm-12 car_div_label">
 												<label><input type="checkbox" value="-1" name="carBrandIds" checked="checked" id="useAllCar"/>不限</label>
 												<c:forEach var="value" items="${carBrands }">
 													<label><input type="checkbox" value="${value.id }" name="carBrandIds"/>${value.name }</label>
@@ -639,14 +660,14 @@
 											</div>
 										</div>
 										<div class="form-group" id="carTypeIdDiv">
-											<label class="col-sm-4 control-label">车系</label>
-											<div class="col-sm-8" id="carTypeLabel">
+											<label class="col-sm-2 " style="font-weight: bold;">车系</label>
+											<div class="col-sm-12 car_div_label" id="carTypeLabel">
 												
 											</div>
 										</div>
 										<div class="form-group" id="carIdDiv">
-											<label class="col-sm-4 control-label">车型</label>
-											<div class="col-sm-8" id="carLabel">
+											<label class="col-sm-2 " style="font-weight: bold;"><input type="checkbox" id="allCarCheckbox"/>车型(全选)</label>
+											<div class="col-sm-12 car_div_label_type" id="carLabel">
 												
 											</div>
 										</div>

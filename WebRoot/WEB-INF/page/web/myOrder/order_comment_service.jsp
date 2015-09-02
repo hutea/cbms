@@ -35,7 +35,49 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 	<script src="${pageContext.request.contextPath}/resource/chain/js/jquery.cookies.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/chain/js/custom.js"></script>
 	<script src="${pageContext.request.contextPath}/resource/js/myform.js" type="text/javascript"></script>
-
+<script type="text/javascript">
+	function checkStar() {
+		var star = $("#star").val();
+		if(star == "" || star == null){
+			$("#star_error").html("星级不能为空");
+			$("#star_error").next().val("");
+		}else{
+			$("#star_error").next().val("success");}
+	}
+	function checkComment() {
+		var comment = $("#comcon").val();
+		if(comment == "" || comment == null){
+			$("#comment_error").html("评论不能为空");
+			$("#comcon").next().val("");
+		}else{
+			$("#comcon").next().val("success");}
+	}
+	
+	function saveType() {
+		checkStar();
+		checkComment();
+		
+		$(function(){
+			var flag = true;
+			$(".repeat").each(function(){
+				//alert($(this).attr("id")+":"+$(this).val());
+				if($(this).val()!="success") flag = false;
+			});
+			if(flag){
+				$("#serverform").submit();
+			}
+		});
+		
+	}
+	</script>
+<STYLE type="text/css">
+#star_error{
+	color: red;
+}
+#comment_error{
+	color: red;
+}
+</STYLE>
 </head>
 
 <body>
@@ -98,7 +140,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 						<div class="right"><a href="${pageContext.request.contextPath}/user/order/list">返回订单列表&gt;&gt;</a></div>
 					</div>
 					<div class="orderDetailsContent">
-						<div class="left"><a href="#"><img src="<%=base%>${serverOrder.serviceType.imgPath}" /></a></div>
+						<div class="left"><a href="#"><img src="<%=base%>${serverOrder.serviceType.imgPath}" height="165" width="165" /></a></div>
 						<div class="right">
 							<ul>
 								<li><b>订单编号：</b>${serverOrder.order.num }</li>
@@ -142,17 +184,23 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 							 <form id="serverform" action="<%=base%>user/comment/saveordercomment" method="post"  >
 							 
 							 	<ul class="scoreUl">
-							 	<li><b>服务评分：</b><em title="2"></em><em title="4"></em><em title="6"></em><em title="8"></em><em title="10"></em></li>
+							 	<li><b>服务评分：</b><em title="2"></em><em title="4"></em><em title="6"></em><em title="8"></em><em title="10"></em>
+								<span class="errorStyle" id="star_error"></span>
+								<input type="hidden" class="repeat"/>
+								</li>
 								<li><b>服务评论：</b></li>
-								<li class="commentsCon"><textarea name="content" rows="5" cols="46"></textarea></li>
+								<li class="commentsCon"><textarea id="comcon" name="content" rows="5" cols="46"></textarea>
+								<input type="hidden" class="repeat"/>
+								<span class="errorStyle" id="comment_error"></span>
+								</li>
 								
 								</ul>
 								
 								<input type="hidden" name="serverOrderId" value="${serverOrder.id }"/>
-								<input type="hidden" name="star"/>
+								<input type="hidden" name="star" id="star"/>
 							</form>
 							<ul class="posts">
-								<li class="post"><a href="javascript:document.getElementById('serverform').submit();"><img src="${pageContext.request.contextPath}/resource/page/images/comments6.png" /></a></li>
+								<li class="post"><a href="javascript:saveType();"><img src="${pageContext.request.contextPath}/resource/page/images/comments6.png" /></a></li>
 							</ul>
 						</div>
 					</div>
@@ -285,6 +333,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 			  }
 			});
 		  }
+		  
  
 	});	
 

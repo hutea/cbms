@@ -189,9 +189,9 @@
 	</div>
 	<div class="description_bottom">
 		<ul class="description_bottom_nav" id="description_bottom_nav">
-			<li class="tab-hover" onclick="tab2(0)">商品详情</li>
-			<li class="" onclick="tab2(1)">商品参数</li>
-			<li class="" onclick="tab2(2)">商品评论（<span>0</span>）
+			<li class="tab-hover li_tab_hover" onclick="tab2(0,this)">商品详情</li>
+			<li class="li_tab_hover" onclick="tab2(1,this)">商品参数</li>
+			<li class="li_tab_hover" onclick="tab2(2,this)">商品评论（<span  id="commentTotalSpan">0</span>）
 			</li>
 		</ul>
 		<div id="des_con">
@@ -236,7 +236,7 @@
 					$("#inputComentPage").val(page);
 					/*console.log(form);
 					form.page.value = page;*/
-					searchProduct();
+					getProductComment();
 				}
 	
 				// 跳转到指定页面
@@ -249,7 +249,7 @@
 					} else {
 						//var form = document.getElementById("pageList");
 						//form.page.value = inputPageValue;
-						searchProduct();
+						getProductComment();
 					}
 				}
 				// 设置页码为1
@@ -257,7 +257,7 @@
 					//var form = document.getElementById("pageList");
 					//form.page.value = 1;
 					$("#inputComentPage").val("1");
-					searchProduct();
+					getProductComment();
 				}
 				
 				function getProductComment(){
@@ -276,8 +276,8 @@
 			</script>
 			<div class="description_bottom_con" style="display: none; ">
 				<div class="form2">
-					<label><input type="radio" name="comment" checked value="0"/>全部</label> <label><input
-						type="radio" name="comment" value="1"/>仅显示有照片的评论（<span>0</span>）</label>
+					<label><input type="radio" name="comment" checked value="0" onclick="confirmComentQuery();"/>全部</label> <label><input
+						type="radio" name="comment" value="1"  onclick="confirmComentQuery();"/>仅显示有照片的评论（<span id="commentHasImg">0</span>）</label>
 				</div>
 				<div class="comment1" id="commentDetail">
 					
@@ -285,10 +285,16 @@
 			</div>
 		</div>
 		<script>
-			function tab2(m) {
+			function tab2(m,e) {
 				var div = $("div.description_bottom_con");
 				div.hide();
 				$(div[m]).show();
+				
+				var lis = $("li.li_tab_hover");
+				for(var i = 0;i<lis.length;i++){
+					$(lis[i]).removeClass("tab-hover");
+				}
+				$(e).addClass("tab-hover");
 				/* var li = document.getElementById("description_bottom_nav")
 						.getElementsByTagName("li");
 				var div = document.getElementById("des_con")

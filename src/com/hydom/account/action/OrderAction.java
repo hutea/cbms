@@ -1,6 +1,7 @@
 package com.hydom.account.action;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,20 +20,22 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.hydom.account.ebean.Area;
+import com.hydom.account.ebean.FeeRecord;
 import com.hydom.account.ebean.Member;
 import com.hydom.account.ebean.MemberCoupon;
 import com.hydom.account.ebean.Order;
+import com.hydom.account.ebean.Product;
 import com.hydom.account.ebean.ServerOrder;
 import com.hydom.account.ebean.ServerOrderDetail;
 import com.hydom.account.service.AreaService;
+import com.hydom.account.service.FeeRecordService;
+import com.hydom.account.service.MemberCouponService;
 import com.hydom.account.service.MemberService;
 import com.hydom.account.service.OrderService;
 import com.hydom.account.service.ServiceTypeService;
 import com.hydom.core.server.ebean.CarTeam;
-import com.hydom.core.server.ebean.Coupon;
 import com.hydom.core.server.service.CarTeamService;
 import com.hydom.util.BaseAction;
 import com.hydom.util.CommonUtil;
@@ -56,6 +59,11 @@ public class OrderAction extends BaseAction{
 	private CarTeamService carTeamService;
 	@Resource
 	private MemberService memberService;
+	@Resource
+	private MemberCouponService memberCouponService;
+	@Resource
+	private FeeRecordService feeRecordService;
+	
 	
 	@Autowired
 	private HttpServletRequest request;
@@ -64,26 +72,51 @@ public class OrderAction extends BaseAction{
 
 	@RequestMapping("/list")
 	public String list(@RequestParam(required = false, defaultValue = "1") int page,
-			ModelMap model,String searchProp,String endOrder,String queryContent) {
+			ModelMap model,String searchProp,String endOrder,String queryContent,
+			@RequestParam(required = false) Date startDate,
+			@RequestParam(required = false) Date endDate,
+			String orderNum,
+			String orderPhone) {
 		
 		PageView<Order> pageView = new PageView<Order>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("createDate", "desc");
 		
 		StringBuffer jpql = new StringBuffer();
-		List<String> params = new ArrayList<String>();
+		List<Object> params = new ArrayList<Object>();
 		jpql.append("o.visible = true and o.isPay = true");
 		if("true".equals(endOrder)){
 			jpql.append(" and o.status = 0");
 		}else{
-			jpql.append(" and o.status < 30");
-			jpql.append(" and o.status > 0");
+			jpql.append(" and o.status > 0 ");
+			jpql.append(" and (o.status < 30 or o.status = 35 )");
 		}
 		
 		if(StringUtils.isNotEmpty(queryContent)){
-			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+			jpql.append(" and (o.num like '%"+queryContent+"%')");
 		}
 		
+		if(startDate != null){
+			jpql.append(" and o.createDate > ?"+(params.size()+1));
+			params.add(startDate);
+		}
+		if(endDate != null){
+			jpql.append(" and o.createDate < ?"+(params.size()+1));
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(endDate);
+			cal.add(Calendar.DAY_OF_MONTH, 1);
+			cal.add(Calendar.SECOND, -1);
+			params.add(cal.getTime());
+		}
+		if(StringUtils.isNotEmpty(orderNum)){
+			jpql.append(" and o.num = ?"+(params.size()+1));
+			params.add(orderNum);
+		}
+		if(StringUtils.isNotEmpty(orderPhone)){
+			jpql.append(" and o.phone = ?"+(params.size()+1));
+			params.add(orderPhone);
+		}
+		pageView.setParams(params.toArray());
 		pageView.setJpql(jpql.toString());
 		pageView.setOrderby(orderby);
 		pageView = orderService.getPage(pageView);
@@ -95,6 +128,12 @@ public class OrderAction extends BaseAction{
 		model.addAttribute("endOrder", endOrder);
 		model.addAttribute("queryContent", queryContent);
 		model.addAttribute("areas", areaService.getRootArea());
+		
+		model.addAttribute("startDate", DateTimeHelper.formatDateTimetoString(startDate, "yyyy-MM-dd"));
+		model.addAttribute("endDate", DateTimeHelper.formatDateTimetoString(endDate, "yyyy-MM-dd"));
+		model.addAttribute("orderNum",orderNum);
+		model.addAttribute("orderPhone",orderPhone);
+		
 		//mav.addAllObjects(model);
 		return basePath+"/order_list";
 	}
@@ -119,19 +158,29 @@ public class OrderAction extends BaseAction{
 		
 		Float sum = CommonUtil.add(productSum,serverSum);
 		
-		String youhuiSum = "0";
-		if(order.getMemberCoupon() != null){
-			MemberCoupon memberCoupon = order.getMemberCoupon();
-			youhuiSum = orderService.getCouponPrice(memberCoupon, sum);
-		}
 		model.addAttribute("productSum", productSum);
 		model.addAttribute("serverSum", serverSum);
-		model.addAttribute("youhuiSum", youhuiSum);
+		model.addAttribute("youhuiSum", CommonUtil.scale2Number(order.getAmount_paid()+"", 2)+"");
+		if(order.getAmount_paid() > 0){//优惠金额大于0
+			if(order.getMemberCoupon() != null){
+				MemberCoupon memberCoupon = order.getMemberCoupon();
+				model.addAttribute("youhuiRemark", "("+memberCoupon.getName()+")");
+			}else{
+				String scale = CommonUtil.div(order.getAmount_paid()+"",order.getAmount_money()+"", 2)+"";
+				model.addAttribute("youhuiRemark", "(会员卡优惠)");
+			}
+		}
+		model.addAttribute("m", mark);
 		//mav.addAllObjects(model);
 		return basePath+"/order_detail";
 	}
 	
-	
+	public static void main(String[] args) {
+		float f = 878.75f;
+		float m = 376.6f;
+		System.out.println(CommonUtil.div(m+"",f+"", 2));
+		
+	}
 	
 	//获取空闲的服务车队
 	@RequestMapping("/getCarTeam")
@@ -213,6 +262,24 @@ public class OrderAction extends BaseAction{
 			Order order = orderService.find(orderId);
 			order.setStatus(0);
 			orderService.update(order);
+			
+			//添加用户积分
+			FeeRecord feeRecord = order.getFeeRecord();
+			Member member = memberService.findByMobile(feeRecord.getPhone());
+			if(member != null){
+				Float point = 0f;
+				if(order.getServerOrderDetail().size() > 0){
+					for(ServerOrderDetail sod : order.getServerOrderDetail()){
+						Product product = sod.getProduct();
+						Float productPoint = CommonUtil.mul(product.getPoint()+"", sod.getCount()+"");
+						point = CommonUtil.add(productPoint+"",point+"");
+					}
+				}
+				Float memberPoint = member.getAmount();
+				member.setAmount(CommonUtil.add(memberPoint+"",point+""));
+				memberService.update(member);
+			}
+			
 			return ajaxSuccess("成功", response);
 		}catch(Exception e){
 			e.printStackTrace();
@@ -276,7 +343,11 @@ public class OrderAction extends BaseAction{
 	 * @return
 	 */
 	@RequestMapping("/market_list")
-	public String market_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent) {
+	public String market_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent,
+			@RequestParam(required = false) Date startDate,
+			@RequestParam(required = false) Date endDate,
+			String orderNum,
+			String orderPhone) {
 		
 		PageView<Order> pageView = new PageView<Order>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
@@ -285,10 +356,36 @@ public class OrderAction extends BaseAction{
 		StringBuffer jpql = new StringBuffer();
 		jpql.append("o.visible = true and o.status = 31 and o.isPay = true");
 		
-		if(StringUtils.isNotEmpty(queryContent)){
+		/*if(StringUtils.isNotEmpty(queryContent)){
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
+		}*/
+		List<Object> params = new ArrayList<Object>();
+		if(startDate != null){
+			jpql.append(" and o.createDate > ?"+(params.size()+1));
+			params.add(startDate);
 		}
+		if(endDate != null){
+			jpql.append(" and o.createDate < ?"+(params.size()+1));
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(endDate);
+			cal.add(Calendar.DAY_OF_MONTH, 1);
+			cal.add(Calendar.SECOND, -1);
+			params.add(cal.getTime());
+		}
+		if(StringUtils.isNotEmpty(orderNum)){
+			jpql.append(" and o.num = ?"+(params.size()+1));
+			params.add(orderNum);
+		}
+		if(StringUtils.isNotEmpty(orderPhone)){
+			jpql.append(" and o.phone = ?"+(params.size()+1));
+			params.add(orderPhone);
+		}
+		model.addAttribute("startDate", DateTimeHelper.formatDateTimetoString(startDate, "yyyy-MM-dd"));
+		model.addAttribute("endDate", DateTimeHelper.formatDateTimetoString(endDate, "yyyy-MM-dd"));
+		model.addAttribute("orderNum",orderNum);
+		model.addAttribute("orderPhone",orderPhone);
 		
+		pageView.setParams(params.toArray());
 		pageView.setJpql(jpql.toString());
 		pageView.setOrderby(orderby);
 		pageView = orderService.getPage(pageView);
@@ -325,7 +422,11 @@ public class OrderAction extends BaseAction{
 	 * @return
 	 */
 	@RequestMapping("/finance_list")
-	public String finance_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent){
+	public String finance_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent,
+			@RequestParam(required = false) Date startDate,
+			@RequestParam(required = false) Date endDate,
+			String orderNum,
+			String orderPhone){
 		PageView<Order> pageView = new PageView<Order>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("modifyDate", "desc");
@@ -335,6 +436,35 @@ public class OrderAction extends BaseAction{
 		if(StringUtils.isNotEmpty(queryContent)){
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
 		}
+		
+		List<Object> params = new ArrayList<Object>();
+		if(startDate != null){
+			jpql.append(" and o.createDate > ?"+(params.size()+1));
+			params.add(startDate);
+		}
+		if(endDate != null){
+			jpql.append(" and o.createDate < ?"+(params.size()+1));
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(endDate);
+			cal.add(Calendar.DAY_OF_MONTH, 1);
+			cal.add(Calendar.SECOND, -1);
+			params.add(cal.getTime());
+		}
+		if(StringUtils.isNotEmpty(orderNum)){
+			jpql.append(" and o.num = ?"+(params.size()+1));
+			params.add(orderNum);
+		}
+		if(StringUtils.isNotEmpty(orderPhone)){
+			jpql.append(" and o.phone = ?"+(params.size()+1));
+			params.add(orderPhone);
+		}
+		model.addAttribute("startDate", DateTimeHelper.formatDateTimetoString(startDate, "yyyy-MM-dd"));
+		model.addAttribute("endDate", DateTimeHelper.formatDateTimetoString(endDate, "yyyy-MM-dd"));
+		model.addAttribute("orderNum",orderNum);
+		model.addAttribute("orderPhone",orderPhone);
+		
+		pageView.setParams(params.toArray());
+		
 		pageView.setJpql(jpql.toString());
 		pageView.setOrderby(orderby);
 		pageView = orderService.getPage(pageView);
@@ -357,14 +487,47 @@ public class OrderAction extends BaseAction{
 	public String financeAgree(String orderId, String content){
 		try{
 			Order order = orderService.find(orderId);
+			
+			if(order.getStatus() == 34){
+				return ajaxError("该订单退款已完成,请重新确认", response);
+			}
+			
 			order.setStatus(33);
 			order.setModifyDate(new Date());
+			
+			if(order.getPayWay() == 1){//会员卡
+				String phone = order.getFeeRecord().getPhone();
+				Member member = memberService.findByMobile(phone);
+				if(member == null){
+					return ajaxError("该会员不存在，请确认", response);
+				}
+				Float order_money = order.getPrice();
+				Float member_moeny = member.getMoney()==null?0f:member.getMoney();
+				member.setMoney(CommonUtil.add(order_money+"",member_moeny+""));
+				memberService.update(member);
+				order.setStatus(34);
+			}
 			orderService.update(order);
+			
+			if(order.getMemberCoupon() != null){
+				MemberCoupon memberCoupon = order.getMemberCoupon();
+				memberCoupon.setStatus(0);
+				memberCoupon.setUseDate(null);
+				memberCouponService.update(memberCoupon);
+			}
+			//退款理由
+			FeeRecord feeRecord = order.getFeeRecord();
+			feeRecord.setRefundContent(content);
+			feeRecord.setIsRefund(1);
+			feeRecord.setModifyDate(new Date());
+			feeRecordService.update(feeRecord);
+			
 			JSONObject obj = new JSONObject();
 			obj.put("trade_num", order.getFeeRecord()==null?"":order.getFeeRecord().getTradeNo());
 			obj.put("payWay", order.getPayWay());
 			obj.put("price", order.getPrice());
 			obj.put("content", content);
+			obj.put("order_num",order.getNum());
 			return ajaxSuccess(obj, response);
 		}catch(Exception e){
 			e.printStackTrace();
@@ -379,7 +542,11 @@ public class OrderAction extends BaseAction{
 	 * @return
 	 */
 	@RequestMapping("/cancel_list")
-	public String cancel_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent){
+	public String cancel_list(@RequestParam(required = false, defaultValue = "1") int page,ModelMap model,String searchProp,String queryContent,
+			@RequestParam(required = false) Date startDate,
+			@RequestParam(required = false) Date endDate,
+			String orderNum,
+			String orderPhone){
 		PageView<Order> pageView = new PageView<Order>(null,page);
 		LinkedHashMap<String, String> orderby = new LinkedHashMap<String, String>();
 		orderby.put("modifyDate", "desc");
@@ -391,6 +558,33 @@ public class OrderAction extends BaseAction{
 			jpql.append(" and (o.num like '%"+queryContent+"%' or o.id like '%"+queryContent+"%')");
 		}
 		
+		List<Object> params = new ArrayList<Object>();
+		if(startDate != null){
+			jpql.append(" and o.createDate > ?"+(params.size()+1));
+			params.add(startDate);
+		}
+		if(endDate != null){
+			jpql.append(" and o.createDate < ?"+(params.size()+1));
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(endDate);
+			cal.add(Calendar.DAY_OF_MONTH, 1);
+			cal.add(Calendar.SECOND, -1);
+			params.add(cal.getTime());
+		}
+		if(StringUtils.isNotEmpty(orderNum)){
+			jpql.append(" and o.num = ?"+(params.size()+1));
+			params.add(orderNum);
+		}
+		if(StringUtils.isNotEmpty(orderPhone)){
+			jpql.append(" and o.phone = ?"+(params.size()+1));
+			params.add(orderPhone);
+		}
+		model.addAttribute("startDate", DateTimeHelper.formatDateTimetoString(startDate, "yyyy-MM-dd"));
+		model.addAttribute("endDate", DateTimeHelper.formatDateTimetoString(endDate, "yyyy-MM-dd"));
+		model.addAttribute("orderNum",orderNum);
+		model.addAttribute("orderPhone",orderPhone);
+		
+		pageView.setParams(params.toArray());
 		pageView.setJpql(jpql.toString());
 		pageView.setOrderby(orderby);
 		pageView = orderService.getPage(pageView);

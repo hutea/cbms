@@ -222,7 +222,7 @@ public class AppServer {
 				member.setMobile(phone);
 				memberService.save(member);
 			} else if (!member.getVisible() || member.getStatus() == 0) {// 帐号被停用
-				dataMap.put("result", "101");// 帐号被停用？？？
+				dataMap.put("result", "101");// 帐号被停用
 				dataMap.put("uid", "");
 				dataMap.put("token", "");
 				String json = mapper.writeValueAsString(dataMap);
@@ -2223,7 +2223,7 @@ public class AppServer {
 	 *            <String(产品ID),Integer(产品数量)>
 	 * @param cpid
 	 * @param otype
-	 *            订单类型 1=洗车优惠券、2=保养优惠券、3=商品优惠券
+	 *            订单类型 1=洗车、2=保养、3=商品
 	 * @return map.put("result", "001"); // 结果<br>
 	 *         map.put("ocmoney", ocmoney + ""); // 服务品总价<br>
 	 *         map.put("opmoney", ocmoney + ""); // 商品总价<br>
@@ -2237,12 +2237,16 @@ public class AppServer {
 			throws CouponUseExcepton {
 		float ocmoney = 0; // 服务总价
 		float opmoney = 0; // 产品总价
-		if (scids != null && scids.size() > 0) {
+		if (otype == 2 && (productMap == null || productMap.size() < 0)) { // 纯保养[不带商品]
+			// 设置价格。。。
+			// ocmoney=serviceTypeService.find("").getPrice();
+		} else if (scids != null && scids.size() > 0) {
 			for (String scid : scids) {
 				ocmoney = CommonUtil.add(ocmoney + "",
 						serviceTypeService.find(scid).getPrice() + "");
 			}
 		}
+		
 		if (productMap != null && productMap.size() > 0) {
 			for (String pid : productMap.keySet()) {
 				Product product = productService.find(pid);

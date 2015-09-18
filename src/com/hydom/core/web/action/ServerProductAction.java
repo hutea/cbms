@@ -108,6 +108,8 @@ public class ServerProductAction extends BaseAction{
 		serviceObj.put("serviceId", serviceType.getId());
 		serviceObj.put("serviceName", serviceType.getName());
 		serviceObj.put("servicePrice", serviceType.getPrice()==null?"0":serviceType.getPrice());
+		serviceObj.put("onlyServicePrice", CommonAttributes.getInstance().getSystemBean()
+				.getPrice()==null?"0":CommonAttributes.getInstance().getSystemBean().getPrice());
 		
 		//商品信息
 		List<ProductCategory> productCategorySet = serviceType.getProductCategory();
@@ -128,7 +130,8 @@ public class ServerProductAction extends BaseAction{
 				productObj.put("name", product.getName());
 				productObj.put("price", product.getMarketPrice());
 				productObj.put("count", "1");
-				productObj.put("serviceId", product.getProductCategory().getServiceType().getId());
+				productObj.put("serviceId", serviceId);
+			//	productObj.put("serviceId", product.getProductCategory().getServiceType().getId());//空指针：子分类没有绑定服务
 			//	obj.put("product", productObj);
 				obj1.put("product", productObj);
 			}else{

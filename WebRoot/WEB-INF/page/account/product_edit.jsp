@@ -155,6 +155,12 @@ div.car_div_label_type label{
     
                             <!-- Tab panes -->
                             <form class="form-horizontal form-bordered" id="inputForm" action="<%=basePath%>manage/product/update" method="POST" enctype="multipart/form-data">
+                            
+                            <input type="hidden" name="productCategoryId" value="${productCategoryId }"/>
+                            <input type="hidden" name="productNum" value="${productNum }"/>
+                            <input type="hidden" name="productName" value="${productName }"/>
+                            <input type="hidden" name="page" value="${page}"/>
+                                                        
                             <div class="tab-content mb30">
                             	<!-- 商品介绍 -->
                             	<input type="hidden" name="productId" value="${entity.id }"/>

@@ -57,6 +57,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				<li class="menu-item myCoupon on">
 					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
+				<li class="menu-item couponPackage">
+					<a href="${pageContext.request.contextPath}/user/couponPackage/list">我的会员卡</a>
+				</li>
 			</ul>
 			<div class="menu-title menu-home">
 				<h3>我的车管家</h3>
@@ -99,7 +102,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							<thead>
 								<tr>
 									<th>名称</th>
-									<th>使用积分</th>
+									<th>获取方式</th>
 									<th>是否已使用</th>
 									<th>使用时间</th>
 									<th>到期时间</th>
@@ -108,15 +111,21 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 							<tbody>
 								<c:forEach items="${pageView.records}" var="entry" >
 								<tr rowspan="2">
-									<td>${entry.coupon.name }</td>
-									<td><fmt:formatNumber value="${entry.point }" type="number" pattern=""/></td>
+									<td>${entry.name }</td>
+									<td>
+										<c:if test="${entry.gainWay eq 1 }"><fmt:formatNumber value="${entry.point }" type="number" pattern=""/>积分兑换</c:if>
+										<c:if test="${entry.gainWay eq 2 }">系统发放</c:if>
+										<c:if test="${entry.gainWay eq 3 }">充值赠送</c:if>
+										<c:if test="${entry.gainWay eq 4 }">购买会员卡</c:if>
+										<c:if test="${entry.gainWay eq 5 }">首次消费赠送</c:if>
+									</td>
 									<td>
 										<c:if test="${2 eq entry.status}">已过期</c:if>
 										<c:if test="${1 eq entry.status}">已使用</c:if>
 										<c:if test="${0 eq entry.status}">未使用</c:if>
 									</td>
 									<td><fmt:formatDate value="${entry.useDate }" pattern="yyyy-MM-dd HH:mm:ss"/></td>
-									<td><fmt:formatDate value="${entry.coupon.endDate }" pattern="yyyy-MM-dd HH:mm:ss"/></td>
+									<td><fmt:formatDate value="${entry.endDate }" pattern="yyyy-MM-dd HH:mm:ss"/></td>
 								</tr>
 								</c:forEach>
 							</tbody>

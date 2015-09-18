@@ -33,6 +33,10 @@ import com.hydom.core.order.ebean.ServiceImage;
 import com.hydom.core.order.ebean.TechnicianBindRecord;
 import com.hydom.core.order.service.ServiceImageService;
 import com.hydom.core.order.service.TechnicianBindRecordService;
+import com.hydom.core.server.ebean.Coupon;
+import com.hydom.core.server.ebean.FirstSpendSendCoupon;
+import com.hydom.core.server.service.CouponPackageRecordService;
+import com.hydom.core.server.service.FirstSpendSendCouponService;
 import com.hydom.util.UploadImageUtil;
 import com.hydom.util.dao.QueryResult;
 
@@ -56,6 +60,8 @@ public class AppServerTechnician {
 	private ServiceImageService serviceImageService;
 	@Resource
 	private WorkLogService workLogService;
+	@Resource
+	private FirstSpendSendCouponService firstSpendSendCouponService;
 	@Autowired
 	private HttpServletRequest request;
 
@@ -98,15 +104,17 @@ public class AppServerTechnician {
 				String json = mapper.writeValueAsString(dataMap);
 				return json;
 			}
-			StringBuffer jpql = new StringBuffer("o.visible = ?1 and o.pushId = ?2");
-			Object[] params = new Object[]{true,pushId};
-			QueryResult<Technician> tech = technicianService.getScrollData(-1, -1, jpql.toString(), params);
+			StringBuffer jpql = new StringBuffer(
+					"o.visible = ?1 and o.pushId = ?2");
+			Object[] params = new Object[] { true, pushId };
+			QueryResult<Technician> tech = technicianService.getScrollData(-1,
+					-1, jpql.toString(), params);
 			List<Technician> list = tech.getResultList();
-			for(Technician t : list){
+			for (Technician t : list) {
 				t.setPushId("0");
 				technicianService.update(t);
 			}
-			
+
 			technician.setPushId(pushId);
 			technicianService.update(technician);
 			dataMap.put("result", "001");
@@ -144,14 +152,13 @@ public class AppServerTechnician {
 			dataMap.put("name", technician.getName());
 			dataMap.put("phoneNumber", technician.getPhonenumber());
 			dataMap.put("jobStatus", technician.isJobstatus());
-			dataMap.put("stats", technician.getStats());
 			Order order = technician.getOrder();
 			if (technician.isJobstatus() && order == null) {
-				order = orderService.matchOrder(techId,
-						technician.getLatitude(), technician.getLongitude());
+				order = orderService.matchOrder(techId, technician.getLatitude(), technician.getLongitude());
 			}
 			if (technician.getOrder() != null) {
 				dataMap.put("result", "001");
+				dataMap.put("stats", order.getStatus()-1);
 				dataMap.put("hasOrder", true);
 				dataMap.put("orderId", order.getId());// 订单id
 				dataMap.put("orderNum", order.getNum());// 订单编号
@@ -167,6 +174,7 @@ public class AppServerTechnician {
 				dataMap.put("distance", order.getDistance());// 距离
 			} else {
 				dataMap.put("result", "001");
+				dataMap.put("stats", 0);
 				dataMap.put("hasOrder", false);
 				dataMap.put("orderId", "");// 订单id
 				dataMap.put("orderNum", "");// 订单编号
@@ -209,24 +217,24 @@ public class AppServerTechnician {
 					+ " 技师经度=" + lng + "技师纬度=" + lat);
 			Technician tech = technicianService.find(techId);
 			JSONObject obj = new JSONObject();
-			
-			//暂时存储当前上下班状态
+
+			// 暂时存储当前上下班状态
 			boolean js = tech.isJobstatus();
-			
+
 			// 更改上班状态
 			tech.setJobstatus(jobStatus);
 			tech.setLongitude(lng);
 			tech.setLatitude(lat);
 			technicianService.update(tech);
-			
-			//记录上下班日志
-			if(js!=jobStatus){
+
+			// 记录上下班日志
+			if (js != jobStatus) {
 				WorkLog workLog = new WorkLog();
 				workLog.setTechnician(technicianService.find(techId));
 				workLog.setJobstatus(jobStatus);
 				workLogService.save(workLog);
 			}
-			
+
 			Order order = tech.getOrder();
 			if (jobStatus && order == null) {
 				order = orderService.matchOrder(techId, lat, lng);
@@ -295,10 +303,14 @@ public class AppServerTechnician {
 	/**
 	 * 技师接受订单
 	 * 
-	 * @param techId 技师id
-	 * @param orderId 订单id
-	 * @param tlng 技师经度
-	 * @param tlat 技师纬度
+	 * @param techId
+	 *            技师id
+	 * @param orderId
+	 *            订单id
+	 * @param tlng
+	 *            技师经度
+	 * @param tlat
+	 *            技师纬度
 	 * @return
 	 */
 	@RequestMapping(value = "acceptOrder", produces = "text/html;charset=UTF-8")
@@ -309,15 +321,19 @@ public class AppServerTechnician {
 					+ " 技师经度=" + tlng + " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
 			Order order = orderService.find(orderId);
-			if(order.getStatus()>=31 && order.getStatus()<=39){
+			if (order.getStatus() >= 31 && order.getStatus() <= 39) {
 				tech.setOrder(null);
 				order.setTechMember(null);
 				technicianService.update(tech);
 				orderService.update(order);
 				return "{\"result\":\"1002\"}";
 			}
-			if(tech.getOrder()==null || order.getStatus()!=1) return "{\"result\":\"1003\"}";
-			if(tlng==0 && tlat==0) return "{\"result\":\"1001\"}";
+			if (tech.getOrder() == null || order.getStatus() != 1)
+				return "{\"result\":\"1003\"}";
+			if (!order.getTechMember().getId().equals(techId))
+				return "{\"result\":\"1005\"}";
+			if (tlng == 0 && tlat == 0)
+				return "{\"result\":\"1001\"}";
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
 			tech.setStats(1);
@@ -333,7 +349,7 @@ public class AppServerTechnician {
 					* Math.pow(Math.sin(b / 2), 2)));
 			s = s * EARTH_RADIUS;
 			s = Math.round(s * 10000) / 10000;
-			order.setDistance(s/1000);
+			order.setDistance(s / 1000);
 
 			order.setStatus(2);
 			order.getTechnicianBindRecord().setState(2);
@@ -376,16 +392,20 @@ public class AppServerTechnician {
 			JSONObject obj = new JSONObject();
 			Technician tech = technicianService.find(techId);
 			Order order = tech.getOrder();
-			if(order.getStatus()>=31 && order.getStatus()<=39){
+			if (order.getStatus() >= 31 && order.getStatus() <= 39) {
 				tech.setOrder(null);
 				order.setTechMember(null);
 				technicianService.update(tech);
 				orderService.update(order);
 				return "{\"result\":\"1002\"}";
 			}
-			if(order==null || order.getStatus()!=1) return "{\"result\":\"1003\"}";
-			if(tlng==0 || tlat==0) return "{\"result\":\"1001\"}";
-			
+			if (order == null || order.getStatus() != 1)
+				return "{\"result\":\"1003\"}";
+			if (!order.getTechMember().getId().equals(techId))
+				return "{\"result\":\"1005\"}";
+			if (tlng == 0 || tlat == 0)
+				return "{\"result\":\"1001\"}";
+
 			tech.setLongitude(tlng);
 			tech.setLatitude(tlat);
 
@@ -400,11 +420,11 @@ public class AppServerTechnician {
 			s = s * EARTH_RADIUS;
 			s = Math.round(s * 10000) / 10000;
 
-			order.getTechnicianBindRecord().setRefuseDistance(s/1000);
+			order.getTechnicianBindRecord().setRefuseDistance(s / 1000);
 			order.getTechnicianBindRecord().setRefuseDate(new Date());
 			order.getTechnicianBindRecord().setRefuseCause(refuseCause);
 			order.getTechnicianBindRecord().setState(3);
-			order.setTechMember(null); 
+			order.setTechMember(null);
 			orderService.update(order);
 
 			// 查找未绑定技师的订单
@@ -414,7 +434,7 @@ public class AppServerTechnician {
 				tech.setOrder(order);
 				tech.setStats(0);
 				technicianService.update(tech);
-				
+
 				obj.put("result", "001");
 				obj.put("hasOrder", true);
 				obj.put("orderId", order.getId());// 订单id
@@ -496,10 +516,14 @@ public class AppServerTechnician {
 			log.info("App【服务开始】：" + "技师id=" + techId);
 			Technician tech = technicianService.find(techId);
 			Order order = tech.getOrder();
-			if(order==null || order.getStatus()!=2) return "{\"result\":\"1003\"}";
-			if(imageUrl!=null){
+			if (order == null || order.getStatus() != 2)
+				return "{\"result\":\"1003\"}";
+			if (!order.getTechMember().getId().equals(techId))
+				return "{\"result\":\"1005\"}";
+			if (imageUrl != null) {
 				for (String img : imageUrl) {
-					if(imageUrl==null || imageUrl.equals("null")) continue;
+					if (imageUrl == null || imageUrl.equals("null"))
+						continue;
 					ServiceImage serviceImage = new ServiceImage();
 					serviceImage.setOrder(tech.getOrder());
 					serviceImage.setImg(img);
@@ -544,10 +568,14 @@ public class AppServerTechnician {
 					+ " 技师纬度=" + tlat);
 			Technician tech = technicianService.find(techId);
 			Order order = tech.getOrder();
-			if(order==null || order.getStatus()!=3) return "{\"result\":\"1003\"}";
+			if (order == null || order.getStatus() != 3)
+				return "{\"result\":\"1003\"}";
+			if (!order.getTechMember().getId().equals(techId))
+				return "{\"result\":\"1005\"}";
 			JSONObject obj = new JSONObject();
 			for (String img : imageUrl) {
-				if(imageUrl==null || imageUrl.equals("null")) continue;
+				if (imageUrl == null || imageUrl.equals("null"))
+					continue;
 				ServiceImage serviceImage = new ServiceImage();
 				serviceImage.setOrder(tech.getOrder());
 				serviceImage.setImg(img);
@@ -559,10 +587,12 @@ public class AppServerTechnician {
 			order.setMakeEndDate(new Date());
 			order.setStatus(0);
 			orderService.update(order);
-
+			
+			//首次消费送优惠券
+			firstSpendSendCouponService.gainCoupon(order);
 			// 设技师目前服务的订单
 			tech.setOrder(null);// //////////////////////////////////////////////////////////////////////////////////////
-			
+
 			// 查找未绑定技师的订单
 			order = orderService.matchOrder(techId, tlat, tlng);
 			// orderService.find("29381b50-14e8-4448-8acb-71389656dd8f");//////////////////////////////////////////////////////////////////////
@@ -585,7 +615,7 @@ public class AppServerTechnician {
 				tech.setStats(1);
 				tech.setOrder(order);// //////////////////////////////////////////////////////////////////////////////////////
 				technicianService.update(tech);
-				
+
 				return obj.toString();
 			} else {
 				// 设技师状态为空闲
@@ -630,18 +660,20 @@ public class AppServerTechnician {
 			log.info("App【技师经纬度更新】：" + "技师id=" + techId + " 技师经度=" + tlng
 					+ " 技师纬度=" + tlat + " 所在地=" + area);
 			Technician technician = technicianService.find(techId);
-			if((tlat==0||tlat==null) && (tlng==0||tlng==null)) return "{\"result\":\"1001\"}";
+			if ((tlat == 0 || tlat == null) && (tlng == 0 || tlng == null))
+				return "{\"result\":\"1001\"}";
 			technician.setLongitude(tlng);
 			technician.setLatitude(tlat);
-			if(StringUtils.isEmpty(area)) area="获得地区失败";
+			if (StringUtils.isEmpty(area))
+				area = "获得地区失败";
 			technician.setArea(area);
 			technicianService.update(technician);
 			JSONObject obj = new JSONObject();
-			
-//			Date d2=new Date();
-//			System.out.println("经纬度更新接口调用时间间隔（s）："+(Double.parseDouble((d2.getTime()-d1.getTime())+"")/1000));
-//			d1=new Date();
-			
+
+			// Date d2=new Date();
+			// System.out.println("经纬度更新接口调用时间间隔（s）："+(Double.parseDouble((d2.getTime()-d1.getTime())+"")/1000));
+			// d1=new Date();
+
 			obj.put("result", "001");
 			obj.put("jobStatus", technicianService.find(techId).isJobstatus());
 			return obj.toString();
@@ -650,8 +682,8 @@ public class AppServerTechnician {
 			return "{\"result\":\"000\"}";
 		}
 	}
-	
-//	static private Date d1=new Date();
+
+	// static private Date d1=new Date();
 
 	/**
 	 * 原密码验证与修改密码
@@ -753,7 +785,7 @@ public class AppServerTechnician {
 					obj.put("startDate", "");
 				}
 
-				obj.put("orderState", tbr.getState());//接受=2，拒绝=3
+				obj.put("orderState", tbr.getState());// 接受=2，拒绝=3
 				array.add(obj);
 				obj.clear();
 			}
@@ -782,6 +814,8 @@ public class AppServerTechnician {
 		try {
 			log.info("App【获得订单详情】" + "订单id=" + orderId);
 			Order order = orderService.find(orderId);
+			if (!order.getTechMember().getId().equals(techId))
+				return "{\"result\":\"1005\"}";
 			JSONObject obj = new JSONObject();
 			obj.put("result", "001");
 			obj.put("orderId", order.getId());// 订单id
@@ -807,9 +841,10 @@ public class AppServerTechnician {
 					.getAfterImageByOrderId(orderId);
 			for (int i = 0; i < 3; i++) {
 				if (i < imgUrl.size()) {
-					if(imgUrl.get(i).getImg().equals("null") || imgUrl.get(i).getImg()==null){
+					if (imgUrl.get(i).getImg().equals("null")
+							|| imgUrl.get(i).getImg() == null) {
 						imgs.put("imgUrl" + i, "");
-					}else{
+					} else {
 						imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
 					}
 				} else {
@@ -821,9 +856,10 @@ public class AppServerTechnician {
 			imgUrl = serviceImageService.getBeforeImageByOrderId(orderId);
 			for (int i = 0; i < 3; i++) {
 				if (i < imgUrl.size()) {
-					if(imgUrl.get(i).getImg().equals("null") || imgUrl.get(i).getImg()==null){
+					if (imgUrl.get(i).getImg().equals("null")
+							|| imgUrl.get(i).getImg() == null) {
 						imgs.put("imgUrl" + i, "");
-					}else{
+					} else {
 						imgs.put("imgUrl" + i, imgUrl.get(i).getImg());
 					}
 				} else {

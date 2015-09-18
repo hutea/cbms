@@ -82,6 +82,9 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 				<li class="menu-item myCoupon">
 					<a href="${pageContext.request.contextPath}/user/myCoupon/list">我的优惠券</a>
 				</li>
+				<li class="menu-item couponPackage">
+					<a href="${pageContext.request.contextPath}/user/couponPackage/list">我的会员卡</a>
+				</li>
 			</ul>
 			<div class="menu-title menu-home active">
 				<h3>我的车管家</h3>
@@ -125,7 +128,7 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 								<li class="lists">
 									<dl class="listsdl1">
 										<dd class="selectedLikes">
-											<label><a><img src="<%=basePath %>${userCar.car.carBrand.imgPath }" /></a></label>
+											<label><a><img src="<%=basePath %>${userCar.car.carBrand.imgPath }" style="height: 100px; width: 100px;"/></a></label>
 										</dd>
 										<dd class="listsdd">
 											<ul>

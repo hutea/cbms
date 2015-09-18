@@ -96,7 +96,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 					 <div class="form-group" style="border-top: 0px dotted #d3d7db;width: 33%;display: inline-block;">
 						<label class="col-sm-3 control-label">商品名称</label>
 						<div class="col-sm-8">
-							<input type="text" name="productName" class="form-control" maxlength="200" value="${productName }"/>
+							<input type="text" name="productName" class="form-control" maxlength="200" value="${productName }" id="productName"/>
 						</div>
 					</div>
 			        <div class="btn-list">
@@ -180,7 +180,7 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 									<fmt:formatNumber value="${product.point }" pattern="0.00"></fmt:formatNumber> 
 								</td>
 								<td>
-									<a href="<%=base %>manage/product/edit?id=${product.id}">[编辑]</a>
+									<a href="javascript:gotoEdit('${product.id }');">[编辑]</a>
 								</td>
 							</tr>
 						  </c:forEach>
@@ -192,6 +192,22 @@ String base = request.getScheme()+"://"+request.getServerName()+":"+request.getS
 		  </div>       
     </div> <!-- mainwrapper -->
     </section>
-   
+   <script type="text/javascript">
+   		function gotoEdit(obj){
+   			var productCategoryId = $("#productCategorys option:selected").val();
+   			var productNum = $("#productBrandId option:selected").val();
+   			var productName = $("#productName").val();
+   			
+   			var inputPage = $("#inputPage").val();
+   			
+   			var url = "<%=base %>manage/product/edit?id="+obj
+   					+"&productCategoryId="+productCategoryId
+   					+"&productNum="+productNum
+   					+"&productName="+productName
+   					+"&page="+inputPage;
+   			
+   			window.location.href=url;
+   		}
+   </script>
 </body>
 </html>
